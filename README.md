@@ -1,4 +1,3 @@
-````markdown
 # OpenAI Image-API Playground (Flask Edition)
 
 This repository is a **personal, single-user test bed** for experimenting with OpenAI’s new `gpt-image-1` endpoints—**_not_** a production-grade service.  
@@ -23,7 +22,6 @@ echo "OPENAI_API_KEY=sk-..." > .env
 python app.py
 # open http://127.0.0.1:5000
 ```
-````
 
 Generated or edited images are:
 
