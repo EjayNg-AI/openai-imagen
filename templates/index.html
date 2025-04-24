@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Image-API Playground</title>
+<style>
+body      { font-family: system-ui, sans-serif; max-width: 50rem; margin: 2rem auto; }
+fieldset  { margin-bottom: 2rem; }
+.preview  { margin-top: 1rem; max-width: 100%; border: 1px solid #ddd; }
+.error    { color: #b00; margin-top: 0.5rem; }
+.meta     { margin-top: 0.5rem; }
+</style>
+</head>
+<body>
+<h1>OpenAI Image Playground</h1>
+
+<!-- ------------- Generate ------------------------------------------------- -->
+<fieldset>
+<legend><strong>Generate</strong></legend>
+<label>Prompt<br><textarea id="genPrompt" rows="3" style="width:100%"></textarea></label><br>
+<label>Size
+  <select id="genSize">
+    <option>1024x1024</option><option>1536x1024</option><option>1024x1536</option>
+  </select>
+</label>
+<label>Quality
+  <select id="genQuality">
+    <option>auto</option><option>low</option><option>medium</option><option>high</option>
+  </select>
+</label>
+<button id="btnGenerate">Generate</button>
+<button id="dlGen" disabled>Download</button>
+<div id="genErr" class="error"></div>
+<a id="genLink" class="meta" target="_blank"></a><br>
+<img id="genImg" class="preview" />
+</fieldset>
+
+<!-- ------------- Edit ----------------------------------------------------- -->
+<fieldset>
+<legend><strong>Edit / Combine</strong></legend>
+<label>Prompt<br><textarea id="editPrompt" rows="3" style="width:100%"></textarea></label><br>
+<label>Image 1 <input type="file" id="img1" accept="image/*" /></label><br>
+<label>Image 2 (optional) <input type="file" id="img2" accept="image/*" /></label><br>
+<label>Size
+  <select id="editSize">
+    <option>1024x1024</option><option>1536x1024</option><option>1024x1536</option>
+  </select>
+</label>
+<button id="btnEdit">Create</button>
+<button id="dlEdit" disabled>Download</button>
+<div id="editErr" class="error"></div>
+<a id="editLink" class="meta" target="_blank"></a><br>
+<img id="editImg" class="preview" />
+</fieldset>
+
+<script>
+async function postForm(url, formData) {
+  const r = await fetch(url, { method:"POST", body:formData });
+  return r.json();
+}
+
+// ---------------- Generate handlers ----------------
+btnGenerate.onclick = async () => {
+  const fd = new FormData();
+  fd.append("prompt",  genPrompt.value);
+  fd.append("size",    genSize.value);
+  fd.append("quality", genQuality.value);
+
+  genErr.textContent = "Generating…";
+  dlGen.disabled = true; genLink.textContent = ""; genLink.href = ""; genImg.src = "";
+
+  const res = await postForm("/generate", fd);
+  if (res.ok) {
+    genImg.src = res.data_uri;
+    dlGen.disabled = false;
+    genLink.href = res.url; genLink.textContent = "Saved copy ↗";
+    genErr.textContent = "";
+  } else {
+    genErr.textContent = res.error || "Error";
+  }
+};
+
+dlGen.onclick = () => downloadImage(genImg.src, "generated.png");
+
+// ---------------- Edit handlers --------------------
+btnEdit.onclick = async () => {
+  const fd = new FormData();
+  fd.append("prompt", editPrompt.value);
+  fd.append("size",   editSize.value);
+  if (img1.files[0]) fd.append("image1", img1.files[0]);
+  if (img2.files[0]) fd.append("image2", img2.files[0]);
+
+  editErr.textContent = "Calling Edit…";
+  dlEdit.disabled = true; editLink.textContent = ""; editImg.src = "";
+
+  const res = await postForm("/edit", fd);
+  if (res.ok) {
+    editImg.src = res.data_uri;
+    dlEdit.disabled = false;
+    editLink.href = res.url; editLink.textContent = "Saved copy ↗";
+    editErr.textContent = "";
+  } else {
+    editErr.textContent = res.error || "Error";
+  }
+};
+
+dlEdit.onclick = () => downloadImage(editImg.src, "edited.png");
+
+// ---------------- Utility: client-side download ----
+function downloadImage(dataUri, filename){
+  if (!dataUri) return;
+  const a = document.createElement('a');
+  a.href = dataUri;
+  a.download = filename;
+  a.click();
+}
+</script>
+</body>
+</html>
