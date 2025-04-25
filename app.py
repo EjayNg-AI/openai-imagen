@@ -1,11 +1,12 @@
 import base64, io, os, uuid, datetime as dt
 from pathlib import Path
-import logging
+from typing import List
 from flask import Flask, render_template, request, jsonify, send_from_directory
 from openai import OpenAI
 from dotenv import load_dotenv
+import logging
 
-# ------------------------------------------------------------------ configuration
+# ------------------------------------------------------------- configuration
 # Configure logging with proper error handling
 logging.basicConfig(
     level=logging.DEBUG,
@@ -25,102 +26,119 @@ except Exception as e:
     raise
 
 SAVE_DIR = Path("saved_images")
-SAVE_DIR.mkdir(exist_ok=True)                                # local persistence folder
+SAVE_DIR.mkdir(exist_ok=True)
 
-# ------------------------------------------------------------------ helpers
-def file_to_bytes(f):
-    return f.read() if f and f.filename else None
+# ------------------------------------------------------------- helpers
+def nowstamp() -> str:
+    return dt.datetime.now().strftime("%Y%m%d-%H%M%S")
 
-
-def b64_to_datauri(b64, fmt="png"):
-    return f"data:image/{fmt};base64,{b64}"
-
-
-def save_image_bytes(img_bytes: bytes, fmt: str) -> str:
-    """Write image to disk, return the relative URL for accessing it."""
-    stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
-    fname = f"{stamp}-{uuid.uuid4().hex}.{fmt}"
+def save_bytes(img_bytes: bytes, ext: str) -> str:
+    fname = f"{nowstamp()}-{uuid.uuid4().hex}.{ext}"
     (SAVE_DIR / fname).write_bytes(img_bytes)
     return f"/saved/{fname}"
 
+def file_to_bytes(f):
+    return f.read() if f and f.filename else None
 
-# ------------------------------------------------------------------ Flask app
+def b64_to_datauri(b64: str, ext="png") -> str:
+    return f"data:image/{ext};base64,{b64}"
+
+def parse_int(value, default=1):
+    try:
+        return max(1, int(value))
+    except (TypeError, ValueError):
+        return default
+
+# ------------------------------------------------------------- Flask app
 app = Flask(__name__)
-
 
 @app.route("/")
 def index():
     return render_template("index.html")
 
+@app.route("/saved/<path:fname>")
+def serve_saved(fname):
+    return send_from_directory(SAVE_DIR, fname, as_attachment=False)
 
-@app.route("/saved/<path:filename>")
-def saved_file(filename):
-    """Serve persisted images."""
-    return send_from_directory(SAVE_DIR, filename, as_attachment=False)
+# ------------------------------------------------------------- routes
+COMMON_ARGS = ["size", "quality", "background", "output_format",
+               "output_compression", "moderation"]
 
+def build_kwargs(src):
+    """Translate HTML form → kwargs understood by the Image API."""
+    kw = {}
+    for k in COMMON_ARGS:
+        v = src.get(k)
+        if v not in (None, "", "auto"):
+            kw[k if k != "output_format" else "output_format"] = v
+    if "output_compression" in kw:
+        kw["output_compression"] = int(kw["output_compression"])
+    return kw
 
 @app.route("/generate", methods=["POST"])
 def generate():
     data = request.form
     prompt = data.get("prompt", "").strip()
-    size = data.get("size", "1024x1024")
-    quality = data.get("quality", "auto")
-    bg = data.get("background", None)
-    fmt = data.get("format", "png")
-    n = int(data.get("n", 1))
+    n      = parse_int(data.get("n", 1), 1)
+
+    if not prompt:
+        return jsonify({"ok": False, "error": "Prompt is required"}), 400
 
     try:
         result = client.images.generate(
             model="gpt-image-1",
             prompt=prompt,
-            size=size,
-            quality=quality,
-            background=bg,
-            output_format=fmt,
             n=n,
+            **build_kwargs(data),
         )
-        img_b64 = result.data[0].b64_json
-        img_bytes = base64.b64decode(img_b64)
-        url = save_image_bytes(img_bytes, fmt)
-        return jsonify(
-            {"ok": True, "data_uri": b64_to_datauri(img_b64, fmt), "url": url}
-        )
+        fmt = data.get("output_format", "png")
+        data_uris, urls = [], []
+        for item in result.data:
+            b64 = item.b64_json
+            img_bytes = base64.b64decode(b64)
+            data_uris.append(b64_to_datauri(b64, fmt))
+            urls.append(save_bytes(img_bytes, fmt))
+        return jsonify({"ok": True, "data_uris": data_uris, "urls": urls})
     except Exception as e:
+        logger.exception("Generate failed")
         return jsonify({"ok": False, "error": str(e)}), 500
-
 
 @app.route("/edit", methods=["POST"])
 def edit():
     data = request.form
     prompt = data.get("prompt", "").strip()
-    size = data.get("size", "1024x1024")
+    if not prompt:
+        return jsonify({"ok": False, "error": "Prompt is required"}), 400
 
-    img1_bytes = file_to_bytes(request.files.get("image1"))
-    img2_bytes = file_to_bytes(request.files.get("image2"))
+    # collect up to 10 images: fields image1 … image10
+    images: List[io.BytesIO] = []
+    for i in range(1, 11):
+        b = file_to_bytes(request.files.get(f"image{i}"))
+        if b: images.append(io.BytesIO(b))
+    if not images:
+        return jsonify({"ok": False, "error": "At least one image required"}), 400
 
-    if not prompt or not img1_bytes:
-        return (
-            jsonify({"ok": False, "error": "Need prompt + at least 1 image"}),
-            400,
-        )
+    mask_bytes = file_to_bytes(request.files.get("mask"))
+    mask_file  = io.BytesIO(mask_bytes) if mask_bytes else None
 
     try:
-        image_files = [io.BytesIO(img1_bytes)]
-        if img2_bytes:
-            image_files.append(io.BytesIO(img2_bytes))
-
         result = client.images.edit(
-            model="gpt-image-1", image=image_files, prompt=prompt, size=size
+            model="gpt-image-1",
+            prompt=prompt,
+            image=images,
+            mask=mask_file,
+            **build_kwargs(data),
         )
-        img_b64 = result.data[0].b64_json
-        img_bytes = base64.b64decode(img_b64)
-        url = save_image_bytes(img_bytes, "png")
-        return jsonify(
-            {"ok": True, "data_uri": b64_to_datauri(img_b64), "url": url}
-        )
+        fmt = data.get("output_format", "png")
+        b64 = result.data[0].b64_json
+        img_bytes = base64.b64decode(b64)
+        url = save_bytes(img_bytes, fmt)
+        return jsonify({"ok": True,
+                        "data_uri": b64_to_datauri(b64, fmt),
+                        "url": url})
     except Exception as e:
+        logger.exception("Edit failed")
         return jsonify({"ok": False, "error": str(e)}), 500
-
 
 if __name__ == "__main__":
     app.run(debug=True)

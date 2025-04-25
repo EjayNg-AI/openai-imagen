@@ -1,119 +1,129 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<title>Image-API Playground</title>
+<meta charset="utf-8">
+<title>OpenAI Image-API Playground</title>
 <style>
-body      { font-family: system-ui, sans-serif; max-width: 50rem; margin: 2rem auto; }
-fieldset  { margin-bottom: 2rem; }
-.preview  { margin-top: 1rem; max-width: 100%; border: 1px solid #ddd; }
-.error    { color: #b00; margin-top: 0.5rem; }
-.meta     { margin-top: 0.5rem; }
+body {font-family:system-ui,sans-serif;max-width:58rem;margin:1.5rem auto;}
+fieldset{margin-bottom:2rem;padding:1rem;border:1px solid #bbb;}
+.preview{max-width:100%;border:1px solid #ccc;margin:0.5rem 0;}
+.error{color:#b00;margin-top:0.3rem;}
+.meta{margin-top:0.3rem;display:block}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.5rem;}
+.gallery img{width:100%;border:1px solid #ccc;}
+small{opacity:.7}
 </style>
 </head>
 <body>
-<h1>OpenAI Image Playground</h1>
+<h1>OpenAI Image API Playground</h1>
 
-<!-- ------------- Generate ------------------------------------------------- -->
+<!-- ---------- Generate ------------------------------------------------ -->
 <fieldset>
-<legend><strong>Generate</strong></legend>
-<label>Prompt<br><textarea id="genPrompt" rows="3" style="width:100%"></textarea></label><br>
-<label>Size
-  <select id="genSize">
-    <option>1024x1024</option><option>1536x1024</option><option>1024x1536</option>
-  </select>
-</label>
-<label>Quality
-  <select id="genQuality">
-    <option>auto</option><option>low</option><option>medium</option><option>high</option>
-  </select>
-</label>
-<button id="btnGenerate">Generate</button>
-<button id="dlGen" disabled>Download</button>
-<div id="genErr" class="error"></div>
-<a id="genLink" class="meta" target="_blank"></a><br>
-<img id="genImg" class="preview" />
+<legend><strong>Generate images</strong></legend>
+<label>Prompt<br><textarea id="gPrompt" rows="3" style="width:100%"></textarea></label><br>
+
+<label>Number (n) <input type="number" id="gN" min="1" max="8" value="1" style="width:4rem"></label>
+<label>Size <select id="gSize"><option>1024x1024</option><option>1536x1024</option><option>1024x1536</option></select></label>
+<label>Quality <select id="gQual"><option>auto</option><option>low</option><option>medium</option><option>high</option></select></label>
+<label>Format <select id="gFmt"><option>png</option><option>jpeg</option><option>webp</option></select></label>
+<label>Compression (<span id="gCompVal">0</span>) <input type="range" id="gComp" min="0" max="100" value="0"></label>
+<label>Background <select id="gBg"><option value="">opaque</option><option value="transparent">transparent</option></select></label>
+<label>Moderation <select id="gMod"><option>auto</option><option>low</option></select></label>
+
+<br><button id="gBtn">Generate</button>
+<div id="gErr" class="error"></div>
+
+<div id="gallery" class="gallery"></div>
 </fieldset>
 
-<!-- ------------- Edit ----------------------------------------------------- -->
+<!-- ---------- Edit ---------------------------------------------------- -->
 <fieldset>
 <legend><strong>Edit / Combine</strong></legend>
-<label>Prompt<br><textarea id="editPrompt" rows="3" style="width:100%"></textarea></label><br>
-<label>Image 1 <input type="file" id="img1" accept="image/*" /></label><br>
-<label>Image 2 (optional) <input type="file" id="img2" accept="image/*" /></label><br>
-<label>Size
-  <select id="editSize">
-    <option>1024x1024</option><option>1536x1024</option><option>1024x1536</option>
-  </select>
-</label>
-<button id="btnEdit">Create</button>
-<button id="dlEdit" disabled>Download</button>
-<div id="editErr" class="error"></div>
-<a id="editLink" class="meta" target="_blank"></a><br>
-<img id="editImg" class="preview" />
+<label>Prompt<br><textarea id="ePrompt" rows="3" style="width:100%"></textarea></label><br>
+
+<!-- container for dynamic image inputs -->
+<div id="imgInputs">
+  <label>Image 1 <input type="file" name="image1" accept="image/*"></label><br>
+</div>
+<button id="addImg">+ add image</button> <small>(max 10)</small><br><br>
+
+<label>Mask (optional) <input type="file" id="mask" accept="image/*"></label><br>
+
+<label>Size <select id="eSize"><option>1024x1024</option><option>1536x1024</option><option>1024x1536</option></select></label>
+<label>Quality <select id="eQual"><option>auto</option><option>low</option><option>medium</option><option>high</option></select></label>
+<label>Format <select id="eFmt"><option>png</option><option>jpeg</option><option>webp</option></select></label>
+<label>Compression (<span id="eCompVal">0</span>) <input type="range" id="eComp" min="0" max="100" value="0"></label>
+<label>Background <select id="eBg"><option value="">opaque</option><option value="transparent">transparent</option></select></label>
+<label>Moderation <select id="eMod"><option>auto</option><option>low</option></select></label>
+
+<br><button id="eBtn">Create</button>
+<div id="eErr" class="error"></div>
+<a id="eLink" class="meta" target="_blank"></a>
+<img id="eImg" class="preview">
 </fieldset>
 
 <script>
-async function postForm(url, formData) {
-  const r = await fetch(url, { method:"POST", body:formData });
+const $ = sel => document.querySelector(sel);
+const gallery = $('#gallery');
+const imgInputs = $('#imgInputs');
+let imgCount = 1;
+$('#addImg').onclick = () => {
+  if (imgCount >= 10) return;
+  imgCount++;
+  const lbl = document.createElement('label');
+  lbl.innerHTML = `Image ${imgCount} <input type="file" name="image${imgCount}" accept="image/*">`;
+  imgInputs.appendChild(lbl);
+  imgInputs.appendChild(document.createElement('br'));
+};
+
+const syncSlider = (slider, span) => slider.oninput = () => span.textContent = slider.value;
+syncSlider($('#gComp'), $('#gCompVal'));
+syncSlider($('#eComp'), $('#eCompVal'));
+
+async function post(url, fd) {
+  const r = await fetch(url, {method:'POST', body:fd});
   return r.json();
 }
 
-// ---------------- Generate handlers ----------------
-btnGenerate.onclick = async () => {
+/* ---------- Generate ---------- */
+$('#gBtn').onclick = async () => {
+  $('#gErr').textContent = 'Generating…';
+  gallery.innerHTML = '';
   const fd = new FormData();
-  fd.append("prompt",  genPrompt.value);
-  fd.append("size",    genSize.value);
-  fd.append("quality", genQuality.value);
-
-  genErr.textContent = "Generating…";
-  dlGen.disabled = true; genLink.textContent = ""; genLink.href = ""; genImg.src = "";
-
-  const res = await postForm("/generate", fd);
-  if (res.ok) {
-    genImg.src = res.data_uri;
-    dlGen.disabled = false;
-    genLink.href = res.url; genLink.textContent = "Saved copy ↗";
-    genErr.textContent = "";
-  } else {
-    genErr.textContent = res.error || "Error";
-  }
+  fd.append('prompt', $('#gPrompt').value);
+  fd.append('n', $('#gN').value);
+  ['size','quality','output_format','output_compression','background','moderation']
+    .forEach((k,i)=>fd.append(k=== 'output_format'?'output_format':k,
+      [$('#gSize'),$('#gQual'),$('#gFmt'),$('#gComp'),$('#gBg'),$('#gMod')][i].value));
+  const res = await post('/generate', fd);
+  if (!res.ok){ $('#gErr').textContent = res.error; return; }
+  $('#gErr').textContent = '';
+  res.data_uris.forEach((uri,i)=>{
+    const img = new Image(); img.src = uri;
+    img.title = `Image ${i+1}`;
+    img.className = 'preview';
+    gallery.appendChild(img);
+  });
 };
 
-dlGen.onclick = () => downloadImage(genImg.src, "generated.png");
-
-// ---------------- Edit handlers --------------------
-btnEdit.onclick = async () => {
+/* ---------- Edit ---------- */
+$('#eBtn').onclick = async () => {
+  $('#eErr').textContent = 'Calling edit…';
+  $('#eImg').src = ''; $('#eLink').textContent='';
   const fd = new FormData();
-  fd.append("prompt", editPrompt.value);
-  fd.append("size",   editSize.value);
-  if (img1.files[0]) fd.append("image1", img1.files[0]);
-  if (img2.files[0]) fd.append("image2", img2.files[0]);
+  fd.append('prompt', $('#ePrompt').value);
+  ['size','quality','output_format','output_compression','background','moderation']
+    .forEach((k,i)=>fd.append(k=== 'output_format'?'output_format':k,
+      [$('#eSize'),$('#eQual'),$('#eFmt'),$('#eComp'),$('#eBg'),$('#eMod')][i].value));
+  [...imgInputs.querySelectorAll('input[type="file"]')].forEach(f=>f.files[0]&&fd.append(f.name,f.files[0]));
+  if ($('#mask').files[0]) fd.append('mask', $('#mask').files[0]);
 
-  editErr.textContent = "Calling Edit…";
-  dlEdit.disabled = true; editLink.textContent = ""; editImg.src = "";
-
-  const res = await postForm("/edit", fd);
-  if (res.ok) {
-    editImg.src = res.data_uri;
-    dlEdit.disabled = false;
-    editLink.href = res.url; editLink.textContent = "Saved copy ↗";
-    editErr.textContent = "";
-  } else {
-    editErr.textContent = res.error || "Error";
-  }
+  const res = await post('/edit', fd);
+  if (!res.ok){ $('#eErr').textContent = res.error; return; }
+  $('#eErr').textContent = '';
+  $('#eImg').src = res.data_uri;
+  $('#eLink').href = res.url; $('#eLink').textContent = 'Saved copy ↗';
 };
-
-dlEdit.onclick = () => downloadImage(editImg.src, "edited.png");
-
-// ---------------- Utility: client-side download ----
-function downloadImage(dataUri, filename){
-  if (!dataUri) return;
-  const a = document.createElement('a');
-  a.href = dataUri;
-  a.download = filename;
-  a.click();
-}
 </script>
 </body>
 </html>

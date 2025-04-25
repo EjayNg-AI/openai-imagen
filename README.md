@@ -8,8 +8,8 @@ It demonstrates only the core “generate” and “edit” flows and a couple o
 ## Quick start
 
 ```bash
-git clone <this-repo>
-cd image-playground
+git clone git@github.com:EjayNg-AI/openai-imagen.git
+cd openai-imagen
 
 # 1 — set up Python
 python -m venv .venv && source .venv/bin/activate
@@ -23,6 +23,8 @@ python app.py
 # open http://127.0.0.1:5000
 ```
 
+## Overview of functionalities
+
 Generated or edited images are:
 
 - **previewed in-browser** via a data-URI
@@ -31,11 +33,33 @@ Generated or edited images are:
 
 ---
 
+## Current capabilities in detail
+
+The test-bed supports every documented knob in the **OpenAI Image API**:
+
+| Feature                | Usage in HTML/JS                  | Flask param → API arg                   |
+| ---------------------- | --------------------------------- | --------------------------------------- |
+| Multiple results (`n`) | _Generate_ → **Number (n)** field | `n`                                     |
+| Up to 10 ref images    | _Edit_ → “+ add image” button     | `image=[…]`                             |
+| Alpha-mask inpainting  | _Edit_ → **Mask** file input      | `mask=`                                 |
+| Quality                | _Quality_ dropdowns               | `quality=`                              |
+| Sizes                  | _Size_ dropdowns                  | `size=`                                 |
+| Transparent background | _Background_ = `transparent`      | `background=`                           |
+| Formats/compression    | _Format_ + slider                 | `output_format=`, `output_compression=` |
+| Moderation strictness  | _Moderation_ dropdown             | `moderation=`                           |
+
+All returned images are base-64 decoded, persisted to `saved_images/`, and exposed at  
+`/saved/<file>` for easy sharing.
+
+---
+
 ## What this project **is**
 
 - A concise, readable reference for hitting `images.generate` and `images.edit` from Flask
 - A sandbox for tweaking prompts, image sizes, quality settings, etc.
 - A stepping-stone to bigger things—queues, auth, masking UI, cloud storage…
+
+---
 
 ## What it **is _not_** (yet)
 
@@ -47,7 +71,6 @@ Generated or edited images are:
 
 ## Next steps (ideas)
 
-- Mask upload / paint-in-browser for inpainting
 - React / Next.js front-end & API gateway
 - Worker queue (Celery / RQ) to avoid blocking Flask
 - S3 (or MinIO) storage and signed download links
