@@ -1,4 +1,5 @@
 import base64
+import socket
 import io
 import os
 import uuid
@@ -169,5 +170,24 @@ def edit():
         logger.exception("Edit failed")
         return jsonify(ok=False, error=str(e)), 500
 
+
+
+
+def find_free_port(start_port=5000, max_tries=100):
+    port = start_port
+    for _ in range(max_tries):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.bind(('127.0.0.1', port))
+                return port
+            except OSError:
+                port += 1
+    raise RuntimeError("No free ports found in range.")
+
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = find_free_port(5000)
+    print(f"Starting Flask on port {port}")
+    app.run(debug=True, port=port)
+
+
