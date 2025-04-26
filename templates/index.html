@@ -1,129 +1,535 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<title>OpenAI Image-API Playground</title>
-<style>
-body {font-family:system-ui,sans-serif;max-width:58rem;margin:1.5rem auto;}
-fieldset{margin-bottom:2rem;padding:1rem;border:1px solid #bbb;}
-.preview{max-width:100%;border:1px solid #ccc;margin:0.5rem 0;}
-.error{color:#b00;margin-top:0.3rem;}
-.meta{margin-top:0.3rem;display:block}
-.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.5rem;}
-.gallery img{width:100%;border:1px solid #ccc;}
-small{opacity:.7}
-</style>
-</head>
-<body>
-<h1>OpenAI Image API Playground</h1>
+  <head>
+    <meta charset="utf-8" />
+    <title>OpenAI Image‑API Playground</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 58rem;
+        margin: 1.5rem auto;
+      }
+      fieldset {
+        margin-bottom: 2rem;
+        padding: 1rem;
+        border: 1px solid #bbb;
+      }
+      .preview {
+        max-width: 100%;
+        border: 1px solid #ccc;
+        margin: 0.5rem 0;
+      }
+      .error {
+        color: #b00;
+        margin-top: 0.3rem;
+      }
+      .meta {
+        margin-top: 0.3rem;
+        display: block;
+      }
+      .gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 0.5rem;
+      }
+      .gallery img {
+        width: 100%;
+        border: 1px solid #ccc;
+      }
+      small {
+        opacity: 0.7;
+      }
+      /* mask & out‑paint */
+      .mask-container {
+        position: relative;
+        display: inline-block;
+        margin-top: 0.5rem;
+      }
+      .mask-container img {
+        max-width: 100%;
+        display: block;
+      }
+      .mask-canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        cursor: crosshair;
+        opacity: 0.55;
+      }
+      .tools,
+      .outpaint {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: center;
+        margin: 0.5rem 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>OpenAI Image‑API Playground</h1>
 
-<!-- ---------- Generate ------------------------------------------------ -->
-<fieldset>
-<legend><strong>Generate images</strong></legend>
-<label>Prompt<br><textarea id="gPrompt" rows="3" style="width:100%"></textarea></label><br>
+    <!-- ============  GENERATE  ============ -->
+    <fieldset>
+      <legend><strong>Generate images</strong></legend>
+      <label
+        >Prompt<br /><textarea
+          id="gPrompt"
+          rows="3"
+          style="width: 100%"
+        ></textarea></label
+      ><br />
 
-<label>Number (n) <input type="number" id="gN" min="1" max="8" value="1" style="width:4rem"></label>
-<label>Size <select id="gSize"><option>1024x1024</option><option>1536x1024</option><option>1024x1536</option></select></label>
-<label>Quality <select id="gQual"><option>auto</option><option>low</option><option>medium</option><option>high</option></select></label>
-<label>Format <select id="gFmt"><option>png</option><option>jpeg</option><option>webp</option></select></label>
-<label>Compression (<span id="gCompVal">0</span>) <input type="range" id="gComp" min="0" max="100" value="0"></label>
-<label>Background <select id="gBg"><option value="">opaque</option><option value="transparent">transparent</option></select></label>
-<label>Moderation <select id="gMod"><option>auto</option><option>low</option></select></label>
+      <label
+        >Number
+        <input
+          type="number"
+          id="gN"
+          min="1"
+          max="8"
+          value="1"
+          style="width: 4rem"
+        />
+      </label>
+      <label
+        >Size
+        <select id="gSize">
+          <option>1024x1024</option>
+          <option>1536x1024</option>
+          <option>1024x1536</option>
+        </select></label
+      >
+      <label
+        >Quality
+        <select id="gQual">
+          <option>auto</option>
+          <option>low</option>
+          <option>medium</option>
+          <option>high</option>
+        </select></label
+      >
+      <label
+        >Format
+        <select id="gFmt">
+          <option>png</option>
+          <option>jpeg</option>
+          <option>webp</option>
+        </select></label
+      >
+      <label
+        >Compression (<span id="gCompVal">100</span>)
+        <input type="range" id="gComp" min="0" max="100" value="100"
+      /></label>
+      <label
+        >Background
+        <select id="gBg">
+          <option value="">opaque</option>
+          <option value="transparent">transparent</option>
+        </select></label
+      >
+      <label
+        >Moderation
+        <select id="gMod">
+          <option>auto</option>
+          <option>low</option>
+        </select></label
+      >
 
-<br><button id="gBtn">Generate</button>
-<div id="gErr" class="error"></div>
+      <br /><button id="gBtn">Generate</button>
+      <div id="gErr" class="error"></div>
+      <div id="gallery" class="gallery"></div>
+    </fieldset>
 
-<div id="gallery" class="gallery"></div>
-</fieldset>
+    <!-- ============  EDIT / COMBINE / OUT‑PAINT  ============ -->
+    <fieldset>
+      <legend><strong>Edit / Combine / Out‑paint</strong></legend>
+      <label
+        >Prompt<br /><textarea
+          id="ePrompt"
+          rows="3"
+          style="width: 100%"
+        ></textarea></label
+      ><br />
 
-<!-- ---------- Edit ---------------------------------------------------- -->
-<fieldset>
-<legend><strong>Edit / Combine</strong></legend>
-<label>Prompt<br><textarea id="ePrompt" rows="3" style="width:100%"></textarea></label><br>
+      <label><input type="checkbox" id="useMask" /> Use in‑painting mask</label
+      ><br />
 
-<!-- container for dynamic image inputs -->
-<div id="imgInputs">
-  <label>Image 1 <input type="file" name="image1" accept="image/*"></label><br>
-</div>
-<button id="addImg">+ add image</button> <small>(max 10)</small><br><br>
+      <div id="imgInputs">
+        <label
+          >Image 1 <input type="file" name="image1" accept="image/*" /></label
+        ><br />
+      </div>
+      <button id="addImg" type="button">+ add image</button>
+      <small>(max 10)</small><br /><br />
 
-<label>Mask (optional) <input type="file" id="mask" accept="image/*"></label><br>
+      <!-- Mask tools (hidden unless #useMask is checked) -->
+      <div id="maskSection" style="display: none">
+        <div class="mask-container">
+          <img id="baseImg" class="preview" alt="reference" />
+          <canvas id="maskCanvas" class="mask-canvas"></canvas>
+          <canvas
+            id="rectPreview"
+            class="mask-canvas"
+            style="pointer-events: none"
+          ></canvas>
+        </div>
 
-<label>Size <select id="eSize"><option>1024x1024</option><option>1536x1024</option><option>1024x1536</option></select></label>
-<label>Quality <select id="eQual"><option>auto</option><option>low</option><option>medium</option><option>high</option></select></label>
-<label>Format <select id="eFmt"><option>png</option><option>jpeg</option><option>webp</option></select></label>
-<label>Compression (<span id="eCompVal">0</span>) <input type="range" id="eComp" min="0" max="100" value="0"></label>
-<label>Background <select id="eBg"><option value="">opaque</option><option value="transparent">transparent</option></select></label>
-<label>Moderation <select id="eMod"><option>auto</option><option>low</option></select></label>
+        <div class="tools">
+          <label
+            >Brush
+            <input type="range" id="brushSize" min="5" max="120" value="40"
+          /></label>
+          <label
+            ><input type="radio" name="tool" value="brush" checked />
+            Brush</label
+          >
+          <label
+            ><input type="radio" name="tool" value="erase" /> Restore</label
+          >
+          <label><input type="radio" name="tool" value="rect" /> Rect</label>
+          <label
+            ><input type="checkbox" id="showMask" checked /> Show mask</label
+          >
+          <button id="resetMask" type="button">Reset mask</button>
+        </div>
 
-<br><button id="eBtn">Create</button>
-<div id="eErr" class="error"></div>
-<a id="eLink" class="meta" target="_blank"></a>
-<img id="eImg" class="preview">
-</fieldset>
+        <div class="outpaint">
+          <label
+            >Border
+            <input
+              type="number"
+              id="borderSize"
+              value="256"
+              min="1"
+              max="1024"
+              style="width: 6rem"
+          /></label>
+          <button id="addBorder" type="button">+ Expand all sides</button>
+        </div>
+      </div>
 
-<script>
-const $ = sel => document.querySelector(sel);
-const gallery = $('#gallery');
-const imgInputs = $('#imgInputs');
-let imgCount = 1;
-$('#addImg').onclick = () => {
-  if (imgCount >= 10) return;
-  imgCount++;
-  const lbl = document.createElement('label');
-  lbl.innerHTML = `Image ${imgCount} <input type="file" name="image${imgCount}" accept="image/*">`;
-  imgInputs.appendChild(lbl);
-  imgInputs.appendChild(document.createElement('br'));
-};
+      <label
+        >Size
+        <select id="eSize">
+          <option>1024x1024</option>
+          <option>1536x1024</option>
+          <option>1024x1536</option>
+        </select></label
+      >
+      <label
+        >Quality
+        <select id="eQual">
+          <option>auto</option>
+          <option>low</option>
+          <option>medium</option>
+          <option>high</option>
+        </select></label
+      >
+      <label
+        >Format
+        <select id="eFmt">
+          <option>png</option>
+          <option>jpeg</option>
+          <option>webp</option>
+        </select></label
+      >
+      <label
+        >Compression (<span id="eCompVal">100</span>)
+        <input type="range" id="eComp" min="0" max="100" value="100"
+      /></label>
+      <label
+        >Background
+        <select id="eBg">
+          <option value="">opaque</option>
+          <option value="transparent">transparent</option>
+        </select></label
+      >
+      <label
+        >Moderation
+        <select id="eMod">
+          <option>auto</option>
+          <option>low</option>
+        </select></label
+      >
 
-const syncSlider = (slider, span) => slider.oninput = () => span.textContent = slider.value;
-syncSlider($('#gComp'), $('#gCompVal'));
-syncSlider($('#eComp'), $('#eCompVal'));
+      <br /><button id="eBtn">Create</button>
+      <div id="eErr" class="error"></div>
+      <a id="eLink" class="meta" target="_blank"></a>
+      <img id="eImg" class="preview" />
+    </fieldset>
 
-async function post(url, fd) {
-  const r = await fetch(url, {method:'POST', body:fd});
-  return r.json();
-}
+    <script>
+      /* ---------- helpers ---------- */
+      const $ = (q) => document.querySelector(q);
+      function normaliseName(n) {
+        n = n.toLowerCase();
+        return n.endsWith(".jpg") ? n.replace(/\.jpg$/, ".jpeg") : n;
+      }
+      function enforceCompression(fmtSel, slider, span) {
+        const sync = () => {
+          if (fmtSel.value === "png") {
+            slider.value = 100;
+            slider.disabled = true;
+          } else {
+            slider.disabled = false;
+          }
+          span.textContent = slider.value;
+        };
+        fmtSel.onchange = sync;
+        slider.oninput = () => (span.textContent = slider.value);
+        sync();
+      }
 
-/* ---------- Generate ---------- */
-$('#gBtn').onclick = async () => {
-  $('#gErr').textContent = 'Generating…';
-  gallery.innerHTML = '';
-  const fd = new FormData();
-  fd.append('prompt', $('#gPrompt').value);
-  fd.append('n', $('#gN').value);
-  ['size','quality','output_format','output_compression','background','moderation']
-    .forEach((k,i)=>fd.append(k=== 'output_format'?'output_format':k,
-      [$('#gSize'),$('#gQual'),$('#gFmt'),$('#gComp'),$('#gBg'),$('#gMod')][i].value));
-  const res = await post('/generate', fd);
-  if (!res.ok){ $('#gErr').textContent = res.error; return; }
-  $('#gErr').textContent = '';
-  res.data_uris.forEach((uri,i)=>{
-    const img = new Image(); img.src = uri;
-    img.title = `Image ${i+1}`;
-    img.className = 'preview';
-    gallery.appendChild(img);
-  });
-};
+      /* ---------- compression locks ---------- */
+      enforceCompression($("#gFmt"), $("#gComp"), $("#gCompVal"));
+      enforceCompression($("#eFmt"), $("#eComp"), $("#eCompVal"));
 
-/* ---------- Edit ---------- */
-$('#eBtn').onclick = async () => {
-  $('#eErr').textContent = 'Calling edit…';
-  $('#eImg').src = ''; $('#eLink').textContent='';
-  const fd = new FormData();
-  fd.append('prompt', $('#ePrompt').value);
-  ['size','quality','output_format','output_compression','background','moderation']
-    .forEach((k,i)=>fd.append(k=== 'output_format'?'output_format':k,
-      [$('#eSize'),$('#eQual'),$('#eFmt'),$('#eComp'),$('#eBg'),$('#eMod')][i].value));
-  [...imgInputs.querySelectorAll('input[type="file"]')].forEach(f=>f.files[0]&&fd.append(f.name,f.files[0]));
-  if ($('#mask').files[0]) fd.append('mask', $('#mask').files[0]);
+      /* ---------- dynamic image inputs ---------- */
+      let imgCount = 1;
+      $("#addImg").onclick = () => {
+        if (imgCount >= 10) return;
+        imgCount++;
+        const lbl = document.createElement("label");
+        lbl.innerHTML = `Image ${imgCount} <input type="file" name="image${imgCount}" accept="image/*">`;
+        $("#imgInputs").append(lbl, document.createElement("br"));
+      };
 
-  const res = await post('/edit', fd);
-  if (!res.ok){ $('#eErr').textContent = res.error; return; }
-  $('#eErr').textContent = '';
-  $('#eImg').src = res.data_uri;
-  $('#eLink').href = res.url; $('#eLink').textContent = 'Saved copy ↗';
-};
-</script>
-</body>
+      /* ---------- GENERATE ---------- */
+      async function post(url, fd) {
+        const r = await fetch(url, { method: "POST", body: fd });
+        return r.json();
+      }
+      $("#gBtn").onclick = async () => {
+        $("#gErr").textContent = "Generating…";
+        $("#gallery").innerHTML = "";
+        const fd = new FormData();
+        fd.append("prompt", $("#gPrompt").value);
+        fd.append("n", $("#gN").value);
+        [
+          "size",
+          "quality",
+          "output_format",
+          "output_compression",
+          "background",
+          "moderation",
+        ].forEach((k, i) =>
+          fd.append(
+            k,
+            [
+              $("#gSize"),
+              $("#gQual"),
+              $("#gFmt"),
+              $("#gComp"),
+              $("#gBg"),
+              $("#gMod"),
+            ][i].value
+          )
+        );
+        const res = await post("/generate", fd);
+        if (!res.ok) {
+          $("#gErr").textContent = res.error;
+          return;
+        }
+        $("#gErr").textContent = "";
+        res.data_uris.forEach((uri, i) => {
+          const img = new Image();
+          img.src = uri;
+          img.title = `Image ${i + 1}`;
+          img.className = "preview";
+          $("#gallery").append(img);
+        });
+      };
+
+      /* ---------- Mask UI toggle ---------- */
+      $("#useMask").onchange = (e) => {
+        const on = e.target.checked;
+        $("#maskSection").style.display = on ? "block" : "none";
+      };
+
+      /* ---------- Mask drawing ---------- */
+      const maskSect = $("#maskSection"),
+        baseImg = $("#baseImg"),
+        maskCan = $("#maskCanvas"),
+        rectCan = $("#rectPreview"),
+        ctxMask = maskCan.getContext("2d"),
+        ctxRect = rectCan.getContext("2d");
+      let drawing = false,
+        startX = 0,
+        startY = 0;
+      function resizeCanvases() {
+        [maskCan, rectCan].forEach((c) => {
+          c.width = baseImg.naturalWidth;
+          c.height = baseImg.naturalHeight;
+          c.style.width = baseImg.width + "px";
+          c.style.height = baseImg.height + "px";
+        });
+
+        ctxMask.clearRect(0, 0, maskCan.width, maskCan.height);
+        ctxMask.fillStyle = "black";
+        ctxMask.fillRect(0, 0, maskCan.width, maskCan.height);
+        ctxRect.clearRect(0, 0, rectCan.width, rectCan.height);
+      }
+      function resetMask(full = true) {
+        ctxMask.clearRect(0, 0, maskCan.width, maskCan.height);
+        if (full) {
+          ctxMask.fillStyle = "black";
+          ctxMask.fillRect(0, 0, maskCan.width, maskCan.height);
+        }
+        ctxRect.clearRect(0, 0, rectCan.width, rectCan.height);
+      }
+      function tool() {
+        return document.querySelector('input[name="tool"]:checked').value;
+      }
+      function pos(e) {
+        const r = maskCan.getBoundingClientRect();
+        return {
+          x: (e.clientX - r.left) * (maskCan.width / r.width),
+          y: (e.clientY - r.top) * (maskCan.height / r.height),
+        };
+      }
+      maskCan.addEventListener("mousedown", (e) => {
+        drawing = true;
+        ({ x: startX, y: startY } = pos(e));
+        if (tool() !== "rect") {
+          ctxMask.lineCap = "round";
+          ctxMask.lineJoin = "round";
+          ctxMask.lineWidth = +$("#brushSize").value;
+          ctxMask.globalCompositeOperation =
+            tool() === "erase" ? "source-over" : "destination-out";
+          ctxMask.beginPath();
+          ctxMask.moveTo(startX, startY);
+        } else ctxRect.clearRect(0, 0, rectCan.width, rectCan.height);
+      });
+      maskCan.addEventListener("mousemove", (e) => {
+        if (!drawing) return;
+        const { x, y } = pos(e);
+        if (tool() === "rect") {
+          ctxRect.clearRect(0, 0, rectCan.width, rectCan.height);
+          ctxRect.setLineDash([6]);
+          ctxRect.strokeStyle = "red";
+          ctxRect.lineWidth = 2;
+          ctxRect.strokeRect(startX, startY, x - startX, y - startY);
+          return;
+        }
+        ctxMask.lineTo(x, y);
+        ctxMask.stroke();
+      });
+      maskCan.addEventListener("mouseup", (e) => {
+        if (!drawing) return;
+        drawing = false;
+        const { x: endX, y: endY } = pos(e);
+        if (tool() === "rect") {
+          const x = Math.min(startX, endX),
+            y = Math.min(startY, endY),
+            w = Math.abs(endX - startX),
+            h = Math.abs(endY - startY);
+          ctxMask.globalCompositeOperation = "destination-out";
+          ctxMask.fillRect(x, y, w, h);
+          ctxRect.clearRect(0, 0, rectCan.width, rectCan.height);
+        }
+        ctxMask.beginPath();
+      });
+      $("#showMask").onchange = (e) => {
+        const d = e.target.checked ? "block" : "none";
+        maskCan.style.display = d;
+        rectCan.style.display = d;
+      };
+      $("#resetMask").onclick = () => resetMask(true);
+
+      /* ---------- file upload & preview ---------- */
+      let origExt = "png";
+      $("#imgInputs").addEventListener("change", (e) => {
+        const f = e.target.files[0];
+        if (!f) return;
+        origExt = normaliseName(f.name).split(".").pop();
+        const R = new FileReader();
+        R.onload = (ev) => {
+          baseImg.src = ev.target.result;
+          $("#maskSection").style.display = $("#useMask").checked
+            ? "block"
+            : "none";
+        };
+        R.readAsDataURL(f);
+      });
+      baseImg.onload = resizeCanvases;
+
+      /* ---------- Out‑paint (expand canvas) ---------- */
+      let expanded = false;
+      $("#addBorder").onclick = () => {
+        const pad = +$("#borderSize").value || 0;
+        if (!pad) return;
+        const nw = baseImg.naturalWidth + pad * 2,
+          nh = baseImg.naturalHeight + pad * 2;
+        const cv = document.createElement("canvas");
+        cv.width = nw;
+        cv.height = nh;
+        const cx = cv.getContext("2d");
+        cx.drawImage(baseImg, pad, pad);
+        expanded = true;
+        cv.toBlob((b) => {
+          baseImg.src = URL.createObjectURL(b);
+          baseImg.onload = resizeCanvases;
+          baseImg.dataset.expBlob = b;
+        }, `image/${origExt}`);
+        $("#eFmt").value = "png";
+        $("#eFmt").dispatchEvent(new Event("change"));
+      };
+
+      /* ---------- EDIT ---------- */
+      $("#eBtn").onclick = async () => {
+        $("#eErr").textContent = "Calling edit…";
+        $("#eImg").src = "";
+        $("#eLink").textContent = "";
+        const fd = new FormData();
+        fd.append("prompt", $("#ePrompt").value);
+        ["size", "quality", "background"].forEach((k, i) =>
+          fd.append(k, [$("#eSize"), $("#eQual"), $("#eBg")][i].value)
+        );
+
+        /* reference images */
+        if (expanded) {
+          if (!baseImg.dataset.expBlob) {
+            $("#eErr").textContent = "Please wait… preparing enlarged image.";
+            return;
+          }
+          fd.append("image1", baseImg.dataset.expBlob, `outpaint.${origExt}`);
+        } else {
+          [...$("#imgInputs").querySelectorAll('input[type="file"]')].forEach(
+            (f) => {
+              if (f.files[0])
+                fd.append(f.name, f.files[0], normaliseName(f.files[0].name));
+            }
+          );
+        }
+
+        /* mask (optional) */
+        const includeMask = $("#useMask").checked;
+        if (includeMask) {
+          const maskBlob = await new Promise((r) => {
+            if (maskCan.width === 0 || maskCan.height === 0) return r(null);
+            try {
+              maskCan.toBlob(r, "image/png");
+            } catch {
+              r(null);
+            }
+          });
+          if (!maskBlob) {
+            $("#eErr").textContent = "Mask export failed.";
+            return;
+          }
+          fd.append("mask", maskBlob, "mask.png");
+        }
+
+        const res = await post("/edit", fd);
+        if (!res.ok) {
+          $("#eErr").textContent = res.error;
+          return;
+        }
+        $("#eErr").textContent = "";
+        $("#eImg").src = res.data_uri;
+        $("#eLink").href = res.url;
+        $("#eLink").textContent = "Saved copy ↗";
+      };
+    </script>
+  </body>
 </html>
