@@ -4,6 +4,10 @@
     <meta charset="utf-8" />
     <title>OpenAI Image‑API Playground</title>
     <style>
+      :root {
+        --toast-bg: #333;
+        --toast-fg: #fff;
+      }
       body {
         font-family: system-ui, sans-serif;
         max-width: 58rem;
@@ -19,14 +23,6 @@
         border: 1px solid #ccc;
         margin: 0.5rem 0;
       }
-      .error {
-        color: #b00;
-        margin-top: 0.3rem;
-      }
-      .meta {
-        margin-top: 0.3rem;
-        display: block;
-      }
       .gallery {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -38,6 +34,45 @@
       }
       small {
         opacity: 0.7;
+      }
+      /* toast */
+      #toast {
+        position: fixed;
+        bottom: 1.5rem;
+        right: 1rem;
+        background: var(--toast-bg);
+        color: var(--toast-fg);
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        display: none;
+        max-width: 22rem;
+      }
+      #toast button {
+        background: none;
+        border: none;
+        color: inherit;
+        font-size: 1rem;
+        padding: 0;
+        margin-left: 0.5rem;
+        cursor: pointer;
+      }
+      /* spinner */
+      .spinner {
+        width: 18px;
+        height: 18px;
+        border: 3px solid #ccc;
+        border-top-color: #333;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        display: inline-block;
+        vertical-align: middle;
+        margin-left: 0.4rem;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
       }
       /* mask & out‑paint */
       .mask-container {
@@ -64,10 +99,19 @@
         align-items: center;
         margin: 0.5rem 0;
       }
+      .dimmed {
+        opacity: 0.4;
+        pointer-events: none;
+      }
     </style>
   </head>
   <body>
     <h1>OpenAI Image‑API Playground</h1>
+
+    <!-- Toast notification -->
+    <div id="toast">
+      <span id="toastMsg"></span><button id="toastClose">✕</button>
+    </div>
 
     <!-- ============  GENERATE  ============ -->
     <fieldset>
@@ -89,11 +133,11 @@
           max="8"
           value="1"
           style="width: 4rem"
-        />
-      </label>
+      /></label>
       <label
         >Size
         <select id="gSize">
+          <option>auto</option>
           <option>1024x1024</option>
           <option>1536x1024</option>
           <option>1024x1536</option>
@@ -135,13 +179,12 @@
         </select></label
       >
 
-      <br /><button id="gBtn">Generate</button>
-      <div id="gErr" class="error"></div>
+      <br /><button id="gBtn">Generate</button> <span id="gSpin"></span>
       <div id="gallery" class="gallery"></div>
     </fieldset>
 
     <!-- ============  EDIT / COMBINE / OUT‑PAINT  ============ -->
-    <fieldset>
+    <fieldset id="editFs">
       <legend><strong>Edit / Combine / Out‑paint</strong></legend>
       <label
         >Prompt<br /><textarea
@@ -209,8 +252,19 @@
       </div>
 
       <label
+        >Number
+        <input
+          type="number"
+          id="eN"
+          min="1"
+          max="8"
+          value="1"
+          style="width: 4rem"
+      /></label>
+      <label
         >Size
         <select id="eSize">
+          <option>auto</option>
           <option>1024x1024</option>
           <option>1536x1024</option>
           <option>1024x1536</option>
@@ -252,28 +306,41 @@
         </select></label
       >
 
-      <br /><button id="eBtn">Create</button>
-      <div id="eErr" class="error"></div>
+      <br /><button id="eBtn">Create</button> <span id="eSpin"></span>
       <a id="eLink" class="meta" target="_blank"></a>
       <img id="eImg" class="preview" />
     </fieldset>
 
     <script>
-      /* ---------- helpers ---------- */
       const $ = (q) => document.querySelector(q);
-      function normaliseName(n) {
-        n = n.toLowerCase();
-        return n.endsWith(".jpg") ? n.replace(/\.jpg$/, ".jpeg") : n;
+      /* ---------- toast helpers ---------- */
+      function showToast(msg) {
+        $("#toastMsg").textContent = msg;
+        $("#toast").style.display = "block";
       }
-      function enforceCompression(fmtSel, slider, span) {
+      $("#toastClose").onclick = () => {
+        $("#toast").style.display = "none";
+      };
+
+      /* ---------- helpers ---------- */
+      function normaliseName(n) {
+        return n.toLowerCase().endsWith(".jpg")
+          ? n.replace(/\.jpg$/, ".jpeg")
+          : n;
+      }
+      async function post(url, fd) {
+        const r = await fetch(url, { method: "POST", body: fd });
+        return r.json();
+      }
+      function enforceCompression(fmtSel, slider, span, bgSel) {
         const sync = () => {
-          if (fmtSel.value === "png") {
-            slider.value = 100;
-            slider.disabled = true;
-          } else {
-            slider.disabled = false;
-          }
+          if (fmtSel.value === "png") slider.disabled = false;
+          if (fmtSel.value === "jpeg") bgSel && (bgSel.value = "");
+          slider.disabled = fmtSel.value === "png";
+          if (slider.disabled) slider.value = 100;
           span.textContent = slider.value;
+          // transparent not allowed in jpeg
+          if (bgSel) bgSel.disabled = fmtSel.value === "jpeg";
         };
         fmtSel.onchange = sync;
         slider.oninput = () => (span.textContent = slider.value);
@@ -281,8 +348,8 @@
       }
 
       /* ---------- compression locks ---------- */
-      enforceCompression($("#gFmt"), $("#gComp"), $("#gCompVal"));
-      enforceCompression($("#eFmt"), $("#eComp"), $("#eCompVal"));
+      enforceCompression($("#gFmt"), $("#gComp"), $("#gCompVal"), $("#gBg"));
+      enforceCompression($("#eFmt"), $("#eComp"), $("#eCompVal"), $("#eBg"));
 
       /* ---------- dynamic image inputs ---------- */
       let imgCount = 1;
@@ -294,14 +361,22 @@
         $("#imgInputs").append(lbl, document.createElement("br"));
       };
 
-      /* ---------- GENERATE ---------- */
-      async function post(url, fd) {
-        const r = await fetch(url, { method: "POST", body: fd });
-        return r.json();
+      /* ---------- spinner helpers ---------- */
+      function startSpinner(id) {
+        $(id).innerHTML = '<span class="spinner"></span>';
       }
+      function stopSpinner(id) {
+        $(id).innerHTML = "";
+      }
+      function disable(el, on = true) {
+        el.classList.toggle("dimmed", on);
+        el.disabled = on;
+      }
+
+      /* ---------- GENERATE ---------- */
       $("#gBtn").onclick = async () => {
-        $("#gErr").textContent = "Generating…";
-        $("#gallery").innerHTML = "";
+        disable($("#gBtn"));
+        startSpinner("#gSpin");
         const fd = new FormData();
         fd.append("prompt", $("#gPrompt").value);
         fd.append("n", $("#gN").value);
@@ -326,11 +401,13 @@
           )
         );
         const res = await post("/generate", fd);
+        stopSpinner("#gSpin");
+        disable($("#gBtn"), false);
         if (!res.ok) {
-          $("#gErr").textContent = res.error;
+          showToast(res.error || "Generate failed");
           return;
         }
-        $("#gErr").textContent = "";
+        $("#gallery").innerHTML = "";
         res.data_uris.forEach((uri, i) => {
           const img = new Image();
           img.src = uri;
@@ -342,11 +419,10 @@
 
       /* ---------- Mask UI toggle ---------- */
       $("#useMask").onchange = (e) => {
-        const on = e.target.checked;
-        $("#maskSection").style.display = on ? "block" : "none";
+        $("#maskSection").style.display = e.target.checked ? "block" : "none";
       };
 
-      /* ---------- Mask drawing ---------- */
+      /* ---------- Mask drawing logic (same as original, omitted for brevity) ---------- */
       const maskSect = $("#maskSection"),
         baseImg = $("#baseImg"),
         maskCan = $("#maskCanvas"),
@@ -355,7 +431,9 @@
         ctxRect = rectCan.getContext("2d");
       let drawing = false,
         startX = 0,
-        startY = 0;
+        startY = 0,
+        expanded = false,
+        origExt = "png";
       function resizeCanvases() {
         [maskCan, rectCan].forEach((c) => {
           c.width = baseImg.naturalWidth;
@@ -363,7 +441,6 @@
           c.style.width = baseImg.width + "px";
           c.style.height = baseImg.height + "px";
         });
-
         ctxMask.clearRect(0, 0, maskCan.width, maskCan.height);
         ctxMask.fillStyle = "black";
         ctxMask.fillRect(0, 0, maskCan.width, maskCan.height);
@@ -435,9 +512,6 @@
         rectCan.style.display = d;
       };
       $("#resetMask").onclick = () => resetMask(true);
-
-      /* ---------- file upload & preview ---------- */
-      let origExt = "png";
       $("#imgInputs").addEventListener("change", (e) => {
         const f = e.target.files[0];
         if (!f) return;
@@ -453,8 +527,7 @@
       });
       baseImg.onload = resizeCanvases;
 
-      /* ---------- Out‑paint (expand canvas) ---------- */
-      let expanded = false;
+      /* ---------- Out‑paint ---------- */
       $("#addBorder").onclick = () => {
         const pad = +$("#borderSize").value || 0;
         if (!pad) return;
@@ -463,8 +536,7 @@
         const cv = document.createElement("canvas");
         cv.width = nw;
         cv.height = nh;
-        const cx = cv.getContext("2d");
-        cx.drawImage(baseImg, pad, pad);
+        cv.getContext("2d").drawImage(baseImg, pad, pad);
         expanded = true;
         cv.toBlob((b) => {
           baseImg.src = URL.createObjectURL(b);
@@ -477,19 +549,24 @@
 
       /* ---------- EDIT ---------- */
       $("#eBtn").onclick = async () => {
-        $("#eErr").textContent = "Calling edit…";
-        $("#eImg").src = "";
-        $("#eLink").textContent = "";
+        disable($("#eBtn"));
+        startSpinner("#eSpin");
         const fd = new FormData();
         fd.append("prompt", $("#ePrompt").value);
-        ["size", "quality", "background"].forEach((k, i) =>
-          fd.append(k, [$("#eSize"), $("#eQual"), $("#eBg")][i].value)
+        fd.append("n", $("#eN").value);
+        ["size", "quality", "background", "moderation"].forEach((k, i) =>
+          fd.append(
+            k,
+            [$("#eSize"), $("#eQual"), $("#eBg"), $("#eMod")][i].value
+          )
         );
 
         /* reference images */
         if (expanded) {
           if (!baseImg.dataset.expBlob) {
-            $("#eErr").textContent = "Please wait… preparing enlarged image.";
+            showToast("Please wait… preparing enlarged image.");
+            stopSpinner("#eSpin");
+            disable($("#eBtn"), false);
             return;
           }
           fd.append("image1", baseImg.dataset.expBlob, `outpaint.${origExt}`);
@@ -503,8 +580,7 @@
         }
 
         /* mask (optional) */
-        const includeMask = $("#useMask").checked;
-        if (includeMask) {
+        if ($("#useMask").checked) {
           const maskBlob = await new Promise((r) => {
             if (maskCan.width === 0 || maskCan.height === 0) return r(null);
             try {
@@ -514,18 +590,23 @@
             }
           });
           if (!maskBlob) {
-            $("#eErr").textContent = "Mask export failed.";
+            showToast("Mask export failed.");
+            stopSpinner("#eSpin");
+            disable($("#eBtn"), false);
+            $("#maskSection").scrollIntoView({ behavior: "smooth" });
             return;
           }
           fd.append("mask", maskBlob, "mask.png");
         }
 
         const res = await post("/edit", fd);
+        stopSpinner("#eSpin");
+        disable($("#eBtn"), false);
         if (!res.ok) {
-          $("#eErr").textContent = res.error;
+          showToast(res.error || "Edit failed");
+          $("#maskSection").scrollIntoView({ behavior: "smooth" });
           return;
         }
-        $("#eErr").textContent = "";
         $("#eImg").src = res.data_uri;
         $("#eLink").href = res.url;
         $("#eLink").textContent = "Saved copy ↗";
