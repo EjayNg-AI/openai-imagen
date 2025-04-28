@@ -22,6 +22,9 @@
         max-width: 100%;
         border: 1px solid #ccc;
         margin: 0.5rem 0;
+        display: block; /* Ensure it behaves like a block for layout */
+        background-color: #eee; /* Indicate loading/empty state */
+        min-height: 50px; /* Prevent collapse when empty */
       }
       .gallery {
         display: grid;
@@ -47,6 +50,7 @@
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
         display: none;
         max-width: 22rem;
+        z-index: 1000; /* Ensure toast is on top */
       }
       #toast button {
         background: none;
@@ -77,19 +81,23 @@
       /* mask & out‑paint */
       .mask-container {
         position: relative;
-        display: inline-block;
+        display: inline-block; /* Adjust as needed, inline-block allows text flow */
         margin-top: 0.5rem;
+        max-width: 100%; /* Ensure container doesn't overflow */
+        line-height: 0; /* Prevent extra space below image */
       }
       .mask-container img {
-        max-width: 100%;
-        display: block;
+        max-width: 100%; /* Image scales down */
+        display: block; /* Prevents bottom space */
+        /* vertical-align: top; Align canvases */
       }
       .mask-canvas {
         position: absolute;
         top: 0;
         left: 0;
         cursor: crosshair;
-        opacity: 0.55;
+        opacity: 0.55; /* Make mask semi-transparent */
+        /* width/height set by JS */
       }
       .tools,
       .outpaint {
@@ -103,6 +111,56 @@
         opacity: 0.4;
         pointer-events: none;
       }
+      /* Hide file inputs visually but keep them accessible */
+      input[type="file"] {
+        /* Add some spacing */
+        margin-top: 5px;
+      }
+      /* Style labels for better alignment */
+      label {
+        display: inline-block;
+        margin-right: 1em;
+        margin-bottom: 0.5em;
+      }
+      #imgInputs label {
+        display: block; /* Each image input on a new line */
+      }
+      textarea {
+        box-sizing: border-box; /* Include padding/border in width */
+        vertical-align: top; /* Align with labels */
+        margin-bottom: 0.5em;
+      }
+      button {
+        padding: 0.5em 1em;
+        cursor: pointer;
+      }
+      select,
+      input[type="number"],
+      input[type="range"] {
+        margin-right: 0.5em;
+        vertical-align: middle;
+      }
+      input[type="range"] {
+        vertical-align: middle;
+      }
+
+      /* --- Prompt Textarea Styling --- */
+      /* Make the labels containing the prompts behave as blocks */
+      label[for="gPrompt"],
+      label[for="ePrompt"] {
+        display: block; /* Take full available width */
+        margin-right: 0; /* Override general label margin if needed */
+      }
+
+      /* Ensure the textareas fill their block-level labels */
+      #gPrompt,
+      #ePrompt {
+        width: 100%;
+        /* box-sizing: border-box; is already in the general textarea rule, which is good */
+        margin-top: 0.25em; /* Optional: add space below the "Prompt" text */
+        /* vertical-align: top; is also inherited */
+      }
+      /* --- End Prompt Textarea Styling --- */
     </style>
   </head>
   <body>
@@ -116,15 +174,11 @@
     <!-- ============  GENERATE  ============ -->
     <fieldset>
       <legend><strong>Generate images</strong></legend>
-      <label
-        >Prompt<br /><textarea
-          id="gPrompt"
-          rows="3"
-          style="width: 100%"
-        ></textarea></label
+      <label for="gPrompt"
+        >Prompt<br /><textarea id="gPrompt" rows="5"></textarea></label
       ><br />
 
-      <label
+      <label for="gN"
         >Number
         <input
           type="number"
@@ -134,25 +188,25 @@
           value="1"
           style="width: 4rem"
       /></label>
-      <label
+      <label for="gSize"
         >Size
         <select id="gSize">
-          <option>auto</option>
+          <option value="auto">auto</option>
           <option>1024x1024</option>
           <option>1536x1024</option>
           <option>1024x1536</option>
         </select></label
       >
-      <label
+      <label for="gQual"
         >Quality
         <select id="gQual">
-          <option>auto</option>
+          <option value="auto">auto</option>
           <option>low</option>
           <option>medium</option>
           <option>high</option>
         </select></label
       >
-      <label
+      <label for="gFmt"
         >Format
         <select id="gFmt">
           <option>png</option>
@@ -160,21 +214,21 @@
           <option>webp</option>
         </select></label
       >
-      <label
+      <label for="gComp"
         >Compression (<span id="gCompVal">100</span>)
         <input type="range" id="gComp" min="0" max="100" value="100"
       /></label>
-      <label
+      <label for="gBg"
         >Background
         <select id="gBg">
           <option value="">opaque</option>
           <option value="transparent">transparent</option>
         </select></label
       >
-      <label
+      <label for="gMod"
         >Moderation
         <select id="gMod">
-          <option>auto</option>
+          <option value="auto">auto</option>
           <option>low</option>
         </select></label
       >
@@ -186,20 +240,21 @@
     <!-- ============  EDIT / COMBINE / OUT‑PAINT  ============ -->
     <fieldset id="editFs">
       <legend><strong>Edit / Combine / Out‑paint</strong></legend>
-      <label
-        >Prompt<br /><textarea
-          id="ePrompt"
-          rows="3"
-          style="width: 100%"
-        ></textarea></label
+      <label for="ePrompt"
+        >Prompt<br /><textarea id="ePrompt" rows="5"></textarea></label
       ><br />
 
       <label><input type="checkbox" id="useMask" /> Use in‑painting mask</label
       ><br />
 
       <div id="imgInputs">
-        <label
-          >Image 1 <input type="file" name="image1" accept="image/*" /></label
+        <label for="image1"
+          >Image 1
+          <input
+            type="file"
+            name="image1"
+            id="image1"
+            accept="image/*" /></label
         ><br />
       </div>
       <button id="addImg" type="button">+ add image</button>
@@ -208,37 +263,42 @@
       <!-- Mask tools (hidden unless #useMask is checked) -->
       <div id="maskSection" style="display: none">
         <div class="mask-container">
-          <img id="baseImg" class="preview" alt="reference" />
+          <img id="baseImg" class="preview" alt="reference for mask" />
           <canvas id="maskCanvas" class="mask-canvas"></canvas>
           <canvas
             id="rectPreview"
             class="mask-canvas"
-            style="pointer-events: none"
+            style="pointer-events: none; display: none"
           ></canvas>
+          <!-- Initially hidden -->
         </div>
 
         <div class="tools">
-          <label
-            >Brush
+          <label for="brushSize"
+            >Brush Size
             <input type="range" id="brushSize" min="5" max="120" value="40"
           /></label>
           <label
-            ><input type="radio" name="tool" value="brush" checked />
-            Brush</label
+            ><input type="radio" name="tool" value="brush" checked /> Erase
+            (Mask)</label
           >
           <label
-            ><input type="radio" name="tool" value="erase" /> Restore</label
+            ><input type="radio" name="tool" value="erase" /> Restore
+            (Unmask)</label
           >
-          <label><input type="radio" name="tool" value="rect" /> Rect</label>
           <label
-            ><input type="checkbox" id="showMask" checked /> Show mask</label
+            ><input type="radio" name="tool" value="rect" /> Rect Erase</label
+          >
+          <label
+            ><input type="checkbox" id="showMask" checked /> Show mask
+            overlay</label
           >
           <button id="resetMask" type="button">Reset mask</button>
         </div>
 
         <div class="outpaint">
-          <label
-            >Border
+          <label for="borderSize"
+            >Border Size (px)
             <input
               type="number"
               id="borderSize"
@@ -248,11 +308,15 @@
               style="width: 6rem"
           /></label>
           <button id="addBorder" type="button">+ Expand all sides</button>
+          <small>(for out-painting)</small>
         </div>
       </div>
 
-      <label
-        >Number
+      <hr style="margin: 1.5rem 0" />
+      <!-- Separator -->
+
+      <label for="eN"
+        >Number (if supported)
         <input
           type="number"
           id="eN"
@@ -261,103 +325,167 @@
           value="1"
           style="width: 4rem"
       /></label>
-      <label
+      <label for="eSize"
         >Size
         <select id="eSize">
-          <option>auto</option>
+          <option value="auto">auto</option>
           <option>1024x1024</option>
           <option>1536x1024</option>
           <option>1024x1536</option>
         </select></label
       >
-      <label
+      <label for="eQual"
         >Quality
         <select id="eQual">
-          <option>auto</option>
+          <option value="auto">auto</option>
           <option>low</option>
           <option>medium</option>
           <option>high</option>
         </select></label
       >
-      <label
-        >Format
-        <select id="eFmt">
-          <option>png</option>
-          <option>jpeg</option>
-          <option>webp</option>
-        </select></label
-      >
-      <label
-        >Compression (<span id="eCompVal">100</span>)
-        <input type="range" id="eComp" min="0" max="100" value="100"
-      /></label>
-      <label
+      <!-- Removed Format, Compression, Moderation as they are not standard for Edit API -->
+      <label for="eBg"
         >Background
         <select id="eBg">
           <option value="">opaque</option>
           <option value="transparent">transparent</option>
         </select></label
       >
-      <label
-        >Moderation
-        <select id="eMod">
-          <option>auto</option>
-          <option>low</option>
-        </select></label
-      >
 
-      <br /><button id="eBtn">Create</button> <span id="eSpin"></span>
-      <a id="eLink" class="meta" target="_blank"></a>
-      <img id="eImg" class="preview" />
+      <br /><button id="eBtn">Create Edit</button> <span id="eSpin"></span>
+      <div style="margin-top: 1rem">
+        <a id="eLink" class="meta" target="_blank" style="display: none"></a>
+        <img
+          id="eImg"
+          class="preview"
+          style="display: none"
+          alt="Edited image result"
+        />
+      </div>
     </fieldset>
 
     <script>
       const $ = (q) => document.querySelector(q);
+      const $$ = (q) => document.querySelectorAll(q);
+
       /* ---------- toast helpers ---------- */
-      function showToast(msg) {
+      let toastTimeout;
+      function showToast(msg, duration = 4000) {
+        clearTimeout(toastTimeout);
         $("#toastMsg").textContent = msg;
         $("#toast").style.display = "block";
+        toastTimeout = setTimeout(() => {
+          $("#toast").style.display = "none";
+        }, duration);
       }
       $("#toastClose").onclick = () => {
+        clearTimeout(toastTimeout);
         $("#toast").style.display = "none";
       };
 
       /* ---------- helpers ---------- */
       function normaliseName(n) {
-        return n.toLowerCase().endsWith(".jpg")
-          ? n.replace(/\.jpg$/, ".jpeg")
-          : n;
+        const nameLower = n.toLowerCase();
+        return nameLower.endsWith(".jpg")
+          ? nameLower.replace(/\.jpg$/, ".jpeg")
+          : nameLower;
       }
       async function post(url, fd) {
-        const r = await fetch(url, { method: "POST", body: fd });
-        return r.json();
+        // Log FormData contents for debugging
+        // console.log(`Posting to ${url}:`);
+        // for (let [key, value] of fd.entries()) {
+        //     console.log(`  ${key}:`, value instanceof File ? `${value.name} (${value.size} bytes, type: ${value.type})` : value);
+        // }
+        try {
+          const r = await fetch(url, { method: "POST", body: fd });
+          // Check for non-JSON error responses (like HTML for 404 or 500)
+          if (!r.ok) {
+            const errorText = await r.text();
+            console.error("Server Error Response:", errorText);
+            // Try to parse as JSON, fallback to text
+            try {
+              const errorJson = JSON.parse(errorText);
+              return {
+                ok: false,
+                error: errorJson.error || `HTTP ${r.status}: ${r.statusText}`,
+              };
+            } catch {
+              return {
+                ok: false,
+                error: `HTTP ${r.status}: ${
+                  r.statusText
+                }. Response: ${errorText.substring(0, 100)}...`,
+              };
+            }
+          }
+          // Check content type before parsing JSON
+          const contentType = r.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            return r.json(); // Parse JSON response
+          } else {
+            const responseText = await r.text();
+            console.warn("Received non-JSON response:", responseText);
+            return {
+              ok: false,
+              error: `Unexpected response format: ${contentType}`,
+            };
+          }
+        } catch (networkError) {
+          console.error(`Network error during fetch to ${url}:`, networkError);
+          return { ok: false, error: `Network error: ${networkError.message}` };
+        }
       }
+
       function enforceCompression(fmtSel, slider, span, bgSel) {
         const sync = () => {
-          if (fmtSel.value === "png") slider.disabled = false;
-          if (fmtSel.value === "jpeg") bgSel && (bgSel.value = "");
-          slider.disabled = fmtSel.value === "png";
-          if (slider.disabled) slider.value = 100;
+          const isPng = fmtSel.value === "png";
+          const isJpeg = fmtSel.value === "jpeg";
+
+          // Compression slider only relevant for non-PNG (jpeg, webp)
+          slider.disabled = isPng;
+          if (slider.disabled) slider.value = 100; // Reset PNG compression visually
           span.textContent = slider.value;
-          // transparent not allowed in jpeg
-          if (bgSel) bgSel.disabled = fmtSel.value === "jpeg";
+
+          // Background transparency only relevant for PNG/WEBP
+          if (bgSel) {
+            bgSel.disabled = isJpeg;
+            if (isJpeg) bgSel.value = ""; // Force opaque for JPEG
+            // Ensure transparent option is disabled if format doesn't support it
+            const transparentOption = bgSel.querySelector(
+              'option[value="transparent"]'
+            );
+            if (transparentOption) transparentOption.disabled = isJpeg;
+          }
         };
         fmtSel.onchange = sync;
         slider.oninput = () => (span.textContent = slider.value);
-        sync();
+        sync(); // Initial setup
       }
 
       /* ---------- compression locks ---------- */
+      // Generate section
       enforceCompression($("#gFmt"), $("#gComp"), $("#gCompVal"), $("#gBg"));
-      enforceCompression($("#eFmt"), $("#eComp"), $("#eCompVal"), $("#eBg"));
+      // Edit section (only background needs checking as format/compression removed)
+      const eBgSel = $("#eBg");
+      if (eBgSel) {
+        // If we ever re-add format selection to Edit, re-enable full enforceCompression
+        // For now, just ensure transparent isn't selected if backend implies JPEG (e.g., based on input)
+        // This is tricky without knowing the output format beforehand for Edit.
+        // Let's assume PNG/WEBP are possible if transparent is chosen.
+      }
 
       /* ---------- dynamic image inputs ---------- */
       let imgCount = 1;
       $("#addImg").onclick = () => {
-        if (imgCount >= 10) return;
+        if (imgCount >= 10) {
+          showToast("Maximum of 10 images allowed.");
+          return;
+        }
         imgCount++;
         const lbl = document.createElement("label");
-        lbl.innerHTML = `Image ${imgCount} <input type="file" name="image${imgCount}" accept="image/*">`;
+        const inputId = `image${imgCount}`;
+        lbl.setAttribute("for", inputId);
+        lbl.innerHTML = `Image ${imgCount} <input type="file" name="${inputId}" id="${inputId}" accept="image/*">`;
         $("#imgInputs").append(lbl, document.createElement("br"));
       };
 
@@ -369,16 +497,24 @@
         $(id).innerHTML = "";
       }
       function disable(el, on = true) {
+        if (!el) return;
         el.classList.toggle("dimmed", on);
         el.disabled = on;
       }
 
       /* ---------- GENERATE ---------- */
       $("#gBtn").onclick = async () => {
+        const prompt = $("#gPrompt").value.trim();
+        if (!prompt) {
+          showToast("Prompt is required for generation.");
+          return;
+        }
         disable($("#gBtn"));
         startSpinner("#gSpin");
+        $("#gallery").innerHTML = ""; // Clear previous results
+
         const fd = new FormData();
-        fd.append("prompt", $("#gPrompt").value);
+        fd.append("prompt", prompt);
         fd.append("n", $("#gN").value);
         [
           "size",
@@ -387,230 +523,709 @@
           "output_compression",
           "background",
           "moderation",
-        ].forEach((k, i) =>
-          fd.append(
-            k,
-            [
-              $("#gSize"),
-              $("#gQual"),
-              $("#gFmt"),
-              $("#gComp"),
-              $("#gBg"),
-              $("#gMod"),
-            ][i].value
-          )
-        );
+        ].forEach((k) => {
+          const el = $(
+            `#g${
+              k.charAt(0).toUpperCase() +
+              k
+                .slice(1)
+                .replace(/_[a-z]/g, (m) => m[1].toUpperCase())
+                .replace("Output_f", "F")
+                .replace("Output_c", "C")
+                .replace("oderation", "Mod")
+                .replace("uality", "Qual")
+                .replace("ize", "Size")
+                .replace("ackground", "Bg")
+            }`
+          ); // Map k to element ID
+          if (el && el.value !== "auto" && el.value !== "") {
+            fd.append(k, el.value);
+          }
+        });
+
+        // Handle background=transparent validation client-side
+        if (
+          fd.get("background") === "transparent" &&
+          !["png", "webp"].includes(fd.get("output_format"))
+        ) {
+          showToast("Transparent background requires PNG or WEBP format.");
+          stopSpinner("#gSpin");
+          disable($("#gBtn"), false);
+          return;
+        }
+
         const res = await post("/generate", fd);
         stopSpinner("#gSpin");
         disable($("#gBtn"), false);
-        if (!res.ok) {
-          showToast(res.error || "Generate failed");
+
+        if (!res || !res.ok) {
+          showToast(
+            res?.error || "Generate failed. Check console for details."
+          );
           return;
         }
-        $("#gallery").innerHTML = "";
+        if (!res.data_uris || res.data_uris.length === 0) {
+          showToast("Received OK response but no images were returned.");
+          return;
+        }
+
         res.data_uris.forEach((uri, i) => {
           const img = new Image();
           img.src = uri;
-          img.title = `Image ${i + 1}`;
+          img.title = `Generated Image ${i + 1}`;
           img.className = "preview";
+          img.alt = `Generated image ${i + 1} for prompt: ${prompt.substring(
+            0,
+            50
+          )}...`;
           $("#gallery").append(img);
         });
       };
 
       /* ---------- Mask UI toggle ---------- */
       $("#useMask").onchange = (e) => {
-        $("#maskSection").style.display = e.target.checked ? "block" : "none";
+        const show = e.target.checked;
+        $("#maskSection").style.display = show ? "block" : "none";
+        // Ensure an image is loaded and has rendered dimensions before resizing
+        if (
+          show &&
+          baseImg.src &&
+          baseImg.clientWidth > 0 &&
+          baseImg.clientHeight > 0
+        ) {
+          // Call resizeCanvases which now uses natural dimensions for bitmap
+          resizeCanvases();
+        } else if (show && !baseImg.src) {
+          showToast("Please select 'Image 1' to use the mask feature.");
+          e.target.checked = false; // Uncheck the box
+          $("#maskSection").style.display = "none";
+        }
       };
 
-      /* ---------- Mask drawing logic (same as original, omitted for brevity) ---------- */
+      /* ---------- Mask drawing logic ---------- */
       const maskSect = $("#maskSection"),
         baseImg = $("#baseImg"),
         maskCan = $("#maskCanvas"),
-        rectCan = $("#rectPreview"),
-        ctxMask = maskCan.getContext("2d"),
+        rectCan = $("#rectPreview"), // Preview canvas for rectangle tool
+        ctxMask = maskCan.getContext("2d", { willReadFrequently: true }), // Added willReadFrequently for potential performance
         ctxRect = rectCan.getContext("2d");
+
       let drawing = false,
         startX = 0,
         startY = 0,
-        expanded = false,
-        origExt = "png";
+        expanded = false, // Flag for outpainting expansion
+        origExt = "png", // Default/initial extension
+        naturalW = 0, // Natural dimensions of the base image
+        naturalH = 0;
+
       function resizeCanvases() {
-        [maskCan, rectCan].forEach((c) => {
-          c.width = baseImg.naturalWidth;
-          c.height = baseImg.naturalHeight;
-          c.style.width = baseImg.width + "px";
-          c.style.height = baseImg.height + "px";
-        });
-        ctxMask.clearRect(0, 0, maskCan.width, maskCan.height);
-        ctxMask.fillStyle = "black";
-        ctxMask.fillRect(0, 0, maskCan.width, maskCan.height);
-        ctxRect.clearRect(0, 0, rectCan.width, rectCan.height);
-      }
-      function resetMask(full = true) {
-        ctxMask.clearRect(0, 0, maskCan.width, maskCan.height);
-        if (full) {
-          ctxMask.fillStyle = "black";
-          ctxMask.fillRect(0, 0, maskCan.width, maskCan.height);
-        }
-        ctxRect.clearRect(0, 0, rectCan.width, rectCan.height);
-      }
-      function tool() {
-        return document.querySelector('input[name="tool"]:checked').value;
-      }
-      function pos(e) {
-        const r = maskCan.getBoundingClientRect();
-        return {
-          x: (e.clientX - r.left) * (maskCan.width / r.width),
-          y: (e.clientY - r.top) * (maskCan.height / r.height),
-        };
-      }
-      maskCan.addEventListener("mousedown", (e) => {
-        drawing = true;
-        ({ x: startX, y: startY } = pos(e));
-        if (tool() !== "rect") {
-          ctxMask.lineCap = "round";
-          ctxMask.lineJoin = "round";
-          ctxMask.lineWidth = +$("#brushSize").value;
-          ctxMask.globalCompositeOperation =
-            tool() === "erase" ? "source-over" : "destination-out";
-          ctxMask.beginPath();
-          ctxMask.moveTo(startX, startY);
-        } else ctxRect.clearRect(0, 0, rectCan.width, rectCan.height);
-      });
-      maskCan.addEventListener("mousemove", (e) => {
-        if (!drawing) return;
-        const { x, y } = pos(e);
-        if (tool() === "rect") {
-          ctxRect.clearRect(0, 0, rectCan.width, rectCan.height);
-          ctxRect.setLineDash([6]);
-          ctxRect.strokeStyle = "red";
-          ctxRect.lineWidth = 2;
-          ctxRect.strokeRect(startX, startY, x - startX, y - startY);
+        // Get rendered dimensions (size on screen)
+        const renderedW = baseImg.clientWidth;
+        const renderedH = baseImg.clientHeight;
+
+        // Check for valid dimensions
+        if (!naturalW || !naturalH || !renderedW || !renderedH) {
+          // console.warn("Cannot resize canvases: Dimensions not available.", {naturalW, naturalH, renderedW, renderedH});
+          // Optionally clear canvases if dimensions are invalid
+          [maskCan, rectCan].forEach((c) => {
+            c.width = 0;
+            c.height = 0;
+            c.style.width = "0px";
+            c.style.height = "0px";
+          });
           return;
         }
-        ctxMask.lineTo(x, y);
-        ctxMask.stroke();
+
+        // Set bitmap dimensions to natural image size
+        maskCan.width = naturalW;
+        maskCan.height = naturalH;
+        rectCan.width = naturalW;
+        rectCan.height = naturalH;
+
+        // Set CSS dimensions to match the rendered image size
+        maskCan.style.width = renderedW + "px";
+        maskCan.style.height = renderedH + "px";
+        rectCan.style.width = renderedW + "px";
+        rectCan.style.height = renderedH + "px";
+
+        // console.log(`Resized canvases: Bitmap=${naturalW}x${naturalH}, CSS=${renderedW}x${renderedH}`);
+
+        // Reset drawing state after resize - fill mask completely black (meaning nothing is masked initially)
+        resetMask(true); // Full reset to black
+      }
+
+      function resetMask(full = true) {
+        if (!naturalW || !naturalH) return; // Don't reset if no dimensions
+
+        // Clear both canvases
+        ctxMask.clearRect(0, 0, naturalW, naturalH);
+        ctxRect.clearRect(0, 0, naturalW, naturalH);
+
+        if (full) {
+          // Set composite mode to default for filling
+          ctxMask.globalCompositeOperation = "source-over";
+          // Fill the mask canvas with black (representing the original image area, not masked)
+          ctxMask.fillStyle = "black";
+          ctxMask.fillRect(0, 0, naturalW, naturalH);
+          // Set composite mode for erasing (drawing transparency)
+          ctxMask.globalCompositeOperation = "destination-out";
+        } else {
+          // If not a full reset (e.g., after outpainting), just clear to transparent
+          // and set mode for drawing the mask (black)
+          ctxMask.globalCompositeOperation = "source-over";
+        }
+      }
+
+      function tool() {
+        const selectedTool = document.querySelector(
+          'input[name="tool"]:checked'
+        );
+        return selectedTool ? selectedTool.value : "brush"; // Default to brush
+      }
+
+      // Calculate mouse position relative to the canvas bitmap (natural dimensions)
+      function pos(e) {
+        const r = maskCan.getBoundingClientRect(); // Canvas position and rendered size
+        const renderedW = r.width;
+        const renderedH = r.height;
+
+        // Prevent division by zero if canvas isn't rendered
+        if (!renderedW || !renderedH || !naturalW || !naturalH) {
+          return { x: 0, y: 0 };
+        }
+
+        // Click position relative to the viewport
+        const clientX = e.clientX;
+        const clientY = e.clientY;
+
+        // Click position relative to the rendered canvas element
+        const canvasX = clientX - r.left;
+        const canvasY = clientY - r.top;
+
+        // Scale coordinates from rendered size to natural bitmap size
+        const scaleX = naturalW / renderedW;
+        const scaleY = naturalH / renderedH;
+
+        return {
+          x: canvasX * scaleX,
+          y: canvasY * scaleY,
+        };
+      }
+
+      // --- MASK DRAWING EVENT LISTENERS ---
+
+      maskCan.addEventListener("mousedown", (e) => {
+        if (!naturalW || !naturalH) return; // Ensure image/canvas is ready
+        drawing = true;
+        ({ x: startX, y: startY } = pos(e)); // Get starting position (scaled)
+
+        const currentTool = tool();
+        const brushSize = +$("#brushSize").value;
+
+        if (currentTool === "rect") {
+          // Using rectangle tool - prepare the preview canvas
+          ctxRect.clearRect(0, 0, naturalW, naturalH); // Clear previous rect preview
+          // Style the preview rectangle
+          ctxRect.setLineDash([6 * (naturalW / (baseImg.clientWidth || 1))]); // Scale dash pattern roughly
+          ctxRect.strokeStyle = "rgba(255, 0, 0, 0.8)"; // Red preview line
+          ctxRect.lineWidth = 2 * (naturalW / (baseImg.clientWidth || 1)); // Scale line width roughly
+        } else {
+          // Using brush or erase tool - prepare the main mask canvas
+          ctxMask.lineCap = "round";
+          ctxMask.lineJoin = "round";
+          ctxMask.lineWidth = brushSize;
+
+          // Set the drawing mode:
+          // 'destination-out': Erases (makes transparent) where you draw. For the 'brush' (Erase Mask) tool.
+          // 'source-over': Draws normally (black). For the 'erase' (Restore Unmask) tool.
+          ctxMask.globalCompositeOperation =
+            currentTool === "erase" ? "source-over" : "destination-out";
+
+          ctxMask.beginPath();
+          ctxMask.moveTo(startX, startY);
+          // Draw a dot for single clicks
+          ctxMask.lineTo(startX + 0.1, startY + 0.1); // Tiny line to make a dot
+          ctxMask.stroke();
+          ctxMask.beginPath(); // Start a new path for potential dragging
+          ctxMask.moveTo(startX, startY);
+        }
       });
+
+      maskCan.addEventListener("mousemove", (e) => {
+        if (!drawing || !naturalW || !naturalH) return;
+        const { x, y } = pos(e); // Get current position (scaled)
+        const currentTool = tool();
+
+        if (currentTool === "rect") {
+          // Update the preview rectangle on the rectCanvas
+          ctxRect.clearRect(0, 0, naturalW, naturalH); // Clear previous preview
+          ctxRect.strokeRect(startX, startY, x - startX, y - startY); // Draw new preview
+        } else {
+          // Continue drawing the line on the main maskCanvas
+          ctxMask.lineTo(x, y);
+          ctxMask.stroke();
+        }
+      });
+
       maskCan.addEventListener("mouseup", (e) => {
-        if (!drawing) return;
+        if (!drawing || !naturalW || !naturalH) return;
         drawing = false;
-        const { x: endX, y: endY } = pos(e);
-        if (tool() === "rect") {
-          const x = Math.min(startX, endX),
-            y = Math.min(startY, endY),
-            w = Math.abs(endX - startX),
-            h = Math.abs(endY - startY);
+        const { x: endX, y: endY } = pos(e); // Get end position (scaled)
+        const currentTool = tool();
+
+        if (currentTool === "rect") {
+          // Apply the rectangle to the main maskCanvas
+          const x = Math.min(startX, endX);
+          const y = Math.min(startY, endY);
+          const w = Math.abs(endX - startX);
+          const h = Math.abs(endY - startY);
+
+          // Use 'destination-out' to erase the rectangle area
           ctxMask.globalCompositeOperation = "destination-out";
           ctxMask.fillRect(x, y, w, h);
-          ctxRect.clearRect(0, 0, rectCan.width, rectCan.height);
+
+          // Clear the preview rectangle canvas
+          ctxRect.clearRect(0, 0, naturalW, naturalH);
+        } else {
+          // Finish the line for brush/erase
+          ctxMask.lineTo(endX, endY);
+          ctxMask.stroke();
         }
+
+        // Reset the path and prepare for next erase operation
         ctxMask.beginPath();
+        // IMPORTANT: Set composite op back to destination-out for subsequent brush strokes
+        // unless the tool is 'erase' (restore)
+        ctxMask.globalCompositeOperation =
+          tool() === "erase" ? "source-over" : "destination-out";
       });
+
+      maskCan.addEventListener("mouseleave", (e) => {
+        // Stop drawing if mouse leaves canvas while button is pressed
+        if (drawing) {
+          drawing = false;
+          const currentTool = tool();
+          if (currentTool !== "rect") {
+            ctxMask.stroke(); // Finish current line segment
+            ctxMask.beginPath(); // Reset path
+          } else {
+            // Optionally clear rect preview if mouse leaves? Or apply rect?
+            // Let's clear it for now.
+            ctxRect.clearRect(0, 0, naturalW, naturalH);
+          }
+          // Reset composite op
+          ctxMask.globalCompositeOperation =
+            tool() === "erase" ? "source-over" : "destination-out";
+        }
+      });
+
+      // --- MASK UI CONTROLS ---
+
       $("#showMask").onchange = (e) => {
-        const d = e.target.checked ? "block" : "none";
-        maskCan.style.display = d;
-        rectCan.style.display = d;
+        const show = e.target.checked;
+        maskCan.style.opacity = show ? "0.55" : "0"; // Toggle visibility via opacity
+        // Hide rect preview if mask is hidden
+        rectCan.style.display = show && tool() === "rect" ? "block" : "none";
       };
-      $("#resetMask").onclick = () => resetMask(true);
+
+      $("#resetMask").onclick = () => {
+        resetMask(true); // Full reset to black, ready for erasing
+        showToast("Mask reset.");
+      };
+
+      // Update rectCanvas visibility and mask composite operation when tool changes
+      editFs.addEventListener("change", (e) => {
+        if (e.target.name === "tool") {
+          const currentTool = e.target.value;
+          rectCan.style.display =
+            currentTool === "rect" && $("#showMask").checked ? "block" : "none";
+          // Set composite operation for next drawing action
+          ctxMask.globalCompositeOperation =
+            currentTool === "erase" ? "source-over" : "destination-out";
+          // Reset current path to avoid connecting lines between tool changes
+          ctxMask.beginPath();
+        }
+      });
+
+      // --- IMAGE LOADING AND HANDLING ---
+
       $("#imgInputs").addEventListener("change", (e) => {
+        // Only react to changes in the *first* image input for the mask base
+        if (e.target.name !== "image1") return;
+
         const f = e.target.files[0];
-        if (!f) return;
+        if (!f) {
+          // Clear image and reset canvas if file is removed
+          baseImg.src = "#"; // Use # or empty string to clear
+          baseImg.alt = "reference for mask";
+          naturalW = 0;
+          naturalH = 0;
+          expanded = false; // Reset expanded state
+          delete window._tempExpandedBlob; // Clear any stored blob
+          resizeCanvases(); // Clear canvases visually
+          $("#maskSection").style.display = "none"; // Hide mask section
+          $("#useMask").checked = false; // Uncheck mask checkbox
+          return;
+        }
+
+        // Validate file type (basic check)
+        if (!f.type.startsWith("image/")) {
+          showToast("Please select a valid image file (PNG, JPEG, WEBP, GIF).");
+          e.target.value = ""; // Clear the invalid file selection
+          return;
+        }
+
         origExt = normaliseName(f.name).split(".").pop();
         const R = new FileReader();
         R.onload = (ev) => {
           baseImg.src = ev.target.result;
-          $("#maskSection").style.display = $("#useMask").checked
-            ? "block"
-            : "none";
+          baseImg.alt = `Mask base: ${f.name}`;
+          // The baseImg.onload event will handle resizing and setting natural dimensions
+          // Show mask section immediately if checkbox is already checked
+          if ($("#useMask").checked) {
+            $("#maskSection").style.display = "block";
+          }
+        };
+        R.onerror = (err) => {
+          console.error("FileReader error:", err);
+          showToast("Error reading file.");
+          baseImg.src = "#"; // Clear image on error
+          naturalW = 0;
+          naturalH = 0;
         };
         R.readAsDataURL(f);
       });
-      baseImg.onload = resizeCanvases;
+
+      // IMPORTANT: This runs *after* a new image (or expanded image) is loaded into baseImg.src
+      baseImg.onload = () => {
+        // Check if the src is valid (not '#' or empty)
+        if (
+          !baseImg.currentSrc ||
+          baseImg.currentSrc === window.location.href + "#"
+        ) {
+          // console.log("baseImg onload triggered for empty src, skipping resize.");
+          return;
+        }
+
+        // Store natural dimensions from the loaded image
+        naturalW = baseImg.naturalWidth;
+        naturalH = baseImg.naturalHeight;
+
+        // console.log(`baseImg loaded: Natural dimensions ${naturalW}x${naturalH}`);
+
+        // Now resize canvases using the new natural dimensions
+        resizeCanvases();
+
+        // If the mask section should be visible (checkbox checked), ensure it is
+        if ($("#useMask").checked) {
+          $("#maskSection").style.display = "block";
+        }
+
+        // If this onload was triggered by expansion, the 'expanded' flag is already true.
+        // If it was triggered by loading a new file, reset the expanded state.
+        // We need a way to distinguish. Let's reset 'expanded' *before* setting src in expansion.
+      };
+      baseImg.onerror = () => {
+        showToast("Error loading image into preview.");
+        baseImg.alt = "Image load error";
+        naturalW = 0;
+        naturalH = 0;
+        resizeCanvases(); // Clear canvases
+      };
 
       /* ---------- Out‑paint ---------- */
-      $("#addBorder").onclick = () => {
+      $("#addBorder").onclick = async () => {
+        if (!naturalW || !naturalH || !baseImg.src || baseImg.src === "#") {
+          showToast("Please load 'Image 1' first before expanding.");
+          return;
+        }
         const pad = +$("#borderSize").value || 0;
-        if (!pad) return;
-        const nw = baseImg.naturalWidth + pad * 2,
-          nh = baseImg.naturalHeight + pad * 2;
+        if (pad <= 0) {
+          showToast("Please enter a positive border size.");
+          return;
+        }
+
+        // Disable button during processing
+        disable($("#addBorder"));
+        showToast("Expanding image...", 2000);
+
+        const nw = naturalW + pad * 2;
+        const nh = naturalH + pad * 2;
+
         const cv = document.createElement("canvas");
         cv.width = nw;
         cv.height = nh;
-        cv.getContext("2d").drawImage(baseImg, pad, pad);
-        expanded = true;
-        cv.toBlob((b) => {
-          baseImg.src = URL.createObjectURL(b);
-          baseImg.onload = resizeCanvases;
-          baseImg.dataset.expBlob = b;
-        }, `image/${origExt}`);
-        $("#eFmt").value = "png";
-        $("#eFmt").dispatchEvent(new Event("change"));
+        const ctx = cv.getContext("2d");
+
+        // Make expanded area transparent initially
+        ctx.clearRect(0, 0, nw, nh);
+        // Draw the original image (using the baseImg element ensures we use the loaded image)
+        try {
+          ctx.drawImage(baseImg, pad, pad, naturalW, naturalH);
+        } catch (e) {
+          console.error("Error drawing image onto expansion canvas:", e);
+          showToast("Error preparing expanded image.");
+          disable($("#addBorder"), false);
+          return;
+        }
+
+        // Convert canvas to PNG Blob
+        let blob;
+        try {
+          blob = await new Promise((resolve) =>
+            cv.toBlob(resolve, "image/png")
+          );
+        } catch (e) {
+          console.error("Error converting expanded canvas to Blob:", e);
+          showToast("Error creating expanded image data.");
+          disable($("#addBorder"), false);
+          return;
+        }
+
+        if (!blob) {
+          showToast("Failed to create expanded image blob.");
+          disable($("#addBorder"), false);
+          return;
+        }
+
+        // --- Update state for expanded image ---
+        expanded = true; // Mark as expanded
+        // Clean up previous blob URL if any
+        if (
+          window._tempExpandedBlobURL &&
+          window._tempExpandedBlobURL.startsWith("blob:")
+        ) {
+          URL.revokeObjectURL(window._tempExpandedBlobURL);
+        }
+        // Store the new blob and create a URL for display
+        window._tempExpandedBlob = blob; // Store blob for submission
+        window._tempExpandedBlobURL = URL.createObjectURL(blob); // Create URL for preview
+
+        // Reset 'expanded' flag *before* setting src to distinguish load types
+        // No, keep expanded=true. baseImg.onload will use the new naturalW/H.
+
+        // Update the baseImg src to show the expanded version. This triggers baseImg.onload.
+        baseImg.src = window._tempExpandedBlobURL;
+        baseImg.alt = `Expanded image ${nw}x${nh}`;
+
+        // Suggest PNG format for output (as expansion creates transparency)
+        // $("#eFmt").value = "png"; // Format selection removed from Edit UI
+        // $("#eFmt").dispatchEvent(new Event("change"));
+
+        // Automatically reset the mask to erase the *original* image area, leaving border transparent
+        // This needs to happen *after* baseImg.onload completes and resizeCanvases runs
+        // Use a small timeout to wait for the DOM updates and canvas resize
+        setTimeout(() => {
+          // Check if the natural dimensions match the expected expanded size
+          if (naturalW === nw && naturalH === nh) {
+            console.log("Auto-masking expanded image...");
+            resetMask(false); // Clear mask to transparent
+            ctxMask.globalCompositeOperation = "source-over"; // Set to draw black
+            ctxMask.fillStyle = "black";
+            // Fill the area where the original image was
+            ctxMask.fillRect(pad, pad, nw - pad * 2, nh - pad * 2);
+            // Set back to erase mode for user interaction
+            ctxMask.globalCompositeOperation = "destination-out";
+            showToast("Image expanded. Original area masked for out-painting.");
+          } else {
+            console.warn(
+              "Resize didn't complete in time for auto-masking. Manual masking required.",
+              { naturalW, naturalH, nw, nh }
+            );
+            showToast("Image expanded. Please mask the area to keep.");
+            resetMask(true); // Full reset if auto-mask failed
+          }
+          disable($("#addBorder"), false); // Re-enable button
+        }, 150); // Increased delay slightly
       };
 
       /* ---------- EDIT ---------- */
       $("#eBtn").onclick = async () => {
-        disable($("#eBtn"));
-        startSpinner("#eSpin");
-        const fd = new FormData();
-        fd.append("prompt", $("#ePrompt").value);
-        fd.append("n", $("#eN").value);
-        ["size", "quality", "background", "moderation"].forEach((k, i) =>
-          fd.append(
-            k,
-            [$("#eSize"), $("#eQual"), $("#eBg"), $("#eMod")][i].value
-          )
-        );
-
-        /* reference images */
-        if (expanded) {
-          if (!baseImg.dataset.expBlob) {
-            showToast("Please wait… preparing enlarged image.");
-            stopSpinner("#eSpin");
-            disable($("#eBtn"), false);
-            return;
-          }
-          fd.append("image1", baseImg.dataset.expBlob, `outpaint.${origExt}`);
-        } else {
-          [...$("#imgInputs").querySelectorAll('input[type="file"]')].forEach(
-            (f) => {
-              if (f.files[0])
-                fd.append(f.name, f.files[0], normaliseName(f.files[0].name));
-            }
-          );
+        const prompt = $("#ePrompt").value.trim();
+        if (!prompt) {
+          showToast("Prompt is required for editing.");
+          return;
         }
 
-        /* mask (optional) */
-        if ($("#useMask").checked) {
-          const maskBlob = await new Promise((r) => {
-            if (maskCan.width === 0 || maskCan.height === 0) return r(null);
-            try {
-              maskCan.toBlob(r, "image/png");
-            } catch {
-              r(null);
+        disable($("#eBtn"));
+        startSpinner("#eSpin");
+        $("#eImg").style.display = "none"; // Hide previous result
+        $("#eLink").style.display = "none";
+
+        const fd = new FormData();
+        fd.append("prompt", prompt);
+
+        // Append allowed parameters for the Edit endpoint
+        ["size", "quality", "background"].forEach((k) => {
+          const elId = `#e${
+            k.charAt(0).toUpperCase() +
+            k
+              .slice(1)
+              .replace("uality", "Qual")
+              .replace("ize", "Size")
+              .replace("ackground", "Bg")
+          }`;
+          const el = $(elId);
+          if (el && el.value !== "auto" && el.value !== "") {
+            fd.append(k, el.value);
+          }
+        });
+
+        // Handle optional 'n' parameter (assuming backend supports it for edit)
+        const nVal = $("#eN").value;
+        if (nVal && parseInt(nVal, 10) >= 1) {
+          fd.append("n", nVal);
+        } else if (nVal !== "1") {
+          // If user entered something invalid, maybe warn?
+          console.warn("Ignoring invalid 'n' value for edit:", nVal);
+        }
+        // Note: The standard OpenAI Edit endpoint *does not* support 'n' > 1.
+        // If using standard API, remove the 'n' input/logic for Edit. Keep if custom backend.
+
+        /* --- Reference Image Handling --- */
+        let refImageFile;
+        let refImageName = "image.png"; // Default name
+
+        if (expanded && window._tempExpandedBlob) {
+          // Use the stored expanded blob
+          refImageFile = window._tempExpandedBlob;
+          // Backend auto-masking relies on name starting with 'outpaint' if only one image.
+          refImageName = `outpaint.${origExt || "png"}`; // Use original extension if known
+          console.log("Using expanded image blob for edit:", refImageName);
+          fd.append("image1", refImageFile, refImageName);
+        } else {
+          // Find the first image input that has a file selected
+          const fileInput = $("#image1"); // Directly select #image1
+          if (fileInput && fileInput.files[0]) {
+            refImageFile = fileInput.files[0];
+            refImageName = normaliseName(refImageFile.name);
+            console.log("Using file input image for edit:", refImageName);
+            fd.append(fileInput.name, refImageFile, refImageName); // Use input name 'image1'
+          }
+          // Add other images if present (though mask usually applies only to first)
+          for (let i = 2; i <= imgCount; i++) {
+            const otherInput = $(`#image${i}`);
+            if (otherInput && otherInput.files[0]) {
+              const otherFile = otherInput.files[0];
+              fd.append(
+                otherInput.name,
+                otherFile,
+                normaliseName(otherFile.name)
+              );
+              console.log(`Adding additional image: ${otherInput.name}`);
             }
-          });
-          if (!maskBlob) {
-            showToast("Mask export failed.");
+          }
+        }
+
+        if (!refImageFile) {
+          showToast("No reference image found (select 'Image 1').");
+          stopSpinner("#eSpin");
+          disable($("#eBtn"), false);
+          return;
+        }
+
+        /* --- Mask Handling (Optional) --- */
+        if ($("#useMask").checked) {
+          // Ensure canvas has valid dimensions before exporting
+          if (
+            !maskCan ||
+            maskCan.width === 0 ||
+            maskCan.height === 0 ||
+            !naturalW ||
+            !naturalH
+          ) {
+            showToast(
+              "Mask canvas is not ready. Ensure image is loaded and mask is enabled."
+            );
             stopSpinner("#eSpin");
             disable($("#eBtn"), false);
-            $("#maskSection").scrollIntoView({ behavior: "smooth" });
+            if (maskSect) maskSect.scrollIntoView({ behavior: "smooth" });
             return;
           }
+
+          console.log(
+            `Exporting mask with dimensions: ${maskCan.width}x${maskCan.height}`
+          );
+          let maskBlob;
+          try {
+            maskBlob = await new Promise((resolve) => {
+              maskCan.toBlob(resolve, "image/png");
+            });
+          } catch (err) {
+            console.error("maskCan.toBlob error:", err);
+            maskBlob = null; // Ensure maskBlob is null on error
+          }
+
+          if (!maskBlob) {
+            showToast("Mask export failed. Check console for errors.");
+            stopSpinner("#eSpin");
+            disable($("#eBtn"), false);
+            if (maskSect) maskSect.scrollIntoView({ behavior: "smooth" });
+            return;
+          }
+          console.log(`Mask blob size: ${maskBlob.size} bytes`);
           fd.append("mask", maskBlob, "mask.png");
         }
 
+        // --- Make the API Call ---
+        console.log("Sending request to /edit");
         const res = await post("/edit", fd);
+
+        // --- Cleanup Temporary Data ---
+        if (
+          window._tempExpandedBlobURL &&
+          window._tempExpandedBlobURL.startsWith("blob:")
+        ) {
+          URL.revokeObjectURL(window._tempExpandedBlobURL);
+          delete window._tempExpandedBlobURL;
+        }
+        delete window._tempExpandedBlob; // Clean up stored blob reference
+        // --- End Cleanup ---
+
+        // --- Handle Response ---
         stopSpinner("#eSpin");
         disable($("#eBtn"), false);
-        if (!res.ok) {
-          showToast(res.error || "Edit failed");
-          $("#maskSection").scrollIntoView({ behavior: "smooth" });
+
+        if (!res || !res.ok) {
+          showToast(res?.error || "Edit failed. Check console for details.");
+          // Optionally scroll to mask section if error might be related
+          if (res?.error?.toLowerCase().includes("mask")) {
+            if (maskSect) maskSect.scrollIntoView({ behavior: "smooth" });
+          }
           return;
         }
-        $("#eImg").src = res.data_uri;
-        $("#eLink").href = res.url;
-        $("#eLink").textContent = "Saved copy ↗";
-      };
+
+        // --- Display Result ---
+        if (res.data_uri && res.url) {
+          $("#eImg").src = res.data_uri;
+          $("#eLink").href = res.url;
+          $("#eLink").textContent = `Saved copy (${res.url
+            .split("/")
+            .pop()}) ↗`;
+          $("#eImg").style.display = "block"; // Make image visible
+          $("#eLink").style.display = "inline"; // Make link visible
+          $("#eImg").alt = `Edited image result for prompt: ${prompt.substring(
+            0,
+            50
+          )}...`;
+        } else {
+          showToast("Edit succeeded but response format is unexpected.");
+          console.warn("Unexpected success response:", res);
+        }
+      }; // End of eBtn.onclick
+
+      // --- Initial Page Setup ---
+      function init() {
+        $("#eImg").style.display = "none";
+        $("#eLink").style.display = "none";
+        // Ensure mask section is hidden initially
+        $("#maskSection").style.display = "none";
+        // Set initial composite operation for mask
+        ctxMask.globalCompositeOperation = "destination-out";
+      }
+
+      // Run init when the DOM is fully loaded
+      document.addEventListener("DOMContentLoaded", init);
     </script>
   </body>
 </html>
