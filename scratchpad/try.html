@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Responses Playground</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-size: 16px;
+        --bg: #090e1a;
+        --fg: #e6edf7;
+        --panel: #131a29;
+        --panel-alt: #101624;
+        --accent: #4f8cff;
+        --accent-hover: #70a1ff;
+        --error: #ff6b6b;
+        --muted: #8f9bb7;
+        --border: #27334a;
+        --textarea-bg: #0f1625;
+        --textarea-border: #2b344a;
+      }
+
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        background: var(--bg);
+        color: var(--fg);
+        min-height: 100vh;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 2rem 1.25rem 4rem;
+      }
+
+      main {
+        width: min(960px, 100%);
+        background: var(--panel);
+        border-radius: 0.75rem;
+        box-shadow: 0 0.75rem 2.25rem rgba(0, 0, 0, 0.45);
+        border: 1px solid var(--border);
+        padding: 2.5rem;
+      }
+
+      h1 {
+        margin: 0 0 1.5rem;
+        font-size: 1.75rem;
+        font-weight: 600;
+      }
+
+      form {
+        display: grid;
+        gap: 1.75rem;
+      }
+
+      label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 8rem;
+        resize: vertical;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        border: 1px solid var(--textarea-border);
+        background: var(--textarea-bg);
+        color: var(--fg);
+        font: inherit;
+        line-height: 1.4;
+      }
+
+      textarea:focus {
+        outline: 3px solid rgba(79, 140, 255, 0.25);
+        border-color: var(--accent);
+      }
+
+      textarea::placeholder {
+        color: var(--muted);
+      }
+
+      .helper {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.9rem;
+        color: var(--muted);
+        margin-top: 0.35rem;
+      }
+
+      .word-count.exceeded {
+        color: var(--error);
+        font-weight: 600;
+      }
+
+      button[type="submit"] {
+        justify-self: flex-start;
+        background: var(--accent);
+        color: #0a101b;
+        border: none;
+        border-radius: 0.5rem;
+        padding: 0.75rem 1.75rem;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 120ms ease, box-shadow 120ms ease;
+      }
+
+      button[type="submit"]:disabled {
+        cursor: not-allowed;
+        opacity: 0.55;
+        transform: none;
+        box-shadow: none;
+      }
+
+      button[type="submit"]:not(:disabled):hover {
+        transform: translateY(-1px);
+        background: var(--accent-hover);
+        box-shadow: 0 0.6rem 1.4rem rgba(79, 140, 255, 0.35);
+      }
+
+      .status {
+        min-height: 1.25rem;
+        font-size: 0.95rem;
+        color: var(--muted);
+      }
+
+      .status.error {
+        color: var(--error);
+        font-weight: 600;
+      }
+
+      .panel {
+        margin-top: 2.5rem;
+        background: #111722;
+        color: #dbe4ff;
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        white-space: pre-wrap;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        border: 1px solid var(--border);
+      }
+
+      .panel h2 {
+        margin-top: 0;
+        font-weight: 600;
+        font-size: 1.15rem;
+      }
+
+      .panel pre {
+        margin: 0;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+
+      .panel--light {
+        background: var(--panel-alt);
+        color: var(--fg);
+        font-family: inherit;
+      }
+
+      .panel textarea {
+        width: 100%;
+        min-height: 14rem;
+        margin: 0;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        border: 1px solid var(--textarea-border);
+        resize: vertical;
+        background: var(--textarea-bg);
+        color: var(--fg);
+        font: inherit;
+        line-height: 1.45;
+      }
+
+      .panel textarea:focus {
+        outline: 3px solid rgba(79, 140, 255, 0.25);
+        border-color: var(--accent);
+      }
+
+      @media (max-width: 720px) {
+        main {
+          padding: 2rem 1.25rem;
+        }
+
+        textarea {
+          min-height: 10rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Custom Response Runner</h1>
+      <p style="margin-top: -0.75rem; color: var(--muted); line-height: 1.45">
+        Provide developer and user instructions (up to 1000 words each) and send
+        them to the backend Python service. The service should relay these
+        fields to the `OpenAI.responses.create` call in
+        <code>scratchpad/examplecode.py</code>.
+      </p>
+
+      <form id="promptForm" data-endpoint="/api/responses">
+        <section>
+          <label for="developerMessage">Developer message</label>
+          <textarea
+            id="developerMessage"
+            name="developerMessage"
+            placeholder="e.g. Keep the output strictly JSON and avoid markdown."
+          ></textarea>
+          <div class="helper">
+            <span>Guidance for the assistant’s behaviour.</span>
+            <span class="word-count" id="developerCount">0 / 1000 words</span>
+          </div>
+        </section>
+
+        <section>
+          <label for="userMessage">User message</label>
+          <textarea
+            id="userMessage"
+            name="userMessage"
+            placeholder="Describe the story, format, or task you need the assistant to complete."
+          ></textarea>
+          <div class="helper">
+            <span>Primary task request that the assistant should fulfil.</span>
+            <span class="word-count" id="userCount">0 / 1000 words</span>
+          </div>
+        </section>
+
+        <button type="submit">Send to backend</button>
+        <div class="status" id="status"></div>
+      </form>
+
+      <section class="panel" aria-live="polite">
+        <h2>Backend response</h2>
+        <pre id="result">Waiting for input…</pre>
+      </section>
+
+      <section class="panel panel--light" aria-live="polite">
+        <h2>Extracted paragraphs</h2>
+        <textarea
+          id="paragraphsBox"
+          readonly
+          placeholder="Paragraphs will appear here when available."
+        ></textarea>
+      </section>
+    </main>
+
+    <script>
+      const MAX_WORDS = 1000;
+      const form = document.getElementById("promptForm");
+      const developerField = document.getElementById("developerMessage");
+      const userField = document.getElementById("userMessage");
+      const developerCount = document.getElementById("developerCount");
+      const userCount = document.getElementById("userCount");
+      const status = document.getElementById("status");
+      const result = document.getElementById("result");
+      const paragraphsBox = document.getElementById("paragraphsBox");
+
+      const countWords = (text) => {
+        return text
+          .trim()
+          .split(/\s+/)
+          .filter(Boolean)
+          .length;
+      };
+
+      const updateCounts = () => {
+        const devWords = countWords(developerField.value);
+        const userWords = countWords(userField.value);
+
+        developerCount.textContent = `${devWords} / ${MAX_WORDS} words`;
+        userCount.textContent = `${userWords} / ${MAX_WORDS} words`;
+
+        developerCount.classList.toggle("exceeded", devWords > MAX_WORDS);
+        userCount.classList.toggle("exceeded", userWords > MAX_WORDS);
+      };
+
+      developerField.addEventListener("input", updateCounts);
+      userField.addEventListener("input", updateCounts);
+
+      const showStatus = (message, isError = false) => {
+        status.textContent = message;
+        status.classList.toggle("error", isError);
+      };
+
+      const disableForm = (disabled) => {
+        form.querySelectorAll("textarea, button").forEach((el) => {
+          el.disabled = disabled;
+        });
+      };
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        updateCounts();
+
+        const developerWords = countWords(developerField.value);
+        const userWords = countWords(userField.value);
+
+        if (developerWords > MAX_WORDS || userWords > MAX_WORDS) {
+          showStatus("Reduce your messages to 1000 words or fewer.", true);
+          return;
+        }
+
+        if (!developerField.value.trim() || !userField.value.trim()) {
+          showStatus("Both messages are required.", true);
+          return;
+        }
+
+        const endpoint = form.dataset.endpoint || "/api/responses";
+        const payload = {
+          developer_message: developerField.value.trim(),
+          user_message: userField.value.trim(),
+        };
+
+        disableForm(true);
+        showStatus("Sending prompt to backend…");
+
+        try {
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          });
+
+          const text = await response.text();
+          let parsed;
+          try {
+            parsed = JSON.parse(text);
+          } catch (err) {
+            parsed = text;
+          }
+
+          if (!response.ok) {
+            const errMsg =
+              (parsed && parsed.error) ||
+              (typeof parsed === "string" && parsed.trim()) ||
+              `Request failed with status ${response.status}`;
+            showStatus(errMsg, true);
+            if (paragraphsBox) {
+              paragraphsBox.value = "";
+            }
+          } else {
+            showStatus("Backend returned a response.");
+          }
+
+          const displayValue =
+            typeof parsed === "string"
+              ? parsed
+              : JSON.stringify(parsed, null, 2);
+          result.textContent = displayValue || "(empty response)";
+
+          if (
+            paragraphsBox &&
+            parsed &&
+            typeof parsed === "object" &&
+            Array.isArray(parsed.paragraphs)
+          ) {
+            const formatted = parsed.paragraphs
+              .map((p, index) => {
+                const text = typeof p === "string" ? p.trim() : "";
+                return text ? `${index + 1}. ${text}` : "";
+              })
+              .filter(Boolean)
+              .join("\n\n");
+            paragraphsBox.value = formatted || "(no paragraphs extracted)";
+          } else if (paragraphsBox) {
+            paragraphsBox.value = "";
+          }
+        } catch (error) {
+          console.error("Network error", error);
+          showStatus(`Network error: ${error.message}`, true);
+          result.textContent = "";
+          if (paragraphsBox) {
+            paragraphsBox.value = "";
+          }
+        } finally {
+          disableForm(false);
+        }
+      });
+    </script>
+  </body>
+</html>

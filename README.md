@@ -30,6 +30,17 @@ Generated or edited images are:
 - **previewed in-browser** via a data-URI
 - **saved on disk** under `saved_images/` and served at `/saved/<filename>`
 - **downloadable** client-side with one click
+- **styled in dark mode** across both the main playground (`templates/index.html`) and the scratchpad UI, giving consistent contrast against the new palette.
+
+### Responses playground (scratchpad)
+
+In addition to the image endpoints, the repository now ships with a mini **Responses API playground** hosted from `scratchpad/examplecode.py`:
+
+- Run `python scratchpad/examplecode.py` to start a lightweight Flask server (defaults to `http://127.0.0.1:2357`).
+- The root path serves `scratchpad/try.html`, a dark-themed frontend with developer/user textareas (1000-word limit each) and live word counts.
+- Submissions POST to `/api/responses`, which forwards the request to `OpenAI.responses.create` using the same schema enforced in code.
+- The backend response is returned verbatim *and* pre-parsed: the server extracts the five paragraph strings from the JSON payload and exposes them separately in the JSON reply.
+- The UI renders both the raw response (pretty-printed JSON) and the cleaned paragraphs in a dedicated high-contrast textbox for quick reading.
 
 ---
 
@@ -56,6 +67,7 @@ All returned images are base-64 decoded, persisted to `saved_images/`, and expos
 ## What this project **is**
 
 - A concise, readable reference for hitting `images.generate` and `images.edit` from Flask
+- A sibling playground for experimenting with the `responses.create` endpoint, including schema validation and result extraction
 - A sandbox for tweaking prompts, image sizes, quality settings, etc.
 - A stepping-stone to bigger things—queues, auth, masking UI, cloud storage…
 
@@ -74,3 +86,4 @@ All returned images are base-64 decoded, persisted to `saved_images/`, and expos
 - React / Next.js front-end & API gateway
 - Worker queue (Celery / RQ) to avoid blocking Flask
 - S3 (or MinIO) storage and signed download links
+- Broaden the responses playground into a reusable SDK demo or QA harness
