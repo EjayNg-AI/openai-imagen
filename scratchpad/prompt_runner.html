@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Prompt Runner</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-size: 16px;
+        --bg: #080e18;
+        --fg: #e7edf7;
+        --panel: #111827;
+        --panel-alt: #0c121f;
+        --accent: #5aa9ff;
+        --accent-hover: #74b8ff;
+        --muted: #91a0ba;
+        --border: #27344a;
+        --error: #ff6b6b;
+        --textarea-bg: #0d1524;
+        --textarea-border: #2b3750;
+      }
+
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        background: radial-gradient(circle at 20% 20%, #0f1a2a, var(--bg));
+        color: var(--fg);
+        min-height: 100vh;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 2.5rem 1.5rem 4rem;
+      }
+
+      main {
+        width: min(900px, 100%);
+        background: var(--panel);
+        border-radius: 0.9rem;
+        box-shadow: 0 0.85rem 2.4rem rgba(0, 0, 0, 0.5);
+        border: 1px solid var(--border);
+        padding: 2.25rem;
+      }
+
+      h1 {
+        margin: 0 0 0.75rem;
+        font-size: 1.9rem;
+        font-weight: 650;
+      }
+
+      p.lead {
+        margin: 0 0 1.75rem;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      form {
+        display: grid;
+        gap: 1.5rem;
+      }
+
+      label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 8rem;
+        resize: vertical;
+        padding: 0.85rem;
+        border-radius: 0.6rem;
+        border: 1px solid var(--textarea-border);
+        background: var(--textarea-bg);
+        color: var(--fg);
+        font: inherit;
+        line-height: 1.45;
+      }
+
+      textarea:focus {
+        outline: 3px solid rgba(90, 169, 255, 0.25);
+        border-color: var(--accent);
+      }
+
+      .helper {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.95rem;
+        color: var(--muted);
+        margin-top: 0.35rem;
+      }
+
+      .word-count.exceeded {
+        color: var(--error);
+        font-weight: 600;
+      }
+
+      .controls {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+      }
+
+      button[type="submit"] {
+        background: linear-gradient(135deg, var(--accent), #82c3ff);
+        color: #0a101b;
+        border: none;
+        border-radius: 0.6rem;
+        padding: 0.8rem 1.8rem;
+        font-size: 1rem;
+        font-weight: 650;
+        cursor: pointer;
+        transition: transform 120ms ease, box-shadow 120ms ease;
+      }
+
+      button[type="submit"]:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+        transform: none;
+        box-shadow: none;
+      }
+
+      button[type="submit"]:not(:disabled):hover {
+        transform: translateY(-1px);
+        box-shadow: 0 0.7rem 1.6rem rgba(90, 169, 255, 0.35);
+      }
+
+      .status {
+        min-height: 1.25rem;
+        font-size: 0.95rem;
+        color: var(--muted);
+      }
+
+      .status.error {
+        color: var(--error);
+        font-weight: 600;
+      }
+
+      .panel {
+        margin-top: 2rem;
+        background: var(--panel-alt);
+        border-radius: 0.75rem;
+        padding: 1.4rem;
+        border: 1px solid var(--border);
+      }
+
+      .panel h2 {
+        margin-top: 0;
+        margin-bottom: 0.7rem;
+        font-size: 1.1rem;
+        font-weight: 650;
+      }
+
+      .panel pre {
+        margin: 0;
+        max-height: 320px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      @media (max-width: 720px) {
+        main {
+          padding: 1.75rem 1.25rem;
+        }
+
+        textarea {
+          min-height: 10rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Prompt Runner</h1>
+      <p class="lead">
+        Send developer and user messages to the backend endpoint that calls
+        <code>OpenAI.responses.create</code> with both roles. The full assistant
+        output is echoed back below for easy copy/paste.
+      </p>
+
+      <form id="promptForm" data-endpoint="/api/prompt-run">
+        <section>
+          <label for="developerMessage">Developer message</label>
+          <textarea
+            id="developerMessage"
+            name="developerMessage"
+            placeholder="e.g. Output all mathematical expressions in LaTeX using $...$ or $$...$$."
+          ></textarea>
+          <div class="helper">
+            <span>Guidance or system-style instructions (max 1000 words).</span>
+            <span class="word-count" id="devCount">0 / 1000 words</span>
+          </div>
+        </section>
+
+        <section>
+          <label for="userMessage">Message</label>
+          <textarea
+            id="userMessage"
+            name="userMessage"
+            placeholder="Type what you want the assistant to work on..."
+          ></textarea>
+          <div class="helper">
+            <span>Primary request to solve (max 1000 words).</span>
+            <span class="word-count" id="userCount">0 / 1000 words</span>
+          </div>
+        </section>
+
+        <div class="controls">
+          <button type="submit">Send to OpenAI</button>
+          <div class="status" id="status" aria-live="polite"></div>
+        </div>
+      </form>
+
+      <section class="panel">
+        <h2>Assistant output</h2>
+        <textarea
+          id="outputBox"
+          readonly
+          placeholder="The model output will appear here in full."
+          style="min-height: 12rem"
+        ></textarea>
+      </section>
+
+      <section class="panel">
+        <h2>Raw response payload</h2>
+        <pre id="rawPayload">Waiting for a call…</pre>
+      </section>
+    </main>
+
+    <script>
+      const MAX_WORDS = 1000;
+      const form = document.getElementById("promptForm");
+      const developerField = document.getElementById("developerMessage");
+      const userField = document.getElementById("userMessage");
+      const devCount = document.getElementById("devCount");
+      const userCount = document.getElementById("userCount");
+      const status = document.getElementById("status");
+      const outputBox = document.getElementById("outputBox");
+      const rawPayload = document.getElementById("rawPayload");
+
+      const countWords = (text) =>
+        text
+          .trim()
+          .split(/\s+/)
+          .filter(Boolean).length;
+
+      const updateCount = () => {
+        const devWords = countWords(developerField.value);
+        const userWords = countWords(userField.value);
+        devCount.textContent = `${devWords} / ${MAX_WORDS} words`;
+        userCount.textContent = `${userWords} / ${MAX_WORDS} words`;
+        devCount.classList.toggle("exceeded", devWords > MAX_WORDS);
+        userCount.classList.toggle("exceeded", userWords > MAX_WORDS);
+      };
+
+      developerField.addEventListener("input", updateCount);
+      userField.addEventListener("input", updateCount);
+
+      const showStatus = (message, isError = false) => {
+        status.textContent = message;
+        status.classList.toggle("error", isError);
+      };
+
+      const setDisabled = (disabled) => {
+        form.querySelectorAll("textarea, button").forEach((el) => {
+          el.disabled = disabled;
+        });
+      };
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        updateCount();
+
+        const devTrimmed = developerField.value.trim();
+        const userTrimmed = userField.value.trim();
+
+        if (!devTrimmed || !userTrimmed) {
+          showStatus("Developer and user messages are required.", true);
+          return;
+        }
+
+        if (
+          countWords(devTrimmed) > MAX_WORDS ||
+          countWords(userTrimmed) > MAX_WORDS
+        ) {
+          showStatus("Please keep each message within 1000 words.", true);
+          return;
+        }
+
+        const endpoint = form.dataset.endpoint || "/api/prompt-run";
+        const payload = {
+          developer_message: devTrimmed,
+          user_message: userTrimmed,
+        };
+
+        setDisabled(true);
+        showStatus("Sending request…");
+
+        try {
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          const rawText = await response.text();
+          let parsed;
+          try {
+            parsed = JSON.parse(rawText);
+          } catch {
+            parsed = rawText;
+          }
+
+          const ok = response.ok && parsed && parsed.ok !== false;
+          if (!ok) {
+            const err =
+              (parsed && parsed.error) ||
+              (typeof parsed === "string" ? parsed : null) ||
+              `Request failed with status ${response.status}`;
+            showStatus(err, true);
+            outputBox.value = "";
+          } else {
+            showStatus("Received response from OpenAI.");
+            const text =
+              (parsed && parsed.output_text) ||
+              (parsed && parsed.response && parsed.response.output) ||
+              "";
+            outputBox.value =
+              typeof text === "string"
+                ? text
+                : JSON.stringify(text, null, 2) || "";
+          }
+
+          rawPayload.textContent =
+            typeof parsed === "string"
+              ? parsed
+              : JSON.stringify(parsed, null, 2) || "(empty response)";
+        } catch (error) {
+          console.error("Network error", error);
+          showStatus(`Network error: ${error.message}`, true);
+          outputBox.value = "";
+          rawPayload.textContent = "(no response received)";
+        } finally {
+          setDisabled(false);
+        }
+      });
+    </script>
+  </body>
+</html>
