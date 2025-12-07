@@ -22,7 +22,7 @@ SCHEMA_DEFINITION: Dict[str, object] = {
     "properties": {
         "paragraphs": {
             "type": "array",
-            "description": "An array containing five paragraphs, each ranging from 150 to 200 words.",
+            "description": "An array containing five paragraphs, each ranging from 250 to 350 words.",
             "minItems": 5,
             "maxItems": 5,
             "items": {
@@ -31,8 +31,8 @@ SCHEMA_DEFINITION: Dict[str, object] = {
                     "text": {
                         "type": "string",
                         "description": "The content of the paragraph (plain text).",
-                        "minLength": 800,
-                        "maxLength": 2000,
+                        "minLength": 1250,
+                        "maxLength": 2450,
                     }
                 },
                 "required": ["text"],
