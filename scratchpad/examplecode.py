@@ -98,43 +98,17 @@ def create_story_response(developer_message: str, user_message: str):
     )
 
 
-def create_prompt_response(developer_message: str, user_message: str):
-    """Invoke Responses API with explicit developer + user roles and no schema."""
+def create_prompt_response(
+    messages: List[Dict[str, object]],
+) -> object:
+    """Invoke Responses API with an ordered list of role/content messages."""
 
-    developer_message = developer_message.strip()
-    user_message = user_message.strip()
-
-    if not developer_message:
-        raise ValueError("Developer message must be a non-empty string.")
-    if not user_message:
-        raise ValueError("User message must be a non-empty string.")
-
-    for label, message in (("Developer", developer_message), ("User", user_message)):
-        if _word_count(message) > 1000:
-            raise ValueError(f"{label} message exceeds the 1000-word limit.")
+    if not messages:
+        raise ValueError("At least one message is required.")
 
     return client.responses.create(
         model="gpt-5.1",
-        input=[
-            {
-                "role": "developer",
-                "content": [
-                    {
-                        "type": "input_text",
-                        "text": developer_message,
-                    }
-                ],
-            },
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "input_text",
-                        "text": user_message,
-                    }
-                ],
-            },
-        ],
+        input=messages,
         text={"format": {"type": "text"}, "verbosity": "high"},
         reasoning={"effort": "high", "summary": None},
         tools=[
@@ -199,10 +173,6 @@ def _extract_output_text(response) -> str:
     return "\n\n".join(chunks).strip()
 
 
-def _word_count(text: str) -> int:
-    return len([token for token in text.strip().split() if token])
-
-
 def _validate_messages(developer_message: str, user_message: str) -> Tuple[str, str]:
     developer_message = developer_message.strip()
     user_message = user_message.strip()
@@ -210,11 +180,75 @@ def _validate_messages(developer_message: str, user_message: str) -> Tuple[str, 
     if not developer_message or not user_message:
         raise ValueError("Developer and user messages are required.")
 
-    for label, message in (("Developer", developer_message), ("User", user_message)):
-        if _word_count(message) > 1000:
-            raise ValueError(f"{label} message exceeds the 1000-word limit.")
-
     return developer_message, user_message
+
+
+def _build_two_message_input(developer_message: str, user_message: str) -> List[Dict[str, object]]:
+    developer_message, user_message = _validate_messages(developer_message, user_message)
+
+    return [
+        {
+            "role": "developer",
+            "content": [{"type": "input_text", "text": developer_message}],
+        },
+        {
+            "role": "user",
+            "content": [{"type": "input_text", "text": user_message}],
+        },
+    ]
+
+
+def _normalize_messages(messages: object) -> List[Dict[str, object]]:
+    """Validate and normalize a list of conversation messages."""
+
+    if not isinstance(messages, list) or not messages:
+        raise ValueError("messages must be a non-empty list.")
+
+    allowed_roles = {"developer", "user", "assistant"}
+    normalized: List[Dict[str, object]] = []
+
+    for idx, item in enumerate(messages):
+        if not isinstance(item, dict):
+            raise ValueError(f"Message #{idx + 1} must be an object.")
+
+        role_raw = item.get("role")
+        role = role_raw.lower().strip() if isinstance(role_raw, str) else None
+        if role not in allowed_roles:
+            raise ValueError(
+                f"Message #{idx + 1} has invalid role. Expected one of {sorted(allowed_roles)}."
+            )
+
+        content = item.get("content")
+        if not isinstance(content, list) or not content:
+            raise ValueError(f"Message #{idx + 1} must include a non-empty content array.")
+
+        normalized_blocks: List[Dict[str, str]] = []
+        default_type = "output_text" if role == "assistant" else "input_text"
+
+        for block in content:
+            if not isinstance(block, dict):
+                continue
+            text = block.get("text")
+            if not isinstance(text, str):
+                continue
+            text = text.strip()
+            if not text:
+                continue
+
+            block_type = block.get("type") if isinstance(block.get("type"), str) else default_type
+            if role != "assistant":
+                block_type = "input_text"
+            elif block_type not in {"output_text", "input_text"}:
+                block_type = default_type
+
+            normalized_blocks.append({"type": block_type, "text": text})
+
+        if not normalized_blocks:
+            raise ValueError(f"Message #{idx + 1} is missing text content.")
+
+        normalized.append({"role": role, "content": normalized_blocks})
+
+    return normalized
 
 
 app = Flask(__name__)
@@ -269,27 +303,23 @@ def handle_response_request():
 @app.post("/api/prompt-run")
 def handle_prompt_run():
     payload = request.get_json(silent=True) or {}
-    developer_message = payload.get("developer_message", "")
-    user_message = payload.get("user_message", "")
 
-    if not isinstance(developer_message, str) or not isinstance(user_message, str):
-        return (
-            jsonify(ok=False, error="developer_message and user_message must be strings."),
-            400,
-        )
+    messages: List[Dict[str, object]] = []
 
     try:
-        developer_message = developer_message.strip()
-        user_message = user_message.strip()
-        if not developer_message or not user_message:
-            raise ValueError("Developer and user messages are required.")
-        if _word_count(developer_message) > 1000 or _word_count(user_message) > 1000:
-            raise ValueError("Each message must be 1000 words or fewer.")
+        if "messages" in payload:
+            messages = _normalize_messages(payload.get("messages"))
+        else:
+            developer_message = payload.get("developer_message", "")
+            user_message = payload.get("user_message", "")
+            if not isinstance(developer_message, str) or not isinstance(user_message, str):
+                raise ValueError("developer_message and user_message must be strings.")
+            messages = _build_two_message_input(developer_message, user_message)
     except ValueError as exc:
         return jsonify(ok=False, error=str(exc)), 400
 
     try:
-        response = create_prompt_response(developer_message, user_message)
+        response = create_prompt_response(messages)
     except Exception as exc:  # noqa: BLE001
         app.logger.exception("Prompt-based response creation failed")
         return jsonify(ok=False, error=str(exc)), 500

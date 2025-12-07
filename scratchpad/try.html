@@ -89,11 +89,6 @@
         margin-top: 0.35rem;
       }
 
-      .word-count.exceeded {
-        color: var(--error);
-        font-weight: 600;
-      }
-
       button[type="submit"] {
         justify-self: flex-start;
         background: var(--accent);
@@ -196,9 +191,9 @@
     <main>
       <h1>Custom Response Runner</h1>
       <p style="margin-top: -0.75rem; color: var(--muted); line-height: 1.45">
-        Provide developer and user instructions (up to 1000 words each) and send
-        them to the backend Python service. The service should relay these
-        fields to the `OpenAI.responses.create` call in
+        Provide developer and user instructions and send them to the backend
+        Python service. The service relays these fields to the
+        <code>OpenAI.responses.create</code> call in
         <code>scratchpad/examplecode.py</code>.
       </p>
 
@@ -212,7 +207,6 @@
           ></textarea>
           <div class="helper">
             <span>Guidance for the assistant’s behaviour.</span>
-            <span class="word-count" id="developerCount">0 / 1000 words</span>
           </div>
         </section>
 
@@ -225,7 +219,6 @@
           ></textarea>
           <div class="helper">
             <span>Primary task request that the assistant should fulfil.</span>
-            <span class="word-count" id="userCount">0 / 1000 words</span>
           </div>
         </section>
 
@@ -249,37 +242,12 @@
     </main>
 
     <script>
-      const MAX_WORDS = 1000;
       const form = document.getElementById("promptForm");
       const developerField = document.getElementById("developerMessage");
       const userField = document.getElementById("userMessage");
-      const developerCount = document.getElementById("developerCount");
-      const userCount = document.getElementById("userCount");
       const status = document.getElementById("status");
       const result = document.getElementById("result");
       const paragraphsBox = document.getElementById("paragraphsBox");
-
-      const countWords = (text) => {
-        return text
-          .trim()
-          .split(/\s+/)
-          .filter(Boolean)
-          .length;
-      };
-
-      const updateCounts = () => {
-        const devWords = countWords(developerField.value);
-        const userWords = countWords(userField.value);
-
-        developerCount.textContent = `${devWords} / ${MAX_WORDS} words`;
-        userCount.textContent = `${userWords} / ${MAX_WORDS} words`;
-
-        developerCount.classList.toggle("exceeded", devWords > MAX_WORDS);
-        userCount.classList.toggle("exceeded", userWords > MAX_WORDS);
-      };
-
-      developerField.addEventListener("input", updateCounts);
-      userField.addEventListener("input", updateCounts);
 
       const showStatus = (message, isError = false) => {
         status.textContent = message;
@@ -294,25 +262,19 @@
 
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
-        updateCounts();
 
-        const developerWords = countWords(developerField.value);
-        const userWords = countWords(userField.value);
+        const developerMessage = developerField.value.trim();
+        const userMessage = userField.value.trim();
 
-        if (developerWords > MAX_WORDS || userWords > MAX_WORDS) {
-          showStatus("Reduce your messages to 1000 words or fewer.", true);
-          return;
-        }
-
-        if (!developerField.value.trim() || !userField.value.trim()) {
+        if (!developerMessage || !userMessage) {
           showStatus("Both messages are required.", true);
           return;
         }
 
         const endpoint = form.dataset.endpoint || "/api/responses";
         const payload = {
-          developer_message: developerField.value.trim(),
-          user_message: userField.value.trim(),
+          developer_message: developerMessage,
+          user_message: userMessage,
         };
 
         disableForm(true);

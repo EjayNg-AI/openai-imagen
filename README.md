@@ -32,15 +32,12 @@ Generated or edited images are:
 - **downloadable** client-side with one click
 - **styled in dark mode** across both the main playground (`templates/index.html`) and the scratchpad UI, giving consistent contrast against the new palette.
 
-### Responses playground (scratchpad)
+### Playgrounds
 
-In addition to the image endpoints, the repository now ships with a mini **Responses API playground** hosted from `scratchpad/examplecode.py`:
-
-- Run `python scratchpad/examplecode.py` to start a lightweight Flask server (defaults to `http://127.0.0.1:2357`).
-- The root path serves `scratchpad/try.html`, a dark-themed frontend with developer/user textareas (1000-word limit each) and live word counts.
-- Submissions POST to `/api/responses`, which forwards the request to `OpenAI.responses.create` using the same schema enforced in code.
-- The backend response is returned verbatim *and* pre-parsed: the server extracts the five paragraph strings from the JSON payload and exposes them separately in the JSON reply.
-- The UI renders both the raw response (pretty-printed JSON) and the cleaned paragraphs in a dedicated high-contrast textbox for quick reading.
+- **Image playground** (run `python app.py`): dark-mode UI at `http://127.0.0.1:5000` for `images.generate` and `images.edit`. It validates prompts/background/format, saves returned images under `saved_images/`, and exposes both previews and saved URLs.
+- **Responses playground** (run `python scratchpad/examplecode.py` → `http://127.0.0.1:2357`):
+  - `try.html` posts `{developer_message, user_message}` to `/api/responses`, which calls `responses.create` with a strict five-paragraph JSON schema. The backend extracts the paragraphs and returns them alongside the raw model dump; the UI pretty-prints both.
+  - `prompt_runner.html` builds multi-turn conversations (developer/user/assistant rows) and POSTs `{messages:[...]}` to `/api/prompt-run`. The backend normalizes the array and forwards it to `responses.create` with text output + web search enabled. The UI shows only the assistant output, plus a “Last sent payload” box (with copy buttons) that reflects the exact parameters sent to OpenAI.
 
 ---
 
@@ -61,6 +58,39 @@ The test-bed supports every documented knob in the **OpenAI Image API**:
 
 All returned images are base-64 decoded, persisted to `saved_images/`, and exposed at  
 `/saved/<file>` for easy sharing.
+
+### Core code snippets
+
+**Image generation (server-side):**
+
+```python
+result = client.images.generate(
+    model="gpt-image-1",
+    prompt=prompt,
+    n=n,
+    **build_kwargs(data, for_generate=True),
+)
+```
+
+**Multi-turn Responses call (server-side):**
+
+```python
+messages = [
+    {"role": "developer", "content": [{"type": "input_text", "text": dev_message}]},
+    {"role": "user", "content": [{"type": "input_text", "text": user_prompt}]},
+    {"role": "assistant", "content": [{"type": "output_text", "text": seed_reply}]},
+    # ...more turns as needed...
+]
+
+response = client.responses.create(
+    model="gpt-5.1",
+    input=messages,
+    text={"format": {"type": "text"}, "verbosity": "high"},
+    reasoning={"effort": "high", "summary": None},
+    tools=[{"type": "web_search", "user_location": {"type": "approximate"}, "search_context_size": "high"}],
+    store=True,
+)
+```
 
 ---
 

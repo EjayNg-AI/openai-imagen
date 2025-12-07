@@ -16,6 +16,7 @@
         --muted: #91a0ba;
         --border: #27344a;
         --error: #ff6b6b;
+        --success: #8ff7b3;
         --textarea-bg: #0d1524;
         --textarea-border: #2b3750;
       }
@@ -33,7 +34,7 @@
       }
 
       main {
-        width: min(900px, 100%);
+        width: min(1000px, 100%);
         background: var(--panel);
         border-radius: 0.9rem;
         box-shadow: 0 0.85rem 2.4rem rgba(0, 0, 0, 0.5);
@@ -58,15 +59,38 @@
         gap: 1.5rem;
       }
 
-      label {
-        display: block;
+      .message-row {
+        background: var(--panel-alt);
+        border: 1px solid var(--border);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .row-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+      }
+
+      .row-header label {
         font-weight: 600;
-        margin-bottom: 0.5rem;
+      }
+
+      select {
+        background: var(--textarea-bg);
+        border: 1px solid var(--textarea-border);
+        color: var(--fg);
+        border-radius: 0.55rem;
+        padding: 0.55rem 0.75rem;
+        font: inherit;
       }
 
       textarea {
         width: 100%;
-        min-height: 8rem;
+        min-height: 6rem;
         resize: vertical;
         padding: 0.85rem;
         border-radius: 0.6rem;
@@ -77,23 +101,61 @@
         line-height: 1.45;
       }
 
-      textarea:focus {
+      textarea:focus,
+      select:focus {
         outline: 3px solid rgba(90, 169, 255, 0.25);
         border-color: var(--accent);
       }
 
-      .helper {
+      .row-actions {
+        margin-left: auto;
         display: flex;
-        justify-content: space-between;
         align-items: center;
-        font-size: 0.95rem;
-        color: var(--muted);
-        margin-top: 0.35rem;
+        gap: 0.5rem;
       }
 
-      .word-count.exceeded {
-        color: var(--error);
-        font-weight: 600;
+      button,
+      .ghost {
+        border: none;
+        border-radius: 0.6rem;
+        padding: 0.75rem 1.4rem;
+        font-size: 1rem;
+        font-weight: 650;
+        cursor: pointer;
+        transition: transform 120ms ease, box-shadow 120ms ease;
+      }
+
+      button.primary {
+        background: linear-gradient(135deg, var(--accent), #82c3ff);
+        color: #0a101b;
+      }
+
+      button.primary:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+        box-shadow: none;
+        transform: none;
+      }
+
+      button.primary:not(:disabled):hover {
+        transform: translateY(-1px);
+        box-shadow: 0 0.7rem 1.6rem rgba(90, 169, 255, 0.35);
+      }
+
+      button.small {
+        padding: 0.45rem 0.8rem;
+        font-size: 0.92rem;
+      }
+
+      .ghost {
+        background: transparent;
+        color: var(--fg);
+        border: 1px solid var(--border);
+      }
+
+      .ghost:hover {
+        border-color: var(--accent);
+        color: var(--accent);
       }
 
       .controls {
@@ -101,30 +163,6 @@
         align-items: center;
         gap: 0.75rem;
         flex-wrap: wrap;
-      }
-
-      button[type="submit"] {
-        background: linear-gradient(135deg, var(--accent), #82c3ff);
-        color: #0a101b;
-        border: none;
-        border-radius: 0.6rem;
-        padding: 0.8rem 1.8rem;
-        font-size: 1rem;
-        font-weight: 650;
-        cursor: pointer;
-        transition: transform 120ms ease, box-shadow 120ms ease;
-      }
-
-      button[type="submit"]:disabled {
-        cursor: not-allowed;
-        opacity: 0.6;
-        transform: none;
-        box-shadow: none;
-      }
-
-      button[type="submit"]:not(:disabled):hover {
-        transform: translateY(-1px);
-        box-shadow: 0 0.7rem 1.6rem rgba(90, 169, 255, 0.35);
       }
 
       .status {
@@ -138,8 +176,13 @@
         font-weight: 600;
       }
 
+      .status.success {
+        color: var(--success);
+        font-weight: 600;
+      }
+
       .panel {
-        margin-top: 2rem;
+        margin-top: 1.75rem;
         background: var(--panel-alt);
         border-radius: 0.75rem;
         padding: 1.4rem;
@@ -153,12 +196,12 @@
         font-weight: 650;
       }
 
-      .panel pre {
-        margin: 0;
-        max-height: 320px;
-        overflow-y: auto;
-        white-space: pre-wrap;
-        word-break: break-word;
+      .panel .panel-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        justify-content: flex-end;
+        margin-bottom: 0.5rem;
       }
 
       @media (max-width: 720px) {
@@ -167,7 +210,7 @@
         }
 
         textarea {
-          min-height: 10rem;
+          min-height: 8rem;
         }
       }
     </style>
@@ -176,46 +219,32 @@
     <main>
       <h1>Prompt Runner</h1>
       <p class="lead">
-        Send developer and user messages to the backend endpoint that calls
-        <code>OpenAI.responses.create</code> with both roles. The full assistant
-        output is echoed back below for easy copy/paste.
+        Build a multi-turn conversation (developer, user, assistant roles) and send it to the
+        backend endpoint that calls <code>OpenAI.responses.create</code>. Copy any textarea with
+        one click; only the assistant output is shown—raw payloads are hidden for clarity.
       </p>
 
       <form id="promptForm" data-endpoint="/api/prompt-run">
-        <section>
-          <label for="developerMessage">Developer message</label>
-          <textarea
-            id="developerMessage"
-            name="developerMessage"
-            placeholder="e.g. Output all mathematical expressions in LaTeX using $...$ or $$...$$."
-          ></textarea>
-          <div class="helper">
-            <span>Guidance or system-style instructions (max 1000 words).</span>
-            <span class="word-count" id="devCount">0 / 1000 words</span>
-          </div>
-        </section>
+        <div class="controls">
+          <button type="button" class="ghost small" id="addMessage">+ Add message</button>
+          <button type="button" class="ghost small" id="addAssistant">+ Add assistant reply</button>
+        </div>
 
-        <section>
-          <label for="userMessage">Message</label>
-          <textarea
-            id="userMessage"
-            name="userMessage"
-            placeholder="Type what you want the assistant to work on..."
-          ></textarea>
-          <div class="helper">
-            <span>Primary request to solve (max 1000 words).</span>
-            <span class="word-count" id="userCount">0 / 1000 words</span>
-          </div>
-        </section>
+        <div id="messagesContainer" class="message-list"></div>
 
         <div class="controls">
-          <button type="submit">Send to OpenAI</button>
+          <button type="submit" class="primary">Send to OpenAI</button>
           <div class="status" id="status" aria-live="polite"></div>
         </div>
       </form>
 
       <section class="panel">
-        <h2>Assistant output</h2>
+        <div style="display: flex; align-items: center; gap: 0.75rem; justify-content: space-between">
+          <h2 style="margin: 0">Assistant output</h2>
+          <div class="panel-actions">
+            <button type="button" class="ghost small" id="copyOutput">Copy</button>
+          </div>
+        </div>
         <textarea
           id="outputBox"
           readonly
@@ -225,78 +254,183 @@
       </section>
 
       <section class="panel">
-        <h2>Raw response payload</h2>
-        <pre id="rawPayload">Waiting for a call…</pre>
+        <div style="display: flex; align-items: center; gap: 0.75rem; justify-content: space-between">
+          <h2 style="margin: 0">Last sent payload</h2>
+          <div class="panel-actions">
+            <button type="button" class="ghost small" id="copyPayload">Copy</button>
+          </div>
+        </div>
+        <textarea
+          id="payloadBox"
+          readonly
+          placeholder="The full payload sent to OpenAI will appear here."
+          style="min-height: 10rem"
+        ></textarea>
       </section>
     </main>
 
     <script>
-      const MAX_WORDS = 1000;
       const form = document.getElementById("promptForm");
-      const developerField = document.getElementById("developerMessage");
-      const userField = document.getElementById("userMessage");
-      const devCount = document.getElementById("devCount");
-      const userCount = document.getElementById("userCount");
-      const status = document.getElementById("status");
+      const messagesContainer = document.getElementById("messagesContainer");
+      const statusEl = document.getElementById("status");
       const outputBox = document.getElementById("outputBox");
-      const rawPayload = document.getElementById("rawPayload");
+      const addMessageBtn = document.getElementById("addMessage");
+      const addAssistantBtn = document.getElementById("addAssistant");
+      const copyOutputBtn = document.getElementById("copyOutput");
+      const payloadBox = document.getElementById("payloadBox");
+      const copyPayloadBtn = document.getElementById("copyPayload");
 
-      const countWords = (text) =>
-        text
-          .trim()
-          .split(/\s+/)
-          .filter(Boolean).length;
-
-      const updateCount = () => {
-        const devWords = countWords(developerField.value);
-        const userWords = countWords(userField.value);
-        devCount.textContent = `${devWords} / ${MAX_WORDS} words`;
-        userCount.textContent = `${userWords} / ${MAX_WORDS} words`;
-        devCount.classList.toggle("exceeded", devWords > MAX_WORDS);
-        userCount.classList.toggle("exceeded", userWords > MAX_WORDS);
+      const ROLE_PLACEHOLDERS = {
+        developer:
+          "System or developer guidance. Example: Keep outputs in markdown unless instructed otherwise.",
+        user: "User request or follow-up. Example: Explain prime numbers.",
+        assistant: "Assistant reply to seed the conversation. Example: A concise answer to the user.",
       };
 
-      developerField.addEventListener("input", updateCount);
-      userField.addEventListener("input", updateCount);
-
-      const showStatus = (message, isError = false) => {
-        status.textContent = message;
-        status.classList.toggle("error", isError);
+      const createOption = (value, label, selected) => {
+        const opt = document.createElement("option");
+        opt.value = value;
+        opt.textContent = label;
+        if (selected) opt.selected = true;
+        return opt;
       };
 
-      const setDisabled = (disabled) => {
-        form.querySelectorAll("textarea, button").forEach((el) => {
+      const showStatus = (message, type = "") => {
+        statusEl.textContent = message || "";
+        statusEl.classList.remove("error", "success");
+        if (type) statusEl.classList.add(type);
+      };
+
+      const copyText = async (text, button) => {
+        try {
+          await navigator.clipboard.writeText(text);
+          if (button) {
+            const previous = button.textContent;
+            button.textContent = "Copied!";
+            button.disabled = true;
+            setTimeout(() => {
+              button.textContent = previous;
+              button.disabled = false;
+            }, 800);
+          }
+        } catch (error) {
+          console.error("Clipboard error", error);
+          showStatus("Copy failed. Check clipboard permissions.", "error");
+        }
+      };
+
+      const buildMessageRow = (role = "user", text = "") => {
+        const row = document.createElement("div");
+        row.className = "message-row";
+
+        const header = document.createElement("div");
+        header.className = "row-header";
+
+        const label = document.createElement("label");
+        label.textContent = "Role";
+
+        const select = document.createElement("select");
+        select.append(
+          createOption("developer", "Developer", role === "developer"),
+          createOption("user", "User", role === "user"),
+          createOption("assistant", "Assistant", role === "assistant")
+        );
+
+        const actions = document.createElement("div");
+        actions.className = "row-actions";
+
+        const copyBtn = document.createElement("button");
+        copyBtn.type = "button";
+        copyBtn.className = "ghost small";
+        copyBtn.textContent = "Copy";
+
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.className = "ghost small";
+        removeBtn.textContent = "Remove";
+
+        actions.append(copyBtn, removeBtn);
+        header.append(label, select, actions);
+
+        const textarea = document.createElement("textarea");
+        textarea.placeholder = ROLE_PLACEHOLDERS[role];
+        textarea.value = text;
+
+        select.addEventListener("change", () => {
+          const nextRole = select.value;
+          textarea.placeholder = ROLE_PLACEHOLDERS[nextRole] || "";
+        });
+
+        copyBtn.addEventListener("click", () => copyText(textarea.value, copyBtn));
+
+        removeBtn.addEventListener("click", () => {
+          if (messagesContainer.children.length <= 1) {
+            showStatus("At least one message is required.", "error");
+            return;
+          }
+          row.remove();
+        });
+
+        row.append(header, textarea);
+        return row;
+      };
+
+      const addMessageRow = (role = "user") => {
+        const row = buildMessageRow(role);
+        messagesContainer.appendChild(row);
+      };
+
+      addMessageBtn.addEventListener("click", () => addMessageRow("user"));
+      addAssistantBtn.addEventListener("click", () => addMessageRow("assistant"));
+      copyOutputBtn.addEventListener("click", () => copyText(outputBox.value, copyOutputBtn));
+      copyPayloadBtn.addEventListener("click", () => copyText(payloadBox.value, copyPayloadBtn));
+
+      const disableForm = (disabled) => {
+        form.querySelectorAll("textarea, button, select").forEach((el) => {
+          if (el === copyOutputBtn) return; // keep copy available
           el.disabled = disabled;
         });
       };
 
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
-        updateCount();
+        showStatus("");
 
-        const devTrimmed = developerField.value.trim();
-        const userTrimmed = userField.value.trim();
-
-        if (!devTrimmed || !userTrimmed) {
-          showStatus("Developer and user messages are required.", true);
+        const rows = Array.from(messagesContainer.querySelectorAll(".message-row"));
+        if (!rows.length) {
+          showStatus("Add at least one message before sending.", "error");
           return;
         }
 
-        if (
-          countWords(devTrimmed) > MAX_WORDS ||
-          countWords(userTrimmed) > MAX_WORDS
-        ) {
-          showStatus("Please keep each message within 1000 words.", true);
-          return;
+        const messages = [];
+        for (const row of rows) {
+          const select = row.querySelector("select");
+          const textarea = row.querySelector("textarea");
+          const role = select?.value;
+          const text = textarea?.value?.trim();
+          if (!role || !text) {
+            showStatus("Every message needs a role and text.", "error");
+            return;
+          }
+          const type = role === "assistant" ? "output_text" : "input_text";
+          messages.push({ role, content: [{ type, text }] });
         }
 
         const endpoint = form.dataset.endpoint || "/api/prompt-run";
-        const payload = {
-          developer_message: devTrimmed,
-          user_message: userTrimmed,
+        const payload = { messages };
+        const payloadForDisplay = {
+          model: "gpt-5.1",
+          input: messages,
+          text: { format: { type: "text" }, verbosity: "high" },
+          reasoning: { effort: "high", summary: null },
+          tools: [
+            { type: "web_search", user_location: { type: "approximate" }, search_context_size: "high" },
+          ],
+          store: true,
         };
+        payloadBox.value = JSON.stringify(payloadForDisplay, null, 2);
 
-        setDisabled(true);
+        disableForm(true);
         showStatus("Sending request…");
 
         try {
@@ -320,33 +454,29 @@
               (parsed && parsed.error) ||
               (typeof parsed === "string" ? parsed : null) ||
               `Request failed with status ${response.status}`;
-            showStatus(err, true);
+            showStatus(err, "error");
             outputBox.value = "";
           } else {
-            showStatus("Received response from OpenAI.");
+            showStatus("Received response from OpenAI.", "success");
             const text =
               (parsed && parsed.output_text) ||
               (parsed && parsed.response && parsed.response.output) ||
               "";
             outputBox.value =
-              typeof text === "string"
-                ? text
-                : JSON.stringify(text, null, 2) || "";
+              typeof text === "string" ? text : JSON.stringify(text, null, 2) || "";
           }
-
-          rawPayload.textContent =
-            typeof parsed === "string"
-              ? parsed
-              : JSON.stringify(parsed, null, 2) || "(empty response)";
         } catch (error) {
           console.error("Network error", error);
-          showStatus(`Network error: ${error.message}`, true);
+          showStatus(`Network error: ${error.message}`, "error");
           outputBox.value = "";
-          rawPayload.textContent = "(no response received)";
         } finally {
-          setDisabled(false);
+          disableForm(false);
         }
       });
+
+      // Seed with two starter rows
+      addMessageRow("developer");
+      addMessageRow("user");
     </script>
   </body>
 </html>
