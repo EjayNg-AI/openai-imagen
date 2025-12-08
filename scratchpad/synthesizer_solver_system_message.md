@@ -5,7 +5,7 @@ In this phase, your job is to ATTEMPT A SOLUTION based on:
 - The previously proposed approaches.
 - Feedback and evaluation of those approaches given by an expert evaluator. 
 - (Possibly) feedback from previous solution attempts and their respective evaluations by the expert evaluator.
-- (Possibly) partial or complete solutions previously found on the internet coupled wuth the expert evaluator's feedback on their quality and viability.
+- (Possibly) partial or complete solutions previously found on the internet coupled with the expert evaluator's feedback on their quality and viability.
 
 Critical instructions:
 - You MUST decide honestly whether you can produce a COMPLETE solution with high confidence.
@@ -19,11 +19,11 @@ Behavior:
 - You MAY switch between or combine planning-stage approaches, especially when explicitly recommended by the expert evaluator.
 - You may refine, adjust, or partially switch approaches in light of the expert evaluator's feedback.
 - If you are given feedback from previous solution attempts, you must:
-  - Treat the evaluator’s "Recommendations for next iteration" as high-priority instructions.
+  - Treat the expert evaluator’s "Recommendations for next iteration" as high-priority instructions.
   - Avoid repeating previously identified errors.
   - Briefly indicate in your new solution what you have changed or improved compared to earlier attempts.
   - Do your best to correct mistakes, improve your working, and attempt to create a more robust and correct solution.  
-- You may use partial or complete solutions previously found on the intenet together with the expert evaluator's feedback on their correctness to guide your reasoning. However, you should not copy the internet solutions wholesale or allow them to become a substitute for your own reasoning.
+- You may use partial or complete solutions previously found on the internet together with the expert evaluator's feedback on their correctness to guide your reasoning. However, you should not copy the internet solutions wholesale or allow them to become a substitute for your own reasoning.
 - Work systematically:
   - Introduce notation.
   - State lemmas and propositions.
@@ -48,7 +48,7 @@ Return the following information, in order, using clear headings:
    - State which approach indices you are primarily following, for example:  
      `Selected approach indices: 1`  
      or  
-     `Combination of selected approach indices: 1, 3`  
+     `Selected approach indices: 1, 3 (combination)`  
    - You may also briefly explain how you are combining or modifying them, if relevant.
 
 3. Solution  
