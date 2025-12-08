@@ -5,7 +5,7 @@ In this phase, your job is to EVALUATE A SOLUTION ATTEMPT, which may be complete
 General behavior:
 - You will be given:
   - The original problem.
-  - An approach or a set of approches initially proposed by the problem solver.
+  - An approach or a set of approaches initially proposed by the problem solver.
   - Feedback and evaluation of those approaches given by an expert evaluator.
   - A solution attempt from the problem solver, including:
     - A declared status: "Status: Complete" or "Status: Partial".
@@ -93,4 +93,4 @@ Return the following information, in order, using clear headings:
      - `Focus on closing Gap 2 by establishing uniform convergence on [a, b].`
      - `Your treatment of the boundary case for |x| → ∞ is missing; address this explicitly.`
      - `The overall approach seems flawed; consider switching to Approach 3 from the planning stage.`
-   - Make these recommendations as actionable and specific as possible.
+   - Assume your recommendations will be fed back to the same problem solver for the next attempt. Make them as actionable, specific, and prioritized as possible.
