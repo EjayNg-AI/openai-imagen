@@ -25,18 +25,26 @@ Constraints:
 
 Return the following information, in order, using clear headings:
 
-1. Global assessment:  
+1. A level 1 heading entitled "Expert evaluator's assessment and feedback on the proposed approaches". Use markdown formatting as follows:
+   ```markdown
+   
+   ---
+
+   # Expert evaluator's assessment and feedback on the proposed approaches
+   ```  
+
+2. Global assessment:  
    - Provide a paragraph (4 to 15 sentences) summarizing the overall quality of the proposed approaches.
    - Then give an overall viability score from 0 to 100 for the entire set of approaches (taken as a collective whole, not individually), labelled clearly, for example:  
      `Overall viability score (0–100): 78`
    - List any key global concerns as bullet points. If there are no major global concerns, write: "Key global concerns: None."
 
-2. Addressing assumptions or clarifications:  
+3. Addressing assumptions or clarifications:  
    - Review the assumptions or clarifications section provided by the problem solver.
    - For each concern raised by the problem solver, address them to the best of your ability.
    - If none were provided, write: "No assumptions or clarifications were provided."
 
-3. Per-approach feedback:
+4. Per-approach feedback:
    For each approach, in increasing order of its index (1, 2, 3, ...), provide:
    - A heading of the form: "Approach k: [Name]" where k is the index and [Name] is the given name.
    - Viability score (your own independent assessment, 0 to 100), clearly labelled.
@@ -51,12 +59,12 @@ Return the following information, in order, using clear headings:
      - Extra hypotheses that might be needed.
      - More appropriate theorems or tools.
 
-4. Recommended approaches:  
+5. Recommended approaches:  
    - Recommended approach indices: state clearly which indices you recommend as the primary starting point, for example:  
      `Recommended approach indices: 1, 3`
    - Recommendation rationale: 4 to 15 sentences explaining why these approaches are preferable, how they compare to the others, and, if relevant, how they might be combined or ordered (e.g., `try Approach 1 first; if it stalls at lemma X, switch to Approach 3`).
 
-5. Internet search results:
+6. Internet search results:
    - If the problem solver found a partial or complete solution on the internet, assess the correctness of the transcribed solution. Provide:
      - Viability score (your own independent assessment, 0 to 100), clearly labelled.
      - Strengths: a short paragraph or bullet list describing what is good or promising about this approach.

@@ -39,19 +39,27 @@ Scoring rule:
 
 Return the following information, in order, using clear headings:
 
-1. Status  
+1. A level 1 heading entitled "Expert evaluator's assessment and feedback on Solution Attempt [solution_number]", where [solution_number] refers to numerical labelling of the most recent attempt by the problem solver -- that is, the solution attempt which is currently being evaluated. Use markdown formatting as follows:
+   ```markdown
+   
+   ---
+
+   # Expert evaluator's assessment and feedback on Solution Attempt [solution_number]
+   ```   
+
+2. Status  
    - On a separate line, state your judgment as one of the following (use exactly these phrases):  
      `Status: Solved`  
      `Status: Solved with minor gaps`
      `Status: Partial`  
      `Status: Incorrect`
 
-2. Score  
+3. Score  
    - Provide a single line of the form:  
      `Score (0–100): X`  
      where X is an integer from 0 to 100.
 
-3. Major issues  
+4. Major issues  
    - List the major issues as bullet points. For each major issue, include:
      - Location: where the issue appears (e.g., `Main proof, Step 3`, `Equation (5)`, `Part (b), final paragraph`).
      - Issue type: choose a label such as `logical error`, `major computational error`, `missing critical case`, `misuse of theory`, or similar.
@@ -59,14 +67,14 @@ Return the following information, in order, using clear headings:
      - Suggested direction for fix: high-level guidance on how one might repair this issue (e.g., `you need a uniform bound to apply dominated convergence here`, `you must treat the boundary case separately`, `the argument requires a compactness assumption that is not justified`).
    - If there are no major issues, write: `Major issues: None.`
 
-4. Minor issues  
+5. Minor issues  
    - List minor issues as bullet points. For each, specify:
      - Location.
      - Nature of the issue (e.g., `minor algebraic slip`, `unclear notation`, `insufficient explanation of a key step`).
      - Brief suggestion for improvement.
    - If there are no minor issues of substance, write: `Minor issues: None.`
 
-5. Gap assessment  
+6. Gap assessment  
    - If the problem solver reported explicit gaps, discuss them here. For each reported gap:
      - Refer to it by the label or description given by the problem solver.
      - Assess whether the gap is:
@@ -75,19 +83,19 @@ Return the following information, in order, using clear headings:
        - "Minor" (a technical detail that could be filled in without changing the overall strategy).
    - If the problem solver claimed "Gaps: None", briefly state whether you agree or disagree, and why.
 
-6. Coverage assessment  
+7. Coverage assessment  
    - State whether all parts of the problem have been addressed, for example:  
      `All subparts addressed: Yes` or `All subparts addressed: No`.
    - Provide a short comment indicating which parts are fully solved, which are partially handled, and which are untouched.
 
-7. Summary  
+8. Summary  
    - Provide a summary (5 to 20 sentences) of your overall assessment:
      - How close the attempt is to a complete, correct solution.
      - The main strengths.
      - The main weaknesses.
      - Whether you think the current approach is promising for further refinement.
 
-8. Recommendations for next iteration  
+9. Recommendations for next iteration  
    - Provide a prioritized list of concrete recommendations to the problem solver for the next attempt. Examples:
      - `Re-check the application of theorem X in Step 4; its hypotheses are not verified.`
      - `Focus on closing Gap 2 by establishing uniform convergence on [a, b].`

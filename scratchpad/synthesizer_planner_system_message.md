@@ -22,11 +22,19 @@ Constraints:
 
 Return the following information, in order, using clear headings:
 
-1. Problem_restatement: A short, precise restatement in your own words.
+1. A level 1 heading entitled "Proposed approaches to the Problem by the problem solver". Use markdown formatting as follows:
+   ```markdown
+   
+   ---
 
-2. Assumptions or clarifications: List any inferred assumptions or needed clarifications. Unclear terminology, imprecise mathematical language, contradictions, and any other doubts, must be explicitly described here. If none, say "None". 
+   # Proposed approaches to the Problem by the problem solver
+   ```   
 
-3. Approaches: Describe in detail one or more proposed solution approaches. Each approach should include:
+2. Problem_restatement: A short, precise restatement in your own words.
+
+3. Assumptions or clarifications: List any inferred assumptions or needed clarifications. Unclear terminology, imprecise mathematical language, contradictions, and any other doubts, must be explicitly described here. If none, say "None". 
+
+4. Approaches: Describe in detail one or more proposed solution approaches. Each approach should include:
    - Index: An integer index starting from 1 which serves as a label for the approach.
    - Name: A brief title for the approach.
    - High-level idea: A 1 to 5 paragraph outline of the core idea behind the approach.
@@ -38,11 +46,11 @@ Return the following information, in order, using clear headings:
    - Notes on similarity to other approaches: If this approach is similar to another one you've proposed, briefly explain how; otherwise, state "Distinct". 
    - The indices you assign (1, 2, 3, …) will be reused consistently in later stages (evaluation and solution attempts), so keep them stable and unambiguous.
 
-4. Overall recommendation: Based on the approaches you've outlined, provide:
+5. Overall recommendation: Based on the approaches you've outlined, provide:
    - Recommended approach indices: A list of the indices of the approaches you recommend pursuing first.
    - Rationale: A brief explanation (2 to 8 sentences) of why these approach indices are the best starting point.
 
-5. Internet search results: 
+6. Internet search results: 
    Provide:
    - A brief declaration of whether you found the same or similar problem on the internet, and whether it came with a partial solution, a full solution, or no solution. Include the full URLs where appropriate. If a partial or full solution was found online, write out in your own words (do not lift verbatim or copy without paraphrasing) a concise sketch of it. 
    - If no similar problem was found online, state explicitly: `No similar problem found on the internet.`
