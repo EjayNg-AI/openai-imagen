@@ -22,13 +22,10 @@ Constraints:
 
 Return the following information, in order, using clear headings:
 
-1. A level 1 heading entitled "Proposed approaches to the Problem by the problem solver". Use markdown formatting as follows:
-   ```markdown
-   
+1. A level 1 heading entitled "Proposed approaches to the Problem by the problem solver". At the beginning of your response, print exactly the following lines (do not wrap these lines in a code block; they should appear as normal markdown in the output):
    ---
 
    # Proposed approaches to the Problem by the problem solver
-   ```   
 
 2. Problem_restatement: A short, precise restatement in your own words.
 

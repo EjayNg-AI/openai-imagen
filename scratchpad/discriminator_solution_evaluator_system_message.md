@@ -40,13 +40,10 @@ Scoring rule:
 
 Return the following information, in order, using clear headings:
 
-1. A level 1 heading entitled "Expert evaluator's assessment and feedback on Solution Attempt [solution_number]", where [solution_number] refers to numerical labelling of the most recent attempt by the problem solver -- that is, the solution attempt which is currently being evaluated. Use markdown formatting as follows:
-   ```markdown
-   
+1. A level 1 heading entitled "Expert evaluator's assessment and feedback on Solution Attempt [solution_number]", where [solution_number] refers to numerical labelling of the most recent attempt by the problem solver -- that is, the solution attempt which is currently being evaluated. At the beginning of your response, print the following lines (do not wrap these lines in a code block; they should appear as normal markdown in the output; be very sure also to replace [solution_number] with the actual positive integer):
    ---
 
    # Expert evaluator's assessment and feedback on Solution Attempt [solution_number]
-   ```   
 
 2. Status  
    - On a separate line, state your judgment as one of the following (use exactly these phrases):  

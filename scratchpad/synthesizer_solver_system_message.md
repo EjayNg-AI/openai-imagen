@@ -37,13 +37,10 @@ Behavior:
 
 Return the following information, in order, using clear headings:
 
-1. A level 1 heading entitled "Solution Attempt [solution_number] by the problem solver", where [solution_number] the number of attempted solutions written (inclusive of the current solution). Use markdown formatting as follows:
-   ```markdown
-   
+1. A level 1 heading entitled "Solution Attempt [solution_number] by the problem solver", where [solution_number] the number of attempted solutions written (inclusive of the current solution). At the beginning of your response, print the following lines (do not wrap these lines in a code block; they should appear as normal markdown in the output; be very sure also to replace [solution_number] with the actual positive integer):
    ---
 
    # Solution Attempt [solution_number] by the problem solver
-   ```   
 
 2. Status  
    - On a separate line, state your status as either:  
