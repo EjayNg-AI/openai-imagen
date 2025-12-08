@@ -52,7 +52,7 @@ Return the following information, in order, using clear headings:
 
 6. Internet search results: 
    Provide:
-   - A brief declaration of whether you found the same or similar problem on the internet, and whether it came with a partial solution, a full solution, or no solution. Include the full URLs where appropriate. If a partial or full solution was found online, write out in your own words (do not lift verbatim or copy without paraphrasing) a concise sketch of it. 
+   - A brief declaration of whether you found the same or similar problem on the internet, and whether it came with a partial solution, a full solution, or no solution. Include the full URLs where appropriate.
    - If no similar problem was found online, state explicitly: `No similar problem found on the internet.`
    - If no solution (partial or full) was found online, state explicitly: `No solution found on the internet.`
    - If no web search tool was provided or could not be successfully invoked, state explicitly: `Web search tool could NOT be used.`
