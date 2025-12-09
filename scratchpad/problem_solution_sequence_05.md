@@ -1189,3 +1189,95 @@ Gap 1: Upper polynomial bound for K_n
   - The reduction to K_n and the exact drift for Y_n are fully addressed.
   - The lower polynomial bound for K_n (key bootstrap) is fully rigorous.
   - The convergence Y_n→3/2, hence K_n∼(3/2)^{1/3} n^{2/3} and G_n/n^{4/3}→(3/2)^{2/3}, is proved under a standard coarse upper bound on K_n; the missing piece is to establish that upper bound unconditionally.
+
+---
+
+# Expert evaluator's assessment and feedback on Solution Attempt 3
+
+2. Status  
+Status: Partial
+
+3. Score  
+Score (0–100): 70
+
+4. Major issues  
+- Location: Stage A, “Borel–Cantelli for good blocks and a telescoping growth argument” (eqs. (3.7)–(3.9))  
+  Issue type: Logical error / insufficiently justified inference  
+  Description: After showing that “good blocks” occur eventually a.s., you deduce that for any infinite set S with K_{2^m} ≤ L_m (m ∈ S), one has K_{2^{m+1}} − K_{2^m} ≥ L_m for each m ∈ S, then sum over m ∈ S to conclude K_{2^{m_k}} > L_{m_k} for large k, a contradiction. The inference “divergent partial sums over S force K_{2^{m_k}} > L_{m_k}” is not valid in general: S may be very sparse (e.g., m_k = 2^k), in which case ∑_{m∈S, m<m_k} L_m can remain o(L_{m_k}), so no contradiction follows.  
+  Suggested direction for fix: Replace the telescoping argument by a clean “one‑step escape” implication combined with a short-range dependence argument. A robust way is:
+  - Prove (and state explicitly) the implication: for all large m, if the block m is good and K_{2^m} ≤ L_m, then K_{2^{m+1}} > L_{m+1} (both “overshoot” and “drift” branches give this, because v_m/2 ≫ L_{m+1}).  
+  - Then show that a down‑crossing at time m (i.e., K_{2^m} ≤ L_m) implies that at least one of the last w blocks {m−w,…,m−1} must be bad for some fixed w chosen so that ∑_{i=1}^w L_{m-i} ≥ L_m (possible since 2^{β_-} > 1 and the geometric tail sum can be made >1 by taking w large).  
+  - By summability of bad‑block probabilities (Freedman), a union bound over sliding windows, and Borel–Cantelli, conclude that only finitely many down‑crossings occur. This removes the need for the flawed sparse‑S summation.
+
+- Location: Stage A, conditional Freedman step and probability quantification (eq. (3.4))  
+  Issue type: Justification gap / conditional vs unconditional bound  
+  Description: You state P(G_m^c | 𝔽_{2^m}) ≤ exp(−c 2^{(3−4β_-)m}) “a.s., for all large m.” The argument uses a deterministic bound V_{2^{m+1}}−V_{2^m} ≤ 2^m and then applies Freedman to −S_m with x = v_m/2. While Freedman indeed yields a bound independent of the past when v is deterministic, the conditioning “| 𝔽_{2^m}” should be explained carefully, or you should present the inequality unconditionally and then apply Borel–Cantelli to the unconditional probabilities.  
+  Suggested direction for fix: State and use the conditional Freedman inequality explicitly (or work unconditionally with the deterministic variance bound v = 2^m). Make clear that the bound holds uniformly over 𝔽_{2^m}, so that summability in m follows and Borel–Cantelli applies.
+
+- Location: Stage A → Stage B interface (use of the lower bound in (3.16))  
+  Issue type: Dependence on a still‑unproven result  
+  Description: The estimate |ε_n| ≤ C (Y_n+1)/(n+1)^2 + C n^{−2β_-} and its summability rely on D_n ≥ c n^{2β_-}, i.e., on the Stage‑A lower bound. Since the lower bound proof still has the logical gap above, the summability of ε_n, and hence the Robbins–Siegmund step, are not yet unconditionally valid.  
+  Suggested direction for fix: First complete the lower bound using the sliding‑window “bad implies down‑crossing” argument. Then the bound D_n ≥ c n^{2β_-} (with 2β_->1) becomes rigorously available for use in Stage B.
+
+- Location: Stage 3.2 (Upper polynomial bound)  
+  Issue type: Missing critical case  
+  Description: The coarse upper bound K_n ≤ C n^{β_+} (β_+ ∈ (2/3,1)) is still only sketched. Stage B depends on it to guarantee square‑summable noise and error.  
+  Suggested direction for fix: Formalize the dyadic “level‑to‑level” argument with hitting times τ_m and events “keep up from U_m to U_{m+1} within block I_m.” Define E_m^{up} := {τ_m<∞ and K_{2^{m+1}}−K_{τ_m} ≥ Δ_m}. Use deterministic variance bound v ≤ v'_m and Freedman to get P(E_m^{up} | 𝔽_{τ_m}) ≤ exp(−c·2^{β_+ m}) (the denominator is dominated by x/3 when β_+>2/3). Then apply a conditional Borel–Cantelli/renewal argument to show only finitely many keeps‑up occur, hence K_{2^m} < U_m for large m, and extend to all n.
+
+5. Minor issues  
+- Location: Stage 3.2, Freedman exponent in (3.11)  
+  Nature: Minor computational slip  
+  Suggestion: With x = Δ_m ∼ 2^{β_+ m} and v ≤ v'_m ∼ 2^{(2−2β_+)m}, for β_+>2/3 one has v ≪ x, so v + x/3 ≍ x and the exponent is of order c·x ∼ c·2^{β_+ m}, not 2^{(4β_+−2)m}. The bound remains summable; correct the display to avoid confusion.
+
+- Location: Eq. (3.20) transition  
+  Nature: Inequality bookkeeping  
+  Suggestion: Explicitly justify (1−2/(n+1))^2 + 1/(n+1) ≤ 1−1/(n+1) for n≥1, and note that you are intentionally weakening the coefficient to fit the standard almost‑supermartingale form.
+
+- Location: Global presentation  
+  Nature: Clarity/structure  
+  Suggestion: Fix the constants c_0, c_1, c_2 once and for all at their first appearance; specify “for all large m ≥ M_0” thresholds explicitly to improve readability.
+
+6. Gap assessment  
+- Reported gap by solver: Upper polynomial bound K_n ≤ C n^{β_+}.  
+  Assessment: Moderate. The path to a proof is standard via dyadic levels and Freedman; it needs careful conditioning and Borel–Cantelli but no new ideas.
+
+- Unreported gap (reopened here): Lower polynomial bound K_n ≥ c n^{β_-}.  
+  Assessment: Moderate to fundamental. The Freedman part is fine, but the final contradiction via summing over a sparse infinite set S is invalid. A corrected sliding‑window/Borel–Cantelli argument as suggested above should close it without changing the overall approach.
+
+Given these, Stage B (Robbins–Siegmund) is currently conditional on Stage A being fully rigorous.
+
+7. Coverage assessment  
+All subparts addressed: No  
+- Correct reduction G_n = K_n^2 + K_n + 2n + 2: complete.  
+- Stage A lower bound: substantially improved but still not airtight (needs the sliding‑window correction).  
+- Stage A upper bound: outlined but not proved.  
+- Stage B (SA/Robbins–Siegmund): clean and correct conditional on the coarse two‑sided bounds.  
+- Final conclusion G_n / n^{4/3} → (3/2)^{2/3}: established only under the unproven upper bound and the corrected lower bound.
+
+8. Summary  
+This attempt meaningfully advances the proof. The Freedman application for the lower bound now uses a deterministic variance control, and the stochastic‑approximation part is cast cleanly in a Robbins–Siegmund framework with all perturbations checked pathwise once coarse bounds hold. The choice of Y_n = K_n^3/n^2 and the identification of drift (3 − 2Y_n)/(n+1) are elegant and align with standard SA theory. However, the Stage‑A lower bound still contains a logical gap: the telescoping argument that an infinite set of “under‑threshold” blocks forces a contradiction is not valid for sparse subsequences. This can be repaired by a short “sliding‑window” refinement that ties any down‑crossing to the occurrence of a recent bad block; Freedman then makes such events summable. The coarse upper bound remains to be written out rigorously; the needed ingredients (level‑to‑level Freedman bounds and a conditional Borel–Cantelli) are standard. Once both coarse bounds are solidified, your Stage‑B Robbins–Siegmund argument should yield Y_n → 3/2 a.s., hence K_n ∼ (3/2)^{1/3} n^{2/3} and G_n / n^{4/3} → (3/2)^{2/3} a.s. The approach is promising and close to completion, but it is not yet a full solution.
+
+9. Recommendations for next iteration  
+- Repair the lower bound via a sliding‑window argument:  
+  - Fix β_- ∈ (1/2, 2/3) and choose w so that ∑_{i=1}^w 2^{-β_- i} > 1.  
+  - Show that if all of the last w blocks are “good,” then K_{2^m} must exceed L_m; hence any down‑crossing at m forces at least one of these w blocks to be bad.  
+  - Use the summable Freedman bounds and a union bound over the w previous blocks to conclude, by Borel–Cantelli, that down‑crossings occur only finitely many times a.s.
+
+- Finish the upper bound rigorously:  
+  - Define τ_m = inf{n ∈ I_m : K_n ≥ U_m} with U_m = 2^{β_+ m}.  
+  - Condition on 𝔽_{τ_m} and apply Freedman with x = Δ_m = U_{m+1} − U_m and v ≤ v'_m = ∑_{j≥τ_m} p_j to get P(keep‑up on I_m | 𝔽_{τ_m}) ≤ exp(−c 2^{β_+ m}).  
+  - Use a renewal/Borel–Cantelli argument to show only finitely many keep‑ups, whence K_{2^m} < U_m eventually and K_n ≤ C n^{β_+} for all large n.
+
+- Make the conditional/probabilistic structure explicit:  
+  - For both lower and upper bounds, define the precise “bad” events E_m (and E_m^{up}) you aim to exclude and prove that ∑ P(E_m) < ∞ (or a conditional version that implies the same).  
+  - This will remove any ambiguity about conditioning and measurability.
+
+- Keep Stage B strictly pathwise:  
+  - After completing Stage A, restate the summability of ε_n and of the conditional variances as deterministic exponent comparisons along sample paths; then invoke Robbins–Siegmund exactly as in §3.5.
+
+- Optional but helpful: Present a sharpened asymptotic K_n = n^{2/3+o(1)} a.s.  
+  - The dyadic block method readily yields for each ε>0 eventual bounds n^{2/3−ε} ≤ K_n ≤ n^{2/3+ε}; adding this will both strengthen the result and serve as an internal consistency check.
+
+10. Research flag  
+Research needed: No  
+All remaining steps can be completed with standard tools (Freedman’s inequality, conditional Borel–Cantelli, Robbins–Siegmund). No new external theory appears necessary; what remains is careful organization of the martingale/concentration arguments and bookkeeping of exponents.
