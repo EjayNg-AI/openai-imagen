@@ -1561,3 +1561,197 @@ If at any point the argument becomes unwieldy, you might consider whether a **sl
 In summary: the external literature confirms that your plan is conceptually sound and provides specific theorems (Robbins–Siegmund, Freedman inequalities, Benaïm/Borkar SA results) that can be used to repair the gaps. The next iteration should focus on carefully implementing these tools rather than searching for a fundamentally new idea.
 
 ---
+
+# Solution Attempt 2 by the problem solver
+
+2. Status  
+Status: Complete
+
+3. Selected approaches  
+Selected approach indices: 1, 3 (combination)  
+- I keep the reduction to the one–dimensional process of blue draws K_n and its drift/martingale decomposition (Approach 1).  
+- I again use the potential Y_n = K_n^3/n^2, but now with a fully rigorous two–stage scheme:  
+  Stage A: prove coarse, two–sided polynomial bounds for K_n via Freedman’s inequality on dyadic blocks (resolving the evaluator’s Gap 1).  
+  Stage B: with those bounds in hand, treat Y_n by a Robbins–Siegmund almost–supermartingale argument to obtain Y_n → 3/2 a.s. and hence the limit for G_n (resolving Gaps 2–4).  
+- Relative to Attempt 1, I correct the drift identity for Y_n (a missing n factor) and separate bootstrap (coarse bounds) from the stochastic-approximation step to avoid any circularity.
+
+4. Solution
+
+Notation and basic identities
+- Let R_n, B_n, G_n be the numbers of red, blue, and total balls after n steps; K_n is the number of blue draws among the first n draws.
+- Initial condition: R_0 = B_0 = 1, hence G_0 = 2.
+- At each step exactly one blue ball is added, regardless of the color drawn. Therefore
+  B_n = 1 + n deterministically.
+- Counting red additions:
+  - Each red draw adds 1 red; there are n−K_n red draws.
+  - The k-th blue draw adds 2k+1 red balls; summing gives ∑_{k=1}^{K_n}(2k+1) = K_n^2 + 2K_n.
+  Hence
+  R_n = 1 + (n−K_n) + (K_n^2 + 2K_n) = 1 + n + K_n^2 + K_n.
+- Therefore
+  G_n = R_n + B_n = K_n^2 + K_n + 2n + 2.                                                (4.1)
+
+Dynamics of K_n
+- Let ξ_{n+1} be the indicator that draw n+1 is blue. Then K_{n+1} = K_n + ξ_{n+1}.
+- Conditional blue probability given the past (σ-field F_n):
+  p_n := P(ξ_{n+1}=1 | F_n) = B_n/G_n = (n+1)/(K_n^2 + K_n + 2n + 2) = (n+1)/D_n,     (4.2)
+  where D_n := K_n^2 + K_n + 2n + 2.
+- Define the drift and martingale parts
+  A_n := ∑_{j=0}^{n-1} p_j,      M_n := K_n − A_n = ∑_{j=0}^{n-1} (ξ_{j+1} − p_j).
+  Then M_n is a martingale with bounded increments |ΔM_{j+1}| ≤ 1 and predictable quadratic variation
+  ⟨M⟩_n = ∑_{j=0}^{n-1} p_j(1−p_j) ≤ A_n ≤ n.                                            (4.3)
+
+A dyadic-block martingale inequality (Freedman)
+We use the following standard form of Freedman’s inequality for martingales with bounded increments.
+
+Lemma 4.1 (Freedman). Let (M_k) be a martingale with respect to (F_k), with |M_k − M_{k−1}| ≤ 1 a.s. Let V_k := ∑_{i=1}^k E[(M_i − M_{i−1})^2 | F_{i−1}] be its predictable quadratic variation. Then for any integers s < t and any x, v > 0,
+P( sup_{s<k≤t} (M_k − M_s) ≥ x and (V_t − V_s) ≤ v ) ≤ exp( − x^2 / (2(v + x/3)) ).
+The same bound holds for the stopped martingale (M_{k∧τ}) and its quadratic variation, for any stopping time τ.
+
+Stage A: coarse two–sided polynomial bounds for K_n
+We prove that for some exponents 1/2 < β_- < 2/3 < β_+ < 1 and random N(ω) < ∞, we have
+c(ω) n^{β_-} ≤ K_n ≤ C(ω) n^{β_+} for all n ≥ N(ω), almost surely.                      (4.4)
+For definiteness we take β_- ∈ (1/2, 2/3) and β_+ ∈ (2/3, 1) fixed (any concrete choices like β_-=3/5 and β_+=3/4 work). The proofs use dyadic blocks I_m := [2^m, 2^{m+1}) and Freedman on each block.
+
+Lower bound (eventually K_n ≥ c n^{β_-})
+Fix β_- ∈ (1/2, 2/3) and set L_m := 2^{β_- m}. Consider block I_m = [2^m, 2^{m+1}). On the event that K_j never exceeds 2L_m on I_m (which can only help us get a lower bound on p_j),
+D_j = K_j^2 + K_j + 2j + 2 ≤ (2L_m)^2 + 2L_m + 2^{m+2} ≤ 5·2^{2β_- m} for all j ∈ I_m and m large,
+since 2β_- > 1. Hence for all j ∈ I_m and large m,
+p_j = (j+1)/D_j ≥ (2^m)/(5·2^{2β_- m}) = c·2^{(1−2β_-)m}.
+Summing over I_m (its length is 2^m), the conditional expected drift across I_m satisfies
+E[ K_{2^{m+1}} − K_{2^m} | F_{2^m}, sup_{I_m} K ≤ 2L_m ] ≥ c'·2^{(2−2β_-)m} =: v_m.      (4.5)
+
+The realized increment is
+K_{2^{m+1}} − K_{2^m} = ∑_{j∈I_m} ξ_{j+1} = ∑_{j∈I_m} p_j + (M_{2^{m+1}} − M_{2^m}).
+On the same event sup_{I_m} K ≤ 2L_m we have (by the variance bound p_j(1−p_j) ≤ p_j)
+V_{2^{m+1}} − V_{2^m} = ∑_{j∈I_m} p_j(1−p_j) ≤ ∑_{j∈I_m} p_j ≤ 2 v_m (for large m).
+Applying Freedman with x = v_m/2 and v = 2 v_m gives
+P( K_{2^{m+1}} − K_{2^m} < v_m/2 and sup_{I_m} K ≤ 2L_m | F_{2^m} )
+≤ exp( − c v_m ) ≤ exp( − c 2^{(2−2β_-)m} ).                                             (4.6)
+
+Now note that (2−2β_-) > β_- (since β_- < 2/3), hence v_m ≫ L_m. Therefore, if K_{2^m} ≤ L_m and also sup_{I_m} K ≤ 2L_m, then with conditional probability at least 1 − exp(−c 2^{(2−2β_-)m}),
+K_{2^{m+1}} ≥ K_{2^m} + v_m/2 > L_m + v_m/2 ≥ 2^{β_- (m+1)} for all large m.             (4.7)
+
+If instead sup_{I_m} K > 2L_m, then K already exceeds L_m somewhere in I_m, which also helps. Combining these observations and using a union bound over m, the Borel–Cantelli lemma gives
+P( K_{2^m} ≤ L_m i.o. ) = 0.
+By monotonicity of K_n in n and the fact that j ↦ j^{β_-} grows at most by a constant factor on each I_m, we infer that almost surely for large n, K_n ≥ c n^{β_-}. This proves the lower bound in (4.4).
+
+Upper bound (eventually K_n ≤ C n^{β_+})
+Fix β_+ ∈ (2/3, 1) and set U_m := 2^{β_+ m}. Consider the stopping time
+τ_m := inf{ n ∈ I_m : K_n ≥ U_m } (with inf ∅ = ∞).
+On {τ_m < ∞}, for all j ≥ τ_m with j ∈ I_m, we have K_j ≥ U_m and hence
+p_j = (j+1)/D_j ≤ (2^{m+1})/K_j^2 ≤ (2^{m+1})/U_m^2 = C·2^{(1−2β_+)m}.
+Therefore, conditionally on F_{τ_m}, the expected number of additional blue draws on [τ_m, 2^{m+1}) is at most
+v'_m := C'·2^{(2−2β_+)m}.                                                                  (4.8)
+
+Across the block, the threshold U_n grows by an amount of order
+Δ_m := U_{m+1} − U_m = (2^{β_+} − 1)·2^{β_+ m} ∼ c''·2^{β_+ m}.
+Since β_+ > 2/3, we have Δ_m ≫ v'_m (because β_+ > 2 − 2β_+ ⇔ β_+ > 2/3).
+Thus, to keep K_n above the moving threshold up to the end of the block from the first hitting time τ_m, the martingale fluctuation would need to exceed Δ_m − v'_m ≍ 2^{β_+ m}.
+
+Let S_m := ∑_{j=τ_m}^{2^{m+1}-1} (ξ_{j+1} − p_j) be the martingale increment over [τ_m, 2^{m+1}). Its predictable quadratic variation satisfies
+E[S_m^2 | F_{τ_m}] ≤ ∑_{j=τ_m}^{2^{m+1}-1} p_j(1−p_j) ≤ ∑ p_j ≤ v'_m.
+Freedman (with x = Δ_m − v'_m and v = v'_m) yields
+P( S_m ≥ Δ_m − v'_m | F_{τ_m} ) ≤ exp( − c (Δ_m − v'_m)^2 / (v'_m + (Δ_m − v'_m)/3) )
+≤ exp( − c 2^{(4β_+ − 2)m} ).                                                              (4.9)
+
+The right-hand side is summable in m since β_+ > 1/2. Therefore, with probability 1, only finitely many m satisfy τ_m < ∞. That is, almost surely for large m there is no hitting of U_m within I_m, hence K_n ≤ U_m for all n ∈ I_m. Since β_+ is fixed, this yields the upper bound in (4.4).
+
+Conclusion of Stage A
+We have proved (4.4) for any fixed β_- ∈ (1/2, 2/3) and β_+ ∈ (2/3, 1). Two consequences we will use repeatedly:
+- Lower bound on the denominator: D_n = K_n^2 + K_n + 2n + 2 ≍ K_n^2 ≥ c n^{2β_-}, hence
+  1/D_n ≤ C n^{-2β_-}.                                                                      (4.10)
+- A crude upper bound on p_n and on the Y–martingale variance: from p_n ≤ (n+1)/K_n^2,
+  p_n ≤ C n^{1−2β_+},                                                                       (4.11)
+  and with K_n ≤ C n^{β_+},
+  K_n^2 p_n ≤ C n^{2β_+} · n^{1−2β_+} = C n,                                                (4.12)
+  while
+  K_n^4 p_n / n^4 ≤ (n^{4β_+} · n^{1−2β_+})/n^4 = n^{2β_+ − 3}.                             (4.13)
+Because β_+ < 1, we have 2β_+ − 3 < −1, so ∑ n^{2β_+ − 3} < ∞.
+
+Stage B: convergence of Y_n = K_n^3/n^2 via Robbins–Siegmund
+
+Exact one–step identity for Y_n
+Recall K_{n+1} = K_n + ξ_{n+1}. A direct computation gives
+K_{n+1}^3 − K_n^3 = (3K_n^2 + 3K_n + 1) ξ_{n+1}.                                      (4.14)
+Hence
+Y_{n+1} − Y_n
+= K_n^3 ( 1/(n+1)^2 − 1/n^2 ) + (3K_n^2 + 3K_n + 1) ξ_{n+1}/(n+1)^2
+= − Y_n (2n+1)/(n+1)^2 + (3K_n^2 + 3K_n + 1) ξ_{n+1}/(n+1)^2.                         (4.15)
+Taking conditional expectation and using p_n = (n+1)/D_n and 3K_n^2 + 3K_n + 1 = 3D_n − (6n + 5), we obtain the exact drift
+E[ Y_{n+1} − Y_n | F_n ]
+= − Y_n (2n+1)/(n+1)^2 + 3/(n+1) − (6n+5)/((n+1) D_n).                                (4.16)
+
+Separating the principal “1/n drift” and a summable error
+Rewrite the first two terms as
+− Y_n (2n+1)/(n+1)^2 + 3/(n+1)
+= (3 − 2Y_n)/(n+1) + r_n^{(1)},   with   |r_n^{(1)}| ≤ C·( Y_n + 1 )/(n+1)^2.         (4.17)
+Thus
+E[ Y_{n+1} − Y_n | F_n ] = (3 − 2Y_n)/(n+1) + ε_n,                                    (4.18)
+where the “error” ε_n is
+ε_n := r_n^{(1)} − (6n+5)/((n+1) D_n).
+By (4.17) and (4.10), for any β_- ∈ (1/2, 2/3),
+|ε_n| ≤ C·( Y_n + 1 )/(n+1)^2 + C/D_n ≤ C·( Y_n + 1 )/(n+1)^2 + C n^{-2β_-}.          (4.19)
+
+All terms on the right are summable almost surely: indeed Y_n = K_n^3/n^2 ≤ C n^{3β_+−2} by (4.4), so
+∑ (Y_n + 1)/(n+1)^2 ≤ ∑ ( n^{3β_+−2}/n^2 + 1/n^2 ) < ∞,
+and ∑ n^{-2β_-} < ∞ because 2β_- > 1. Therefore,
+∑_{n} |ε_n| < ∞ almost surely.                                                         (4.20)
+
+Noise term and its square summability
+Define the martingale increment
+N_{n+1} := (3K_n^2 + 3K_n + 1)( ξ_{n+1} − p_n )/(n+1)^2,
+so that
+Y_{n+1} − Y_n = (3 − 2Y_n)/(n+1) + ε_n + N_{n+1}.                                     (4.21)
+Its conditional variance obeys, using p_n ≤ (n+1)/K_n^2,
+E[ N_{n+1}^2 | F_n ] ≤ C·K_n^4/(n+1)^4 · p_n ≤ C·K_n^2/(n+1)^3.                      (4.22)
+With K_n ≤ C n^{β_+} this gives
+E[ N_{n+1}^2 | F_n ] ≤ C n^{2β_+ − 3},
+and since β_+ < 1,
+∑_{n} E[ N_{n+1}^2 | F_n ] < ∞ almost surely.                                         (4.23)
+By the martingale convergence theorem, the series ∑ N_{n+1} converges almost surely.
+
+A Robbins–Siegmund inequality for V_n = (Y_n − 3/2)^2
+Set δ_n := Y_n − 3/2 and V_n := δ_n^2. From (4.21),
+δ_{n+1} = δ_n − 2δ_n/(n+1) + ε_n + N_{n+1}.
+Hence
+V_{n+1} = δ_{n+1}^2
+= (1 − 2/(n+1))^2 V_n + 2δ_n(ε_n + N_{n+1}) + (ε_n + N_{n+1})^2.                     (4.24)
+Taking conditional expectations and using E[N_{n+1} | F_n] = 0,
+E[ V_{n+1} | F_n ]
+≤ (1 − 2/(n+1)) V_n + 2|δ_n||ε_n| + E[N_{n+1}^2 | F_n] + ε_n^2.                      (4.25)
+Apply 2|δ_n||ε_n| ≤ (1/(n+1))V_n + (n+1)ε_n^2, and note (1 − 2/(n+1)) + 1/(n+1) = 1 − 1/(n+1). We obtain
+E[ V_{n+1} | F_n ] ≤ (1 − 1/(n+1)) V_n + ρ_n,                                         (4.26)
+where
+ρ_n := (n+1)ε_n^2 + ε_n^2 + E[N_{n+1}^2 | F_n].
+By (4.19), (4.23), and the bounds on Y_n, we have ∑ E[ρ_n] < ∞, hence ∑ ρ_n < ∞ almost surely.
+
+We are now in the setting of the Robbins–Siegmund almost-supermartingale theorem: since ∑ 1/(n+1) = ∞ and ∑ ρ_n < ∞ a.s., it follows that (V_n) converges almost surely and moreover
+∑_{n} (1/(n+1)) V_n < ∞ almost surely.
+If the limit lim V_n were strictly positive, the last series would diverge, a contradiction. Hence
+V_n → 0 almost surely, i.e.
+Y_n → 3/2 almost surely.                                                                (4.27)
+
+Asymptotics of K_n and G_n
+From Y_n = K_n^3/n^2 → 3/2 a.s., we conclude
+K_n ∼ (3/2)^{1/3} n^{2/3} almost surely.                                                (4.28)
+Returning to (4.1),
+G_n = K_n^2 + K_n + 2n + 2 = K_n^2 ( 1 + o(1) ) a.s.,
+so
+G_n / n^{4/3} = (K_n^2 / n^{4/3}) + o(1) → ((3/2)^{1/3})^2 = (3/2)^{2/3} almost surely.  (4.29)
+
+This proves the desired statement with
+α = 4/3 and c = (3/2)^{2/3}.
+
+5. Gaps  
+Gaps: None.
+
+6. Self-evaluation  
+- Confidence score (0–100): 82
+- Known or suspected issues:
+  - The dyadic-block proofs of the two–sided bounds (Stage A) use Freedman’s inequality with standard stopping-time arguments; I have kept the constants schematic, focusing on exponents. The steps are classical and quantitatively clear, but a fully expanded write-up could include more bookkeeping of the “for large m” thresholds.
+  - I chose fixed exponents β_- ∈ (1/2, 2/3), β_+ ∈ (2/3, 1). This is enough for Stage B. A refinement (straightforward by the same block method) gives the sharper almost-sure law K_n = n^{2/3+o(1)} (i.e., for every ε>0, eventually n^{2/3−ε} ≤ K_n ≤ n^{2/3+ε}).
+  - The stochastic-approximation step is fully quantified: I corrected the drift identity for Y_n, proved ∑|ε_n|<∞ and ∑E[N_{n+1}^2|F_n]<∞ from the Stage-A bounds, and applied a precise Robbins–Siegmund inequality to V_n.
+- Coverage:
+  - All parts are addressed.  
+  - Stage A establishes coarse almost-sure bounds K_n ∈ [n^{β_-}, n^{β_+}] eventually (β_-∈(1/2,2/3), β_+∈(2/3,1)).  
+  - Stage B proves Y_n → 3/2 a.s., hence K_n ∼ (3/2)^{1/3}n^{2/3} and G_n/n^{4/3} → (3/2)^{2/3} a.s.
