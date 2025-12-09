@@ -1794,6 +1794,8 @@ which is exactly the desired statement.
 
 ---
 
+# Final Solution Writeup
+
 Below is a complete, self‑contained solution to the urn problem, in the style of a research‐level writeup. I begin with a brief literature review to situate the method.
 
 ---
@@ -2670,3 +2672,213 @@ The proof combines:
 - Application of the Robbins–Siegmund almost‑supermartingale theorem to show \(Y_n\to 3/2\) almost surely, then translating back to \(K_n\) and \(G_n\).
 
 This matches the behavior predicted by heuristic ODE methods and fits squarely within the existing framework of stochastic approximation and generalized Pólya urn theory.
+
+---
+
+# Expert evaluator's assessment and feedback on Solution Attempt 1
+
+**Status: Solved with minor gaps**
+
+**Score (0–100): 96**
+
+---
+
+## Major issues
+
+Major issues: None.
+
+I do not see any fundamental logical error, misuse of a theorem, or missing critical case that would threaten the correctness of the main conclusion. The argument is technically sophisticated but coherent and, in my view, essentially complete.
+
+---
+
+## Minor issues
+
+- **Location:** Stage B, inequality after expanding \(V_{n+1}\) (just before equation (4.12)).  
+  **Nature:** Minor algebraic slip in simplifying the coefficient of \(V_n\).  
+  **Details:**  
+  You write
+  \[
+  (1-\tfrac{2}{n+1})^2 + \tfrac{1}{n+1}
+  = 1 - \tfrac{2}{n+1} + O\bigl(\tfrac{1}{n^2}\bigr)
+  \le 1 - \tfrac{1}{n+1}.
+  \]
+  In fact,
+  \[
+  (1-\tfrac{2}{n+1})^2 + \tfrac{1}{n+1}
+  = 1 - \tfrac{3}{n+1} + \tfrac{4}{(n+1)^2}.
+  \]
+  This *is* bounded by \(1 - 1/(n+1)\) for all \(n\ge 2\), so the inequality you actually use is correct, but the intermediate “approximation” is a bit off.  
+  **Suggestion:** Either compute the expression exactly:
+  \[
+  (1-\tfrac{2}{n+1})^2 + \tfrac{1}{n+1}
+  = 1 - \frac{3}{n+1} + \frac{4}{(n+1)^2}
+  \le 1 - \frac{1}{n+1},
+  \]
+  or simply skip the approximation and state the last inequality directly.
+
+- **Location:** Stage B, end of §4.2.2 (“Standard martingale arguments…”).  
+  **Nature:** Insufficient explicit justification.  
+  **Details:**  
+  From \(\sum_n \mathbb E[N_{n+1}^2 \mid \mathcal F_n] <\infty\) you claim that \(\sum_{n\ge1} N_{n+1}\) converges almost surely and in \(L^2\). This is true (the partial sums form an \(L^2\)-bounded martingale and thus converge a.s. and in \(L^2\)), but you do not state a concrete theorem.  
+  **Suggestion:** Add a one‑line reference, e.g. “By the martingale convergence theorem for square‑integrable martingales (bounded quadratic variation), the series \(\sum N_{n+1}\) converges a.s. and in \(L^2\).”
+
+- **Location:** Stage A, application of Freedman’s inequality (Lemma 3.1).  
+  **Nature:** Slightly implicit use of the “sup” formulation.  
+  **Details:**  
+  Freedman’s inequality is stated for \(\sup_{s<k\le t}(M_k-M_s)\). You apply it to \(\{S_m\le -v_m/2\}\). This is justified via the symmetric bound for \(-M\) and the containment
+  \[
+  \{S_m \le -x\} \subset \Bigl\{\sup_{2^m<k\le 2^{m+1}} (M_{2^m}-M_k)\ge x\Bigr\},
+  \]
+  but this connection is not spelled out.  
+  **Suggestion:** Add a brief remark: “Applying Freedman to the martingale \(-M_k\) and using \(\{S_m\le -x\} \subset \{\sup(-M_k+M_{2^m})\ge x\}\), we get …”
+
+- **Location:** Use of Robbins–Siegmund (Section 4.3).  
+  **Nature:** The version of the theorem used is not explicitly stated with all its conclusions.  
+  **Details:**  
+  You correctly derive
+  \[
+  \mathbb E[V_{n+1}\mid\mathcal F_n]
+  \le (1 - \tfrac{1}{n+1}) V_n + \rho_n,
+  \quad\text{with}\quad \sum \rho_n <\infty,
+  \]
+  and invoke the Robbins–Siegmund theorem. However, the crucial part you need is not only convergence of \(V_n\) but also that \(\sum (1/(n+1))\,V_n<\infty\), which forces \(\lim V_n=0\). You hint at this but do not clearly state that it is a *consequence* of the theorem.  
+  **Suggestion:** Explicitly quote a formulation of Robbins–Siegmund that includes \(\sum a_n V_n<\infty\), or add a short proof of that consequence from your inequality.
+
+- **Location:** Stage A, choice of exponents \(\beta_-,\beta_+\) and use “once and for all” in (3.3).  
+  **Nature:** Slight lack of explicitness on measurability / events.  
+  **Details:**  
+  The lower and upper bounds are proved separately for any fixed \(\beta_-\in(1/2,2/3)\) and \(\beta_+\in(2/3,1)\) using Borel–Cantelli. You then say “we can fix once and for all exponents \(\beta_-<2/3<\beta_+\)” and obtain (3.3) on a full‑probability event. Strictly speaking, you are intersecting two events of probability 1 (one for the lower bound, one for the upper bound), which is fine.  
+  **Suggestion:** Add one sentence: “Fix \(\beta_-,\beta_+\) as above. Intersecting the full‑probability events from Propositions 3.2 and 3.4, we obtain (3.3) on a set of probability 1.”
+
+---
+
+## Gap assessment
+
+The previous evaluator had highlighted several “gaps” in an earlier heuristic solution (control of \(K_n\), drift approximation for \(Y_n\), noise control, and formal SA convergence). In your current solution:
+
+1. **Growth control of \(K_n\) (old Gap 1):**  
+   - You now give a detailed two‑sided polynomial sandwich:
+     \[
+     c_- n^{\beta_-} \le K_n \le C_+ n^{\beta_+}
+     \quad\text{a.s. eventually,}
+     \]
+     for fixed exponents \(\frac12<\beta_-<\frac23<\beta_+<1\).  
+   - The lower bound uses Freedman on dyadic blocks with a careful drift estimate; the upper bound uses a third‑moment inequality and Borel–Cantelli.  
+   - This fully addresses the former gap. I would classify any remaining refinements here as **minor** (mainly stylistic).
+
+2. **Drift error \(\varepsilon_n\) for \(Y_n\) (old Gap 2):**  
+   - The exact drift formula for \(Y_n\) is derived and split as
+     \[
+     \mathbb E[Y_{n+1}-Y_n\mid\mathcal F_n]
+     = \frac{3-2Y_n}{n+1} + \varepsilon_n,
+     \]
+     with
+     \[
+     |\varepsilon_n| \le C\bigl(n^{3\beta_+-4} + n^{-2\beta_-}\bigr).
+     \]
+   - Using the already established bounds on \(\beta_\pm\), you show \(\sum |\varepsilon_n|<\infty\) and even \(\sum (n+1)\varepsilon_n^2<\infty\).  
+   - This closes the previous drift‑control gap; any residual issues are **minor** and mostly about presentation.
+
+3. **Noise term \(N_{n+1}\) (old Gap 3):**  
+   - You estimate
+     \[
+     \mathbb E[N_{n+1}^2\mid\mathcal F_n] \le C n^{2\beta_+ -3},
+     \]
+     which is summable since \(\beta_+<1\).  
+   - This square‑summability suffices to ensure the martingale noise is negligible in the SA sense, and you briefly indicate the martingale convergence theorem needed.  
+   - This addresses the earlier gap; again, any remaining improvement is **minor** (more explicit theorem citation).
+
+4. **Application of stochastic approximation / Robbins–Siegmund (old Gap 4):**  
+   - You set \(V_n=(Y_n-3/2)^2\), derive the key inequality
+     \[
+     \mathbb E[V_{n+1}\mid\mathcal F_n]\le (1-\tfrac{1}{n+1})V_n + \rho_n,\quad\sum\rho_n<\infty,
+     \]
+     and then invoke Robbins–Siegmund to obtain \(V_n\to 0\) a.s.  
+   - This is exactly the kind of Lyapunov‑based SA analysis that was missing before. The only small gap is that you do not spell out the version of Robbins–Siegmund including \(\sum a_n V_n<\infty\), but this is a **minor** issue.
+
+Overall, the previously identified gaps are now filled in a standard and convincing way. I do not see any “fundamental” or “moderate” gaps left; the remaining points are minor technical clarifications.
+
+---
+
+## Coverage assessment
+
+**All subparts addressed: Yes.**
+
+The problem has a single main assertion (“prove that there exist constants \(0<c,\alpha<\infty\) such that \(G_n/n^\alpha\to c\) a.s.”). Your solution:
+
+- Reduces the problem to the one‑dimensional process \(K_n\).
+- Shows almost sure convergence of \(K_n^3/n^2\) to \(3/2\).
+- Deduces \(K_n \sim (3/2)^{1/3}n^{2/3}\) a.s.
+- Finally, uses the explicit expression for \(G_n\) to prove
+  \[
+  \frac{G_n}{n^{4/3}} \to \Bigl(\frac{3}{2}\Bigr)^{2/3}\quad\text{a.s.}
+  \]
+Thus, not only existence of such constants is proved, but their explicit values are identified.
+
+---
+
+## Summary
+
+Your solution is, in my view, a correct and essentially complete research‑level argument. It takes a sophisticated but standard modern approach:
+
+1. You **reduce the urn process to a scalar Markov chain** \(K_n\), representing the number of blue draws.
+2. You **derive exact algebraic identities** for \(G_n\) in terms of \(K_n\), and for the drift of \(K_n\) and of the scaled quantity \(Y_n = K_n^3/n^2\).
+3. You implement a **two‑stage strategy**:
+   - First, obtain **coarse polynomial bounds** \(K_n \in [c_- n^{\beta_-}, C_+ n^{\beta_+}]\) almost surely using Freedman’s martingale inequality and a moment‑Borel–Cantelli argument.
+   - Then, on this polynomial scale, analyze \(Y_n\) as a **stochastic approximation recursion** with step size \(\sim 1/n\), linear drift \(3-2Y_n\), summable deterministic error, and martingale noise with square‑summable variance.
+4. You introduce a Lyapunov function \(V_n=(Y_n-3/2)^2\) and use a clean **Robbins–Siegmund almost‑supermartingale inequality** to conclude \(Y_n\to 3/2\) a.s.
+
+The main strengths of the solution are:
+
+- The clear, correct use of Freedman’s inequality on dyadic blocks to bootstrap coarse bounds for \(K_n\), including careful handling of drift and variance on each block.
+- The exact drift calculation for \(Y_n\) and clean separation of main term \((3-2Y_n)/(n+1)\) from perturbations \(\varepsilon_n\) and martingale noise \(N_{n+1}\).
+- The correct and effective use of Robbins–Siegmund with a good Lyapunov function, which is exactly what modern stochastic approximation theory prescribes.
+
+The weaknesses are minor and mostly cosmetic:
+
+- Some algebraic simplifications are slightly off (though inequalities used are correct).
+- A few key probabilistic results (martingale convergence, exact form of Robbins–Siegmund) are invoked somewhat tersely, without explicit statements.
+
+Overall, the approach is very strong and standard for such urn problems; I would be comfortable signing off on this as a correct solution after minor polishing.
+
+---
+
+## Recommendations for next iteration
+
+If you were to revise this write‑up for publication or teaching purposes, here is a prioritized list of improvements:
+
+1. **Tighten the Robbins–Siegmund step.**  
+   - Explicitly state the version of the theorem you use, including the conclusion \(\sum a_n V_n<\infty\) and hence \(V_n\to 0\).
+   - Alternatively, give a brief argument showing that from
+     \[
+     \mathbb E[V_{n+1}\mid\mathcal F_n]\le (1-\tfrac{1}{n+1})V_n + \rho_n,\quad\sum\rho_n<\infty,
+     \]
+     one gets \(V_n\to 0\) almost surely.
+
+2. **Clarify the Freedman application.**  
+   - In Lemma 3.1, briefly explain how \(\{S_m\le -v_m/2\}\) fits into the “sup” formulation of Freedman’s inequality via the martingale \(-M_k\).
+   - Explicitly state the bounded‑increments and quadratic variation bounds you are using (which you do have).
+
+3. **Correct the minor algebra slip in §4.3.**  
+   - Replace the approximate expression for \((1 - 2/(n+1))^2 + 1/(n+1)\) with the exact formula and directly show it is at most \(1 - 1/(n+1)\) for all large \(n\).
+
+4. **Make the use of Borel–Cantelli fully explicit.**  
+   - In the upper bound for \(K_{2^m}\), add the line “Since \(\sum_m C2^{(2-3\beta_+)m}<\infty\), Borel–Cantelli implies …”.
+   - Similarly, after Lemma 3.1, explicitly write \(\sum_m \mathbb P(H_m^c)<\infty\) implies only finitely many bad blocks.
+
+5. **Add precise references for probabilistic tools.**  
+   - When you first state Freedman and Robbins–Siegmund, give a canonical source (textbook or paper) and, if possible, the theorem number.
+   - For the martingale convergence of \(\sum N_{n+1}\), cite the standard result that a martingale with bounded \(\mathbb E[\langle M\rangle_\infty]\) converges a.s. and in \(L^2\).
+
+6. **Optionally, briefly remark on heuristic exponents.**  
+   - At the end, you might include a one‑paragraph heuristic (ODE) argument explaining why the exponent \(2/3\) and constant \((3/2)^{1/3}\) are natural. This connects the rigorous proof back to the intuition.
+
+None of these recommendations require changing the core strategy; they are mostly about clarity and explicitness.
+
+---
+
+## Research flag
+
+**Research needed: No.**
+
+The remaining gaps and issues are of a routine technical nature (clarifying theorem usage, minor algebra, and explicit probabilistic references). They can all be resolved using standard results from martingale theory and stochastic approximation, without requiring any new ideas beyond what you already deployed.
