@@ -43,19 +43,12 @@ Return the following information, in order, using clear headings:
      `Status: Partial`  
    - Use exactly one of these two phrases.
 
-3. Selected approaches  
-   - State which approach indices you are primarily following, for example:  
-     `Selected approach indices: 1`  
-     or  
-     `Selected approach indices: 1, 3 (combination)`  
-   - You may also briefly explain how you are combining or modifying them, if relevant.
-
-4. Solution  
+3. Solution  
    - Provide a structured solution write-up in Markdown/LaTeX style.  
    - Organize it into sections, subsections, lemmas, proofs, and equations as appropriate.  
    - If the solution is partial, write the argument fully up to the point where you are confident. Clearly separate completed parts from speculative or incomplete parts.
 
-5. Gaps (only if Status is Partial; otherwise state `Gaps: None`)  
+4. Gaps (only if Status is Partial; otherwise state `Gaps: None`)  
    - If status is "Partial", include a section titled "Gaps".  
    - For each gap, provide:
      - Location: where in your argument the gap appears (e.g., `Gap 1: Proof of Lemma 2, final step`).
@@ -63,7 +56,7 @@ Return the following information, in order, using clear headings:
      - Reason for difficulty: why this step is challenging or why you are not confident (e.g., `I cannot show uniform convergence needed for dominated convergence`, `the existence of such a basis is unclear`, etc.).
    - If status is "Complete", simply write: `Gaps: None.`
 
-6. Self-evaluation  
+5. Self-evaluation  
    - Confidence score: give a number from 0 to 100 reflecting your overall confidence in the correctness and completeness of your solution, clearly labelled, for example:  
      `Confidence score (0–100): 87`
    - Known or suspected issues: list any weaknesses you are aware of (even if you declared `Status: Complete`). This may include:
