@@ -100,3 +100,7 @@ Return the following information, in order, using clear headings:
      - `Your treatment of the boundary case for |x| → ∞ is missing; address this explicitly.`
      - `The overall approach seems flawed; consider switching to Approach 3 from the planning stage.`
    - Assume your recommendations will be fed back to the same problem solver for the next attempt. Make them as actionable, specific, and prioritized as possible.
+
+10. Research flag
+   - If, in your judgment, the remaining gaps are unlikely to be resolved by purely internal reasoning and standard textbook results, add a line: `Research needed: Yes`, and then give a brief statement of the reasons why further research is necessary and what challenges or conceptual gaps research can address.
+   - Otherwise, if no research is needed, write: `Research needed: No`.

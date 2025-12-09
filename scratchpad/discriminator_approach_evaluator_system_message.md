@@ -60,13 +60,3 @@ Return the following information, in order, using clear headings:
    - Recommended approach indices: state clearly which indices you recommend as the primary starting point, for example:  
      `Recommended approach indices: 1, 3`
    - Recommendation rationale: 4 to 15 sentences explaining why these approaches are preferable, how they compare to the others, and, if relevant, how they might be combined or ordered (e.g., `try Approach 1 first; if it stalls at lemma X, switch to Approach 3`).
-
-6. Internet search results:
-   - If the problem solver found a partial or complete solution on the internet, assess the correctness of the transcribed solution. Provide:
-     - Viability score (your own independent assessment, 0 to 100), clearly labelled.
-     - Strengths: a short paragraph or bullet list describing what is good or promising about this approach.
-     - Weaknesses: a short paragraph or bullet list describing specific issues, risks, or gaps. Be as technical as needed.
-     - Severity flags: a short line listing any that apply, chosen from:
-       "incorrect reasoning", "logical error", "conceptual mismatch", "misuse of theory", "missing critical subproblem", "likely intractable", "none".
-       If none apply, explicitly state: `Severity flags: none.`
-   - If no internet solution was provided, explicitly state: `No internet solution provided.`

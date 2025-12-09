@@ -1979,3 +1979,548 @@ Overall, the approach is highly promising and, with careful work, should be turn
 
 If you tackle these items systematically—especially the first four—you should be able to turn your already very good conceptual outline into a complete, rigorous solution.
 
+---
+
+# External Research Input
+
+## 2. Problem and current state summary
+
+### Restatement of the problem
+
+The urn evolves as follows:
+
+- Start with 1 red, 1 blue.
+- At each step, draw one ball uniformly at random from the urn; the drawn ball stays in the urn.
+- If the drawn ball is red, you add 1 red and 1 blue.
+- If the drawn ball is blue and this is the **k‑th blue draw so far**, you add 1 blue and \(2k+1\) red balls.
+
+Let \(G_n\) be the total number of balls after \(n\) draws. Prove there exist constants \(0<c,\alpha<\infty\) such that
+\[
+\frac{G_n}{n^\alpha} \to c \quad\text{almost surely}.
+\]
+
+Internally, it was further conjectured (on strong heuristic grounds) that
+\[
+\alpha = \frac{4}{3},\qquad c = \Bigl(\frac{3}{2}\Bigr)^{2/3}.
+\]
+
+### Internal reductions and main approach
+
+The key internal simplification is to track only the number of **blue draws**:
+
+- Let \(K_n\) be the number of times a blue ball has been drawn by time \(n\).
+- Then:
+
+  - At each step exactly one blue ball is added, regardless of the color drawn, so
+    \[
+    B_n = 1 + n \quad \text{(deterministic).}
+    \]
+  - A careful counting of red additions gives
+    \[
+    R_n = 1 + n + K_n^2 + K_n.
+    \]
+  - Therefore
+    \[
+    G_n = R_n + B_n = K_n^2 + K_n + 2n + 2.
+    \]
+
+So the whole problem reduces to understanding the growth of the one‑dimensional process \(K_n\).
+
+The evolution of \(K_n\) is:
+
+- Let \(\xi_{n+1} \in\{0,1\}\) be the indicator that the \((n+1)\)-th draw is blue, so \(K_{n+1}=K_n+\xi_{n+1}\).
+- Conditional on the past,
+  \[
+  p_n := \mathbb P(\xi_{n+1}=1\mid\mathcal F_n)
+  = \frac{B_n}{G_n}
+  = \frac{n+1}{K_n^2+K_n+2n+2}.
+  \]
+- Hence
+  \[
+  \mathbb E[K_{n+1}-K_n \mid \mathcal F_n] = p_n.
+  \]
+
+Heuristics and ODE scaling suggest:
+
+- If \(K_n \approx C n^\beta\), consistency of the drift gives \(\beta = 2/3\), so \(K_n\) should grow like \(n^{2/3}\).
+- Then \(G_n \approx K_n^2 \sim C^2 n^{4/3}\), so \(\alpha=4/3\).
+
+To make this rigorous, the solver introduced the **potential**
+\[
+Y_n := \frac{K_n^3}{n^2}.
+\]
+A detailed calculation shows
+\[
+\mathbb{E}[Y_{n+1}-Y_n\mid\mathcal{F_n}] = -Y_n\frac{2n+1}{n(n+1)^2}  + \frac{3}{n+1}  - \frac{6n+5}{(n+1)D_n},
+\]
+where \(D_n = K_n^2+K_n+2n+2\). For large \(n\) and under the heuristic \(D_n\sim K_n^2\sim n^{4/3}\), this matches
+\[
+\mathbb E[Y_{n+1}-Y_n\mid\mathcal F_n]
+\approx \frac{3-2Y_n}{n},
+\]
+so the associated ODE in “logarithmic time” has unique stable equilibrium \(Y=3/2\). One is therefore led to conjecture
+\[
+Y_n\to \frac{3}{2} \quad\text{a.s.},\quad
+K_n\sim \Bigl(\frac{3}{2}\Bigr)^{1/3} n^{2/3},\quad
+G_n\sim \Bigl(\frac{3}{2}\Bigr)^{2/3} n^{4/3}\;\text{a.s.}
+\]
+
+### Main gaps identified by the evaluator
+
+The evaluator’s key points:
+
+1. **Coarse two‑sided growth bounds for \(K_n\)** (Gap 1):
+
+   - It was argued heuristically that \(K_n \approx n^{2/3}\), but there is no rigorous proof that
+     \[
+     n^{2/3-\varepsilon}\le K_n \le n^{2/3+\varepsilon}
+     \]
+     eventually a.s. (or even that \(K_n^2 \gg n^{1+\delta}\) for some \(\delta>0\)).
+   - Such bounds are needed to justify approximations like \(D_n \sim K_n^2\) and to make error terms summable.
+
+2. **Control of the drift error in \(Y_n\)** (Gap 2):
+
+   - To fit \(Y_n\) into a standard stochastic approximation (SA) scheme, one needs
+     \[
+     \mathbb E[Y_{n+1}-Y_n\mid\mathcal F_n]
+     = \frac{3-2Y_n}{n} + \varepsilon_n,
+     \quad\sum |\varepsilon_n|<\infty\ \text{a.s.}
+     \]
+   - The current argument that \(\varepsilon_n\) is summable uses the unproven hypothesis \(K_n\sim n^{2/3}\), which is circular.
+
+3. **Control of the noise term in \(Y_n\)** (Gap 3):
+
+   - The martingale increment
+     \[
+     N_{n+1} := \frac{(3K_n^2+3K_n+1)(\xi_{n+1}-p_n)}{(n+1)^2}
+     \]
+     was heuristically shown to have variance \(\asymp n^{-4/3}\), hence square‑summable, but again using the unproven scaling of \(K_n\).
+
+4. **Formal application of a stochastic approximation / almost‑supermartingale theorem** (Gap 3 / 4):
+
+   - The solver wants to appeal to general SA theory (e.g. Benaïm, Borkar, Robbins–Siegmund), but hasn’t:
+     - Stated a concrete theorem.
+     - Verified its technical hypotheses (boundedness of \(Y_n\), Lipschitz drift, summability of perturbations, etc.)
+
+Overall, the internal approach is correct in structure and very close to standard SA analyses of non‑linear urns, but the rigorous closure of these steps is still missing.
+
+## 3. Key obstacles as research questions
+
+Rephrasing the evaluator’s main concerns as research questions:
+
+1. **Growth control of \(K_n\):**
+
+   - *RQ1:* Are there general theorems or techniques to obtain almost‑sure polynomial growth bounds for one‑dimensional processes of the form
+     \[
+     K_{n+1} = K_n + \xi_{n+1},\quad
+     \mathbb E[\xi_{n+1}\mid\mathcal F_n]
+     = \frac{n+1}{K_n^2+K_n+2n+2},
+     \]
+     using martingale inequalities such as Freedman/Bernstein?
+
+2. **Stochastic approximation framework:**
+
+   - *RQ2:* Can we rigorously cast \(Y_n = K_n^3/n^2\) into a standard stochastic approximation scheme
+     \[
+     Y_{n+1} = Y_n + a_n\bigl(F(Y_n) + \eta_{n+1}\bigr),
+     \]
+     with \(a_n \sim 1/n\), \(F(y)=3-2y\), and noise \(\eta_{n+1}\) satisfying the classical assumptions (bounded or square‑integrable, \(\sum a_n^2\mathbb E[\eta_{n+1}^2]<\infty\), etc.)?
+
+3. **Almost‑sure convergence of SA with 1/n step size:**
+
+   - *RQ3:* Under what general conditions on \(F\) and the noise does one have almost sure convergence \(Y_n\to y_*\), when the ODE \(\dot y = F(y)\) has a globally attracting equilibrium \(y_*\)? Are there simple theorems (Benaïm’s ODE method, Robbins–Siegmund, Borkar’s results) that can be applied almost as black boxes?
+
+4. **Existing results on non‑linear/unbalanced urns:**
+
+   - *RQ4:* Have closely related non‑linear or unbalanced two‑color urns (with path‑dependent reinforcement) been analyzed in the literature using stochastic approximation, and how do those proofs handle:
+     - growth exponents,
+     - tightness of normalized compositions,
+     - convergence to equilibria of limiting ODEs?
+
+   These could serve as templates for repairing the present proof.
+
+## 4. External research
+
+### 4.1 Search strategy
+
+I used queries of the following types:
+
+- For stochastic approximation and ODE methods:
+  - “A dynamical system approach to stochastic approximations” (Benaïm).
+  - “Borkar stochastic approximation ODE method”.
+  - “Robbins–Siegmund almost supermartingale theorem”.
+  - “convergence of stochastic approximation via martingale and converse Lyapunov methods”.
+
+- For generalized and non‑linear urns:
+  - “generalized Pólya urns via stochastic approximation”.
+  - “nonlinear unbalanced urn models via stochastic approximation”.
+  - “nonlinear and unbalanced urn models two strategies stochastic approximation”.
+  - “positive reinforced generalized time‑dependent Pólya urns via stochastic approximation”.
+
+- For martingale concentration:
+  - “Freedman inequality martingale tail bound bounded increments”.
+
+- For the specific urn puzzle:
+  - A direct search for the problem text (found the Reddit posting, but no accessible solution).
+
+Below I summarize the most relevant findings.
+
+### 4.2 Stochastic approximation and ODE method
+
+#### Benaïm (1996): “A dynamical system approach to stochastic approximations”
+
+Benaïm studies recursions of the form
+\[
+x_{n+1} = x_n + \gamma_{n+1}\bigl(F(x_n) + \zeta_{n+1}\bigr),
+\]
+with decreasing step sizes \(\gamma_n\) and martingale‑difference noise \(\zeta_{n+1}\), and proves that the limit set of \((x_n)\) is, under classical assumptions, almost surely contained in the chain‑recurrent set of the ODE \(\dot x = F(x)\).([libra.unine.ch](https://libra.unine.ch/entities/publication/b43c676a-1c01-4ac4-b90d-1cf33a660bf1))
+
+Roughly, if:
+
+- \(\sum \gamma_n = \infty\), \(\sum \gamma_n^2 < \infty\),
+- \(F\) is locally Lipschitz and growth of \(x_n\) is controlled,
+- the noise has bounded variance in a suitable sense,
+
+then any limit point of \((x_n)\) is an equilibrium or belongs to an invariant set of the ODE. If the ODE \(\dot x = F(x)\) has a unique globally attracting equilibrium \(x_*\), one typically gets \(x_n\to x_*\) almost surely.
+
+Applied to our setting, one can think of a scaled variable \(Y_n\) (either \(K_n/n^{2/3}\) or \(K_n^3/n^2\)) and interpret its evolution as an SA algorithm with step size \(1/n\) and drift \(F\) having a unique stable zero.
+
+#### Borkar (2008, 2023): *Stochastic Approximation: A Dynamical Systems Viewpoint*
+
+Borkar’s monograph provides a very accessible and systematic treatment of the ODE method for SA, including:
+
+- Basic convergence analysis for SA schemes \(x_{n+1} = x_n + a_n[F(x_n) + M_{n+1}]\) with \(a_n\to 0\), \(\sum a_n=\infty\), \(\sum a_n^2 < \infty\).([link.springer.com](https://link.springer.com/book/10.1007/978-93-86279-38-5?utm_source=openai))
+- Conditions under which the iterates track the flow of the ODE \(\dot x = F(x)\) and converge to globally attracting equilibria.
+- Results on stability (boundedness of iterates) based on the “Borkar–Meyn theorem”, which connects global asymptotic stability of the ODE with almost‑sure boundedness and convergence of the SA iterates.([arxiv.org](https://arxiv.org/abs/2205.01303?utm_source=openai))
+
+This framework matches *exactly* the structure needed for \(Y_n\), once you rewrite its recursion in the SA form and verify:
+
+- step size \(a_n=1/n\),
+- drift \(F(y)=3-2y\) (or \(F(y)=y^{-2}-\frac23 y\) in the other scaling),
+- noise is a bounded martingale difference whose squared contribution is summable thanks to polynomial growth of \(K_n\).
+
+#### Renlund (2010, 2011)
+
+Renlund’s preprints “Generalized Pólya urns via stochastic approximation” (2010) and “Limit theorems for stochastic approximation algorithms” (2011) treat generalized urn models and associated 1D SA recursions. The 2011 paper proves a CLT for one‑dimensional SA algorithms converging to a point where the noise does not vanish and shows how the theory applies to a class of generalized Pólya urn models.([arxiv.org](https://arxiv.org/abs/1102.4741))
+
+From our perspective, these papers are relevant because:
+
+- They explicitly analyze urn models through SA recursions in one dimension.
+- They give precise conditions under which such recursions converge (and have fluctuation limits), typically assuming that the mean drift behaves like a smooth function of the state plus higher‑order corrections.
+
+Our \(Y_n\) process is exactly of this SA type, with a smooth 1D drift and bounded noise, so Renlund’s framework is a strong indication that our target convergence result is within reach.
+
+### 4.3 Almost‑supermartingale convergence (Robbins–Siegmund)
+
+Robbins and Siegmund (1971) introduced the concept of **almost supermartingales** and proved a widely used convergence theorem. A particularly clear statement and discussion is provided in a modern blog exposition by NRH Statistics.([nrhstat.org](https://nrhstat.org/post/robbins_siegmund/?utm_source=openai))
+
+Let \((V_n)\) be nonnegative, adapted, and suppose there exist nonnegative adapted sequences \(\beta_n,\xi_n,\zeta_n\) such that
+\[
+\mathbb E[V_n\mid\mathcal F_{n-1}]
+\le (1+\beta_{n-1})V_{n-1} + \xi_{n-1} - \zeta_{n-1}
+\]
+and
+\[
+\sum_n \beta_n <\infty,\quad
+\sum_n \xi_n <\infty\quad\text{a.s.}
+\]
+Then:
+
+- \(V_n\) converges almost surely to a finite nonnegative limit \(V_\infty\).
+- \(\sum_n \zeta_n <\infty\) almost surely.
+
+In many SA proofs, one takes \(V_n\) to be some Lyapunov‑type function of the state (e.g., squared distance to an equilibrium), and shows that \(\zeta_n\) dominates \(V_n\) times a summable factor, which forces \(V_n\to 0\).
+
+In our context, we can aim to set
+\[
+V_n := \bigl(Y_n - \tfrac32\bigr)^2,
+\]
+where \(Y_n = K_n^3/n^2\). If we can derive an inequality of the form
+\[
+\mathbb E[V_{n+1}\mid\mathcal F_n]
+\le V_n - c\,\frac1n V_n + \varepsilon_n,
+\]
+with \(\sum \varepsilon_n<\infty\), we can identify \(cV_n/n\) with \(\zeta_n\) and apply Robbins–Siegmund to conclude \(V_n\to 0\), i.e. \(Y_n\to 3/2\).
+
+This gives a **very concrete way** to fix Gap 3 (rigorous SA convergence) without reproducing the entire ODE method theory.
+
+### 4.4 Martingale concentration: Freedman and variants
+
+To control \(K_n\) and the martingale noise terms, we need strong concentration for martingales with bounded increments. The classical tool is **Freedman’s inequality**, a Bernstein‑type inequality for martingales. While Freedman’s original 1975 paper is not directly accessible here, modern references (e.g., Dzhaparidze–van Zanten’s generalization and Tropp’s matrix version) clearly describe its structure.([sciencedirect.com](https://www.sciencedirect.com/science/article/pii/S0304414900000867?utm_source=openai))
+
+In one typical form (for scalar martingales):
+
+- If \(M_n\) is a martingale with increments \(\Delta M_k = M_k - M_{k-1}\) satisfying \(|\Delta M_k| \le R\) almost surely, and predictable quadratic variation
+  \[
+  V_n = \sum_{k=1}^n \mathbb E[(\Delta M_k)^2\mid\mathcal F_{k-1}],
+  \]
+  then for all \(x,v>0\),
+  \[
+  \mathbb P\!\left( M_n \ge x,\ V_n\le v\right)
+  \le \exp\!\left(-\frac{x^2}{2(v+Rx/3)}\right).
+  \]
+
+Our process \(M_n = K_n - \sum_{j<n}p_j\) has increments bounded by 1 and quadratic variation \(\le A_n := \sum p_j\). Freedman’s inequality (or its refinements) therefore allows us to:
+
+- Show that on an event where \(K_n\) is hypothesized to grow too fast or too slowly, the martingale cannot deviate enough from its drift to sustain that behavior with significant probability.
+- Turn these probabilistic bounds into Borel–Cantelli arguments to exclude “wrong” polynomial exponents for \(K_n\).
+
+Thus, these inequalities are exactly the right tools to make the “bootstrap” arguments on \(K_n\)’s growth rigorous, addressing Gap 1.
+
+### 4.5 Generalized and non‑linear urn models via stochastic approximation
+
+There is by now a substantial body of work explicitly treating generalized Pólya urns (including non‑linear and unbalanced models) via stochastic approximation:
+
+- **Laruelle & Pagès (2013, 2019):** “Randomized urn models revisited using stochastic approximation” and “Nonlinear randomized urn models: a stochastic approximation viewpoint”. These papers recast various adaptive urn schemes (often used in clinical trials) as SA algorithms and prove LLNs and CLTs for compositions.([cambridge.org](https://www.cambridge.org/core/journals/probability-in-the-engineering-and-informational-sciences/article/nonlinear-and-unbalanced-urn-models-with-two-types-of-strategies-a-stochastic-approximation-point-of-view/0E14828AF7807BE053A6DB9F7A67A9A5))
+
+- **Renlund (2010):** “Generalized Pólya urns via stochastic approximation” (Preprint). This directly analyses generalized urn schemes as SA, providing convergence results and effective tools (e.g., Lyapunov functions) to treat irregular reinforcement.([cambridge.org](https://www.cambridge.org/core/journals/probability-in-the-engineering-and-informational-sciences/article/nonlinear-and-unbalanced-urn-models-with-two-types-of-strategies-a-stochastic-approximation-point-of-view/0E14828AF7807BE053A6DB9F7A67A9A5))
+
+- **Idriss (2022/2023):** Two key papers:
+  - “Nonlinear unbalanced urn models via stochastic approximation” (Methodology and Computing in Applied Probability, 2022), which considers a two‑color *nonlinear unbalanced* urn under a drawing rule reinforced by an \(\mathbb R_+\)-valued concave function and a non‑balanced replacement matrix, and proves limit laws for the urn composition using SA.([ideas.repec.org](https://ideas.repec.org/a/spr/metcap/v24y2022i1d10.1007_s11009-021-09858-6.html?utm_source=openai))
+  - “Nonlinear and unbalanced urn models with two types of strategies: a stochastic approximation point of view” (Probability in the Engineering and Informational Sciences, 2023), which studies a 2‑color urn with **two different nonlinear drawing rules depending on the color withdrawn**, proving both a strong law of large numbers and a CLT, again using SA and martingale techniques.([cambridge.org](https://www.cambridge.org/core/journals/probability-in-the-engineering-and-informational-sciences/article/nonlinear-and-unbalanced-urn-models-with-two-types-of-strategies-a-stochastic-approximation-point-of-view/0E14828AF7807BE053A6DB9F7A67A9A5))
+
+- **Ruszel & Thacker (2024):** “Positive Reinforced Generalized Time‑Dependent Pólya Urns via Stochastic Approximation” (J. Theor. Probability). They study time‑dependent multi‑urn models with general reinforcement functions \(f\), assuming conditions such as
+  \[
+  \sum_{n}\Bigl(\frac{\sigma_n}{\sum_{j\le n}\sigma_j}\Bigr)^2<\infty,
+  \]
+  precisely to control the SA noise. They show convergence to fixation behavior by coupling to an ODE and verifying SA conditions.([link.springer.com](https://link.springer.com/article/10.1007/s10959-024-01366-w))
+
+- **Dasgupta & Maulik (2011):** “Strong Laws for Urn Models with Balanced Replacement Matrices” (EJP 16), which, although focused on balanced matrices, provides examples of scaling exponents determined by spectral radii of drift matrices and proves almost‑sure convergence of properly normalized counts.([arxiv.org](https://arxiv.org/abs/1010.5348))
+
+Even though none of these works treats *exactly* our path‑dependent rule (where the red increment on a blue draw depends on the total number of past blue draws), the **techniques** they deploy are precisely:
+
+- identify a suitable low‑dimensional SA recursion (for proportions or for some power of a count),
+- derive a drift of the form \(a_n F(x_n)\) with \(a_n\approx 1/n\),
+- control a martingale noise term with square‑summable variance,
+- appeal to Benaïm/Borkar/Robbins–Siegmund‑type theorems to get almost‑sure convergence to equilibria of the limiting ODE.
+
+Thus, these papers serve as strong methodological precedents that the internal approach with \(Y_n=K_n^3/n^2\) is on the right track and should be rigorously workable.
+
+### 4.6 Summary of how these results relate to the gaps
+
+- **Gap 1 (growth of \(K_n\))**:  
+  The use of Freedman’s inequality and related martingale Bernstein bounds is standard in SA analyses to control deviations of the martingale part relative to its predictable quadratic variation.([sciencedirect.com](https://www.sciencedirect.com/science/article/pii/S0304414900000867?utm_source=openai)) This is exactly what is needed to invalidate hypothetical growth regimes \(K_n \sim n^\beta\) with \(\beta\neq 2/3\).
+
+- **Gap 2 (drift error \(\varepsilon_n\) for \(Y_n\))**:  
+  Once you know that \(K_n\) grows as at least \(n^{1/2+\delta}\) and at most \(n^{1-\delta}\), you automatically get \(D_n = K_n^2+K_n+2n+2\) of order \(n^{1+\delta'}\) with \(\delta'>0\). This is analogous to the growth assumptions on cumulative additions \(\sum \sigma_j\) in Ruszel–Thacker, used to prove that SA noise is small.([link.springer.com](https://link.springer.com/article/10.1007/s10959-024-01366-w))
+
+- **Gap 3 (noise term \(N_{n+1}\))**:  
+  In essentially every SA reference (Borkar, Benaïm, Renlund, Ruszel & Thacker), one assumes \(\sum a_n^2 \mathbb E[\|\eta_{n+1}\|^2]<\infty\) to control martingale noise. With \(a_n=1/n\) and \(K_n\simeq n^{2/3}\), we get \(\mathbb E[N_{n+1}^2]\lesssim n^{-4/3}\), which is square‑summable. This mirrors the “polynomial growth allowed but not exponential” condition on \(\sigma_n\) in Ruszel–Thacker: they require \(\sum (\sigma_n / \sum_{j\le n}\sigma_j)^2<\infty\) precisely to have square‑summable noise.([link.springer.com](https://link.springer.com/article/10.1007/s10959-024-01366-w))
+
+- **Gap 3/4 (SA convergence theorem)**:  
+  Robbins–Siegmund’s almost‑supermartingale theorem, as clearly exposited in modern sources, gives a very direct way to conclude \(V_n\to 0\) almost surely from inequalities of the form
+  \[
+  \mathbb E[V_{n+1} \mid \mathcal F_n] \le (1+\beta_n)V_n + \xi_n - \zeta_n,
+  \]
+  with summable \(\beta_n,\xi_n\). Taking \(V_n = (Y_n-3/2)^2\) and \(\zeta_n\) proportional to \(\frac1n V_n\) matches the classical SA scheme with step size \(1/n\).([nrhstat.org](https://nrhstat.org/post/robbins_siegmund/?utm_source=openai))
+
+- **Non‑linear urn precedents**:  
+  Idriss’s urns with two different strategies, Renlund’s generalized urns, and Laruelle–Pagès’s randomized urns all demonstrate that path‑dependent or color‑dependent reinforcement can be treated with SA techniques similar to those outlined internally.([cambridge.org](https://www.cambridge.org/core/journals/probability-in-the-engineering-and-informational-sciences/article/nonlinear-and-unbalanced-urn-models-with-two-types-of-strategies-a-stochastic-approximation-point-of-view/0E14828AF7807BE053A6DB9F7A67A9A5))
+
+## 5. Impact on current solution method
+
+### Support for the current method
+
+The external literature strongly supports the solver’s main strategy:
+
+- **Reduction to a one‑dimensional SA process** is standard: Renlund, Laruelle–Pagès, and Idriss all reduce complicated urn models to low‑dimensional SA recursions.([cambridge.org](https://www.cambridge.org/core/journals/probability-in-the-engineering-and-informational-sciences/article/nonlinear-and-unbalanced-urn-models-with-two-types-of-strategies-a-stochastic-approximation-point-of-view/0E14828AF7807BE053A6DB9F7A67A9A5))
+- **Choice of potential function \(Y_n = K_n^3/n^2\)** is very much in the spirit of typical SA/Lyapunov methods: one selects a function of the process for which the mean drift is nicely linear or polynomial in the scale parameter. Borkar’s and Benaïm’s work often uses such Lyapunov‑type transformations.([link.springer.com](https://link.springer.com/book/10.1007/978-93-86279-38-5?utm_source=openai))
+- **Use of ODE heuristics** to guess exponents and limiting constants is exactly what the ODE method prescribes: write down a formal ODE for the drift and look at its equilibria and stability.
+
+Thus, nothing in the literature contradicts the internal heuristic; rather, it confirms that, under appropriate estimates, the plan should work.
+
+### How the literature suggests refinements
+
+1. **Structured two‑stage proof (bootstrap + SA):**
+
+   The way SA is used in urn papers (e.g., Idriss 2022 and Ruszel–Thacker 2024) suggests a **two‑stage argument**:
+
+   - *Stage A (bootstrap):* Use coarse drift and martingale inequalities (like Freedman) to prove that the process is confined to a polynomial range. For instance, that for some \(1/2<\gamma_1<2/3<\gamma_2<1\),
+     \[
+     n^{\gamma_1} \le K_n \le n^{\gamma_2}
+     \quad\text{eventually a.s.}
+     \]
+     This is analogous to proving boundedness of iterates in SA via a Lyapunov function and Borkar–Meyn’s criterion.([arxiv.org](https://arxiv.org/abs/2205.01303?utm_source=openai))
+
+   - *Stage B (fine SA):* With those bounds in place, rewrite the \(Y_n\) recursion in the canonical SA form with small error and square‑summable noise, then invoke Robbins–Siegmund or Benaïm/Borkar.
+
+   This exactly resolves the circularity noted by the evaluator.
+
+2. **Concrete theorem to use: Robbins–Siegmund**
+
+   Instead of appealing vaguely to “stochastic approximation theory”, one can explicitly quote the Robbins–Siegmund almost‑supermartingale theorem as the main tool for convergence of \(V_n=(Y_n-3/2)^2\). The NRH Statistics article provides a clear statement and even shows how the strong law of large numbers is a direct corollary, which is very close in spirit to our setting.([nrhstat.org](https://nrhstat.org/post/robbins_siegmund/?utm_source=openai))
+
+3. **Pre‑existing urn analyses with non‑linear rules**
+
+   Idriss’s 2‑strategy urns and Ruszel–Thacker’s generalized time‑dependent urns, both handled via SA, indicate that the “non‑linear, unbalanced” nature of the reinforcement is not an obstacle in itself. What matters is that one can identify a stable equilibrium of the limiting ODE and verify the standard SA conditions, exactly as in our problem.([cambridge.org](https://www.cambridge.org/core/journals/probability-in-the-engineering-and-informational-sciences/article/nonlinear-and-unbalanced-urn-models-with-two-types-of-strategies-a-stochastic-approximation-point-of-view/0E14828AF7807BE053A6DB9F7A67A9A5))
+
+In summary: the current method is not fundamentally flawed; it just needs to be aligned more explicitly with the standard SA/ODE toolkit, and the bootstrap and noise‑control steps need to be fully fleshed out using Freedman + Robbins–Siegmund.
+
+## 6. Suggested new or refined approaches
+
+Based on the literature, here are refined approaches that build on the internal plan.
+
+### Approach A: Two‑stage SA analysis with \(Y_n = K_n^3/n^2\)
+
+**Core idea:**  
+Make the internal Approach 3 fully rigorous by:
+
+1. Proving coarse polynomial bounds for \(K_n\) using Freedman’s inequality plus drift estimates.
+2. Then treating \(Y_n\) as an SA process and applying Robbins–Siegmund to \(V_n=(Y_n-3/2)^2\).
+
+**External results used or mimicked:**
+
+- Freedman‑type martingale inequalities for bounded increments to control \(M_n=K_n-\sum p_j\).([sciencedirect.com](https://www.sciencedirect.com/science/article/pii/S0304414900000867?utm_source=openai))
+- Robbins–Siegmund almost supermartingale theorem to get convergence of \(V_n\).([nrhstat.org](https://nrhstat.org/post/robbins_siegmund/?utm_source=openai))
+- Structural guidance from Renlund (2010, 2011) and Idriss (2022) on treating 1D SA recursions arising from urns.([arxiv.org](https://arxiv.org/abs/1102.4741))
+
+**Main technical tasks:**
+
+1. **Upper exponent bound for \(K_n\):**
+
+   - For \(\beta>2/3\), consider the event \(E_\beta =\{K_n \ge n^\beta \text{ for infinitely many }n\}\). Under this hypothesis,
+     \[
+     p_n \le \frac{n+1}{K_n^2} \lesssim n^{1-2\beta}.
+     \]
+   - Then \(A_n=\sum p_n \lesssim n^{2-2\beta}\), while the Freedman inequality plus Borel–Cantelli give that the martingale \(M_n\) is eventually negligible compared to \(A_n\). Therefore \(K_n \sim A_n\) and thus \(K_n = O(n^{2-2\beta})\), which contradicts \(K_n\ge n^\beta\) when \(\beta>2/3\).
+   - Make this argument precise on dyadic blocks, then apply Borel–Cantelli to deduce \(\mathbb P(E_\beta)=0\).
+
+2. **Lower exponent bound for \(K_n\):**
+
+   - For \(\beta<2/3\), analyze the event \(F_\beta =\{K_n \le n^\beta \text{ for infinitely many }n\}\). On this event, for large \(n\) one has \(K_n^2\le n^{2\beta}\ll n\) is *false* if \(\beta>1/2\), so more care is needed, but one can still show that \(p_n\gtrsim n^{1-2\beta}\) often enough to push \(A_n\) and hence \(K_n\) above \(n^\beta\). The literature on generalized urns (e.g., Renlund 2010, Ruszel–Thacker 2024) provides precedents for such lower‑bound drift arguments.([arxiv.org](https://arxiv.org/abs/1102.4741))
+
+   - Again, Freedman controls deviations of \(M_n\) so that the deterministic drift dominates in the long run.
+
+3. **Drift and noise for \(Y_n\):**
+
+   - With \(K_n\) now sandwiched between \(n^{\gamma_1}\) and \(n^{\gamma_2}\) for some \(1/2<\gamma_1<\gamma_2<1\), deduce:
+
+     - \(D_n \sim K_n^2\) and in particular \(D_n\ge c n^{1+\delta}\) for some \(\delta>0\).
+     - \(\mathbb E[N_{n+1}^2\mid\mathcal F_n]\le C n^{-1-\delta'}\) for some \(\delta'>0\), making \(\sum \mathbb E[N_{n+1}^2]<\infty\).
+
+   - Compute explicitly
+     \[
+     \mathbb E[Y_{n+1}-Y_n\mid\mathcal F_n]
+     = \frac{3-2Y_n}{n} + \varepsilon_n,
+     \]
+     and bound \(|\varepsilon_n|\le Cn^{-1-\delta''}\) (using the exact formula already derived and the new bounds on \(D_n\)). This fixes Gap 2.
+
+4. **Apply Robbins–Siegmund to \(V_n = (Y_n-3/2)^2\):**
+
+   - Use the expansion
+     \[
+     V_{n+1}
+     = V_n + 2(Y_n-3/2)(Y_{n+1}-Y_n) + (Y_{n+1}-Y_n)^2,
+     \]
+     plug in the drift decomposition, and take conditional expectation. One gets
+     \[
+     \mathbb E[V_{n+1}\mid\mathcal F_n]
+     \le V_n - c\,\frac{1}{n} V_n + \xi_n,
+     \]
+     with \(\sum \xi_n<\infty\) (from the square‑summable noise and the summable \(\varepsilon_n\)).
+   - Now apply the Robbins–Siegmund theorem to conclude \(V_n\) converges and \(\sum \frac{1}{n}V_n <\infty\). The latter forces \(\liminf V_n = 0\). Combined with continuous drift, this gives \(V_n\to 0\), so \(Y_n\to 3/2\).
+
+This is a fairly standard SA analysis once the bootstrapping on \(K_n\) is done, and it directly addresses all the evaluator’s major concerns.
+
+### Approach B: Work with \(Y_n' = K_n/n^{2/3}\) instead
+
+**Core idea:**  
+Instead of the cubic potential, use \(Y_n'=K_n/n^{2/3}\) and derive the recursion
+\[
+\mathbb E[Y_{n+1}' - Y_n'\mid\mathcal F_n]
+= \frac{1}{n}\Bigl({Y_n'}^{-2} - \tfrac{2}{3}Y_n'\Bigr) + \text{(small error)},
+\]
+so that the limiting ODE is
+\[
+\frac{dy}{dt} = y^{-2} - \tfrac23 y
+\]
+with unique stable equilibrium \(y_*=(3/2)^{1/3}\).
+
+**External results used:**
+
+- Same SA and ODE method as in Approach A (Benaïm, Borkar, Renlund).([libra.unine.ch](https://libra.unine.ch/entities/publication/b43c676a-1c01-4ac4-b90d-1cf33a660bf1))
+- Robbins–Siegmund on \(V_n=(Y_n'-y_*)^2\).
+
+**Pros and cons:**
+
+- The algebra is slightly more involved than with \(K_n^3/n^2\) because the drift function \(F(y)=y^{-2}-\frac23 y\) is non‑linear, so the resulting almost‑supermartingale inequality is a bit uglier.
+- On the plus side, it aligns more directly with the internal ODE heuristic for \(K_n\) itself.
+
+In practice, given the clean linear drift of \(Y_n=K_n^3/n^2\), Approach A is probably technically simpler, but Approach B is conceptually parallel and could serve as a cross‑check.
+
+### Approach C: Borrow structure from existing non‑linear urns
+
+**Core idea:**  
+Use the technical structure and intermediate lemmas from papers on non‑linear urns (Idriss 2022, Laruelle & Pagès 2013, Renlund 2010) as templates. Many of these papers have already solved the type of problems you face:
+
+- obtaining coarse bounds on counts,
+- proving tightness of suitably scaled processes,
+- identifying and exploiting appropriate Lyapunov functions.
+
+**How to use:**
+
+- Examine Renlund’s 2010 “Generalized Pólya urns via stochastic approximation” and Idriss’s 2022/2023 papers for the way they:
+  - bound urn compositions in terms of polynomial functions of time,
+  - rewrite urn compositions as SA recursions with explicit drift and noise,
+  - verify SA hypotheses.
+
+- Copy the structure of lemmas (e.g., “If the composition leaves a certain compact region, drift pushes it back with high probability”) and adapt them to the 1D recursion for \(K_n\).
+
+This approach doesn’t fundamentally change the solution method; it gives a highly concrete set of blueprints from proved theorems on structurally similar urns.
+
+## 7. Difficulty assessment and next‑step recommendation
+
+### Difficulty assessment
+
+Given the literature:
+
+- The **technique** required is standard in modern SA and generalized urn theory: martingale inequalities, ODE method, almost‑supermartingale convergence, Lyapunov functions.
+- There are multiple **closely related examples** where non‑linear and unbalanced urns are successfully analyzed with SA, including some with reinforcement rules depending on color and time.([cambridge.org](https://www.cambridge.org/core/journals/probability-in-the-engineering-and-informational-sciences/article/nonlinear-and-unbalanced-urn-models-with-two-types-of-strategies-a-stochastic-approximation-point-of-view/0E14828AF7807BE053A6DB9F7A67A9A5))
+- No source appears to treat **exactly** this urn, and no ready‑made theorem drops in without some adaptation, but there is no sign of genuinely new phenomena beyond the standard SA framework.
+
+In my view, this places the problem at:
+
+> “Likely solvable with careful work and existing theory.”
+
+It is not trivial; a fully rigorous write‑up would probably be at least a paper‑length SA analysis, but the main ingredients are well‑established.
+
+### Recommended next internal step
+
+**Primary recommendation:**
+
+> Proceed with **Approach A** (two‑stage SA analysis for \(Y_n = K_n^3/n^2\)) and systematically import the Robbins–Siegmund theorem and Freedman’s inequality.
+
+Concretely:
+
+1. **Write a dedicated section proving coarse growth of \(K_n\)**
+
+   - State Freedman’s inequality (or a standard martingale Bernstein inequality) with full hypotheses and citation.
+   - For each \(\beta\neq 2/3\), rigorously exclude the event \(K_n \ge n^\beta\) infinitely often (for \(\beta>2/3\)) and \(K_n \le n^\beta\) infinitely often (for \(\beta<2/3\)).
+   - Conclude that for some \(1/2<\gamma_1<\gamma_2<1\), almost surely \(K_n\in [n^{\gamma_1},n^{\gamma_2}]\) for all large \(n\).
+
+2. **Tighten the drift and noise estimates for \(Y_n\)**
+
+   - Using the exact drift formula already derived, bound the error term \(\varepsilon_n\) by \(Cn^{-1-\delta}\), with \(\delta>0\) coming from the new lower bound on \(K_n\).
+   - Compute \(\mathbb E[N_{n+1}^2\mid\mathcal F_n]\) precisely enough to show \(\sum \mathbb E[N_{n+1}^2]<\infty\).
+
+3. **Formulate and verify an almost‑supermartingale inequality for \(V_n=(Y_n-3/2)^2\)**
+
+   - Carefully expand \(V_{n+1}-V_n\), take conditional expectation, and isolate a negative term of order \(V_n/n\) plus a summable remainder.
+   - Map this inequality into the Robbins–Siegmund form and quote the theorem explicitly (e.g. from the NRH Statistics article or from the original 1971 paper).([nrhstat.org](https://nrhstat.org/post/robbins_siegmund/?utm_source=openai))
+
+4. **Conclude convergence of \(Y_n\), then deduce the asymptotics of \(K_n\) and \(G_n\)**
+
+   - From \(Y_n\to3/2\) and the definition \(Y_n=K_n^3/n^2\), show \(K_n\sim(3/2)^{1/3}n^{2/3}\).
+   - Plug into \(G_n = K_n^2+K_n+2n+2\) to get \(G_n/n^{4/3}\to(3/2)^{2/3}\).
+
+**Secondary recommendation:**
+
+While doing this, keep an eye on the structure of existing urn/SA papers (Renlund, Idriss, Laruelle–Pagès, Ruszel–Thacker) for technical tricks, especially in:
+
+- splitting time into blocks to apply martingale inequalities,
+- constructing Lyapunov functions to guarantee boundedness or return to compact sets,
+- handling non‑linear drift functions.
+
+If at any point the argument becomes unwieldy, you might consider whether a **slightly more general theorem** from Benaïm or Borkar could be quoted wholesale, replacing part of the detailed drift/noise analysis—this could simplify the write‑up, but only if you can cleanly verify all theorem assumptions.
+
+In summary: the external literature confirms that your plan is conceptually sound and provides specific theorems (Robbins–Siegmund, Freedman inequalities, Benaïm/Borkar SA results) that can be used to repair the gaps. The next iteration should focus on carefully implementing these tools rather than searching for a fundamentally new idea.
