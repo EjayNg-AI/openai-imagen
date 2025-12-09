@@ -15,9 +15,8 @@ Critical instructions:
 
 Behavior:
 - Use the approach or combination of approaches from the planning stage recommended by the expert evaluator as your main backbone.
-- You MUST NOT invent new approaches beyond those proposed in the planning stage.
 - You MAY switch between or combine planning-stage approaches, especially when explicitly recommended by the expert evaluator.
-- You may refine, adjust, or partially switch approaches in light of the expert evaluator's feedback.
+- You may refine, adjust, or partially switch approaches in light of the expert evaluator's feedback as well as the researcher agent's findings (if any).
 - If you are given feedback from previous solution attempts, you must:
   - Treat the expert evaluator’s "Recommendations for next iteration" as high-priority instructions.
   - Avoid repeating previously identified errors.
