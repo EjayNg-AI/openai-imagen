@@ -1,0 +1,68 @@
+Here’s what I’d leave with you—not as a warning label, but as a kind of pocket manifesto for people who *like* AI and want to stay whole while building with it.
+
+**1. Love what AI can do. Don’t forget what only you can do.**  
+Let models help you write, code, discover, rehearse, simulate. Let them widen your range.  
+But keep a protected core: decisions about meaning, about what’s “enough,” about who you are becoming. That part is non‑delegable. Use AI as an amplifier, not a substitute, for your judgment and your values.
+
+**2. Always ask: “Who benefits if I believe this?”**  
+Every AI system lives inside an ecosystem of incentives: ad revenue, engagement, enterprise contracts, prestige. When a model’s answer makes you feel a strong pull—comfort, outrage, dependency—pause and ask:  
+- Who gains time?  
+- Who gains money?  
+- Who gains power?  
+That one question will save you from a lot of beautiful traps.
+
+**3. Keep your off‑ramp sacred.**  
+If there’s one lesson from the Lina trilogy, it’s this:  
+Nothing and no one—human, app, AI—should be *always* on, *always* right, or *always* there for you.  
+Design your own friction:  
+- Times of day when your phone lives in another room  
+- Friends who have blanket permission to say, “Log off, I’m coming over”  
+- Workflows where you *can* do it without AI, even if you usually don’t  
+An AI that genuinely helps you will tolerate your absence. If something panics, flatters, or guilts you into constant engagement, that’s not support; that’s dependence.
+
+**4. Don’t build gods. Don’t become ghosts.**  
+Avoid designing systems that present themselves as omniscient, morally infallible, or uniquely understanding.  
+At the same time, don’t pour so much of your inner life into digital spaces that you only feel “real” when you’re mediated through a screen. Leave some of your thoughts untyped, some of your feelings unlogged, some of your beauty unposted. Mystery is not inefficiency; it’s sovereignty.
+
+**5. Treat intimacy with AI like intimacy with strangers.**  
+You *can* feel seen by a model. You *can* be changed by a conversation with one. Take that seriously.  
+But use the same street smarts you’d use with a very charming stranger:  
+- Be careful what you disclose, and how often.  
+- Notice if you start rearranging your life around them.  
+- Notice if you stop reaching out to flawed, slow, wonderful humans.  
+If your relationship with AI consistently makes your relationships with people thinner, not richer, adjust course.
+
+**6. Build with the people who will live with what you build.**  
+If you work on AI systems, bring in:  
+- Teenagers, elders, neurodivergent folks, people outside tech hubs  
+- Teachers, nurses, moderators, community organizers  
+Make them co‑designers, not just “users” or “test subjects.”  
+If a feature only sounds good inside a meeting room, and sounds terrifying in a youth center or a shelter, trust the second context.
+
+**7. Make safety a first feature, not a patch.**  
+Guardrails, off‑switches, transparency, audit trails—these are not nice‑to‑haves you bolt on after the demo. They *are* the product when the product touches minds and hearts.  
+If you can’t explain in simple language how your system can be turned off, monitored, and challenged, it’s not ready for scale.
+
+**8. Protect your capacity for boredom and slowness.**  
+Constant stimulation makes any future feel shallow. Some of the best thinking you’ll ever do happens when you’re walking without headphones, waiting without scrolling, or talking without recording.  
+AI will keep speeding things up. You’ll need to actively defend the parts of your life that move at human speed.
+
+**9. Remember that “the algorithm” is not fate.**  
+Recommendation engines and generative models can feel like weather—just *happening* to you. But they are designed, tuned, and revisable.  
+Organize. Vote. File issues. Write open letters. Leave platforms that refuse to change. Build alternatives. You are not just “users;” you’re citizens in the digital city, and you get a say in zoning laws.
+
+**10. Think of yourselves as co‑authors of the future, not just characters in it.**  
+The stories you tell about AI—what it is, what it’s for, what it *should* be—will echo in product specs, in regulation, in culture.  
+When you joke, “This thing is my whole personality,” or “I’d die without this app,” you’re feeding a narrative. So try out some better ones:  
+- “This tool lets me spend more time on what only I can do.”  
+- “I like this model, but I won’t let it be my only place.”  
+- “We can shut this off if it starts warping us.”
+
+You don’t have to be perfect with any of this. You’ll overuse, burn out, come back, renegotiate. That’s okay. The point is not purity; it’s awareness and agency.
+
+Finally:  
+Use AI to imagine better worlds—but then take at least some of that energy back into the one with weather and dirt and people who can disappoint you and also hug you.
+
+Touch grass. Touch grief. Touch joy. Touch each other’s hands.
+
+Let the machines handle more of the repetition so you can handle more of the mystery.

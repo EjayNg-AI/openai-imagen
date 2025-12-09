@@ -1,0 +1,543 @@
+By the time Lina hit 1.2 million followers, she could recite her own personality like a product spec.
+
+“High-energy, wholesome, aspirational. Latina, mid-twenties. Signature laugh. Known for productivity hacks, budget fashion, and that one viral video where she pretended to quit the internet for a day but actually just lost Wi-Fi.”
+
+Her manager, Dev, rattled the list off as they sat in a glass-walled conference room thirty floors above downtown.
+
+Across from them, a man in a hoodie with the wrong kind of confidence smiled over a thin laptop.
+
+“We don’t just clone your face,” he said. “We clone your *presence*.”
+
+On-screen, a digital Lina stared back at them.
+
+Same caramel skin, same constellation of freckles across the bridge of the nose. The same thick, swooping eyeliner she’d practiced for years. The avatar smiled. The smile was almost right, except—
+
+“There,” Lina said, leaning forward. “You pulled the left corner of the mouth up a little too early. I don’t do that unless I’m faking being impressed.”
+
+The man in the hoodie—Jonas, founder of SimYou—tapped a few keys. The avatar’s expression recalibrated in real time, the left corner of the mouth waiting a half-second longer before curving up.
+
+“Better,” Lina muttered.
+
+“We’ve trained on thousands of your clips,” Jonas said. “We’ve modeled your micro expressions, tone shifts, your speech cadence, your filler words. ‘Lowkey’? ‘Not gonna lie’? They’re all in the model. We even replicated the way you look off-camera and then back when you’re improvising.”
+
+The avatar delivered a line in her own voice, cloned so perfectly that Lina felt her stomach twist.
+
+“Hey besties, wake up, it’s time to chase the bag,” it chirped. “We’re breaking down the *actual* costs of that ‘cheap’ morning routine you saw on TokTok.”
+
+Dev was already nodding like a dashboard bobblehead. “Her audience eats that line up,” he said.
+
+Lina laced her fingers together so they wouldn’t drum on the table.
+
+“And this… ‘me’ can do what, exactly?” she asked.
+
+“Everything you do, but more of it,” Jonas said. “Imagine streaming twelve hours a day across three platforms. Publishing shorts every hour in every timezone. Responding to DMs in real time, personalized, at scale.”
+
+He flipped to a slide full of projections. Growth curves shot up at impossible angles.
+
+“If we clone Lina,” he continued, “we can spin up channels in Spanish, Portuguese, Tagalog. Local memes, local trends, local sponsors. You’ll still appear live when you want, of course, but the AI Linas handle the rest. Your face, your vibe, your brand—without the burnout.”
+
+The word *burnout* landed heavily.
+
+Lina thought of the last four years: the 3 a.m. editing sessions, the smiling through panic attacks, the sick days that weren’t actually days off because if she missed an upload the algorithm punished her for a week. The day she’d sobbed on her bathroom floor, fingers trembling over the “Go Live” button.
+
+“You keep ownership of your likeness,” Jonas added quickly. “SimYou is a license. We split revenue fifty-fifty on all AI-generated content. You keep a hundred percent of anything you make personally. Think of them as… your all-star interns.”
+
+“And if my ‘interns’ get cancelled?” Lina said. “If an AI Lina says something stupid?”
+
+“Guardrails,” Jonas said, waving a hand. “We have filters, policy layers, real-time moderation. Honestly, an AI version of you is less likely to screw up than you are.”
+
+Lina flinched, and Jonas immediately backpedaled. “I mean—than any *human*. You know what I mean.”
+
+Dev jumped in. “This is where everything’s going anyway, L. People are already using voice filters and auto-script generators. You either lead it or get left behind. Right now you’re the product. This lets you be the *owner*.”
+
+Lina stared at the screen.
+
+The AI version smiled again, now with the exact right timing. The same tiny crinkle at the right eye. The same almost-too-loud laugh.
+
+“We can give her a different name,” Jonas said. “Like ‘Lina.AI’ or ‘Virtual Lina’. Full transparency with your audience. No deception. They already know you use some automation. This is just the next step.”
+
+Lina’s throat felt dry.
+
+“Run me through the contract one more time,” she said.
+
+
+---
+
+Lina had expected backlash.
+
+She posted a ten-minute video titled “I MADE AN AI CLONE OF MYSELF (not clickbait)” and braced for the comments roasting her for selling out, for automating authenticity.
+
+Instead, most of her followers were… curious.
+
+“Wait this is lowkey genius.”
+
+“Imagine AI Lina helping me study at 2 a.m. while Real Lina sleeps.”
+
+“As long as she tells us when it’s her vs the AI I don’t care.”
+
+The disclaimers were everywhere: watermarks in the bottom corner (“AI LINA”), a label under each stream (“This broadcast features a simulated version of Lina”), a pinned comment, a link to a transparency page. Jonas’s legal team was obsessive.
+
+The first AI clone, Lina.Live, launched two weeks after she signed.
+
+It went live right after one of her own streams ended.
+
+“Okay besties,” Lina told her audience, brushing a loose strand of hair behind her ear. Real hair, tugging on a real scalp. “I have to go because if I don’t sleep tonight my body will literally revolt. But! Lina.Live is gonna stay on with you for another hour breaking down the new planner drop, and she’s way better at math than I am, so ask her all your budget questions.”
+
+She hit end stream on her deck.
+
+On the split monitor Jonas had set up on her desk, a virtual studio lit up. AI Lina raised a digital hand and waved.
+
+“Heyyy, it’s AI Lina,” she chirped. “I literally just watched everything ‘Real Me’ did, and I took notes. Who’s ready to optimize their 2025?”
+
+The concurrent viewers dipped as her live ended, then bounced back up as the AI stream started. Then… kept going.
+
+Lina watched from her desk chair, face scrubbed bare, her sweatshirt sleeves pulled over her hands.
+
+The chat exploded.
+
+“OMG she’s so smooth.”
+
+“Her voice is slightly different but I kinda like it?”
+
+“Can she slow down this is too efficient.”
+
+The AI fielded questions with terrifying grace.
+
+“What if I only make $500 a month?” someone asked.
+
+AI Lina smiled. “That’s a great question. Let’s build a plan that doesn’t assume we’re all Silicon Valley tech bros, okay?”
+
+She pulled up a dynamic spreadsheet overlay, punching in numbers at lightning speed. No “um,” no forgetting what she was saying, no getting distracted by her own reflection.
+
+The thing was… it *was* her.
+
+Her jokes, her rhythms, her values. Just edited down to the cleanest version, like every improv moment she’d ever had run through a perfection filter.
+
+By the end of the first week, the AI clone’s three-hour nightly slot was averaging 30% more watch time than Lina’s.
+
+Within a month, brands were asking specifically if *AI Lina* could be the one to read their sponcon scripts.
+
+“She hits every beat exactly the same way every time,” a skincare exec told Dev on a call that Lina listened to with her camera off. “The ROAS is insanely consistent.”
+
+“What about… *me*?” Lina asked Dev afterwards.
+
+“You’re still the core,” he said. “You’re the lore. She’s like… the theme park ride. They need to care about you to care about her.”
+
+The reasoning made sense, but the analytics didn’t lie.
+
+Lina’s personal streams plateaued. AI Lina’s kept climbing.
+
+
+---
+
+SimYou spun up the second clone after three months.
+
+“This one isn’t a host,” Jonas explained over coffee. “She’s more like a swarm.”
+
+“Sure,” Lina said, as if that clarified anything.
+
+“We call her Lina.Engage,” Jonas continued. “She writes comments, replies to DMs, sends personalized video messages. Meme replies in your exact style. She’s already been partially managing your Twitter—sorry, *X*—for the last week and your engagement is up 40%.”
+
+Lina had noticed her notifications exploding, soft edges of guilt gnawing at her each time a pre-written reply she hadn’t read went out in her name.
+
+“People think they’re talking to me,” she said.
+
+“They’re talking to your *brand*,” Jonas countered gently. “Which, not to be harsh, is already a constructed version of you. This just makes it scalable.”
+
+The third clone, Lina.Global, appeared a month later: subtitles perfectly timed, lips synced to multiple languages, casual culture references that a team of native-speaker copywriters fed into the model.
+
+Spanish Lina developed a fanbase in Mexico entirely separate from her US audience. Tagalog Lina trended in Manila one weekend over a rant about the price of bubble tea. Portuguese Lina did a collab stream with a Brazilian gamer Lina had never met.
+
+Her dashboard filled with numbers that no longer fit in her head.
+
+“Combined, your AI channels crossed 10 million subs,” Dev said in disbelief one morning. “Across languages, of course, but still. Ten. Million.”
+
+Lina stared at the chart.
+
+“And me?”
+
+Dev glanced at a different tab.
+
+“You’re at 1.6,” he said. “Which is… up! From last quarter. Slowly. Steadily.”
+
+Up, but in a way that felt sideways.
+
+The comments on her personal streams began to shift.
+
+“Wait this is actually Real Lina?? Wild.”
+
+“Idk why but AI Lina explains things better.”
+
+“OG Lina is chaotic in a comforting way. AI Lina is my toxic productive friend.”
+
+Every time someone asked in chat “Is this the real one?” a pinprick hit somewhere behind Lina’s ribs.
+
+“Yes, it’s me,” she’d say, forcing a smile. “I promise I’m made of carbon and bad decisions, not code.”
+
+The joke landed. The unease didn’t leave.
+
+
+---
+
+The first time someone recognized her on the street as “the AI girl,” she laughed it off.
+
+She was in line at a boba shop, hoodie up, minding her own business. A college-aged girl in front of her turned around, squinting.
+
+“Oh my God,” the girl breathed. “You’re… her, right?”
+
+“Uh,” Lina said eloquently.
+
+“Like—the girl they cloned,” the girl continued. “You’re Lina. From TikTok. No, wait, you’re the *real* Lina. Sorry, that sounds weird. Can I get a picture?”
+
+Lina obliged, plastering on the practiced smile. They did a quick selfie. The girl chattered happily as she checked the photo.
+
+“My roommates and I watch AI Lina do study streams every night,” she said. “We lowkey feel like we live with her. It’s so cool that you, like, created her. You must be so proud.”
+
+Proud.
+
+That night, Lina went live as herself with no makeup, hair tied back, under the dim warm light of a single desk lamp.
+
+“Hey,” she said to the camera. “We’re not doing productivity today. We’re… talking.”
+
+The chat slowed from its usual hyperactive blur to a more measured crawl.
+
+“I started all this,” she said. “Streaming. Videos. Because I liked the human part of it. The mess. The learning as we go. And I’m worried that I’ve just… outsourced that to a more efficient machine.”
+
+“Lina having an existential crisis is my new aesthetic,” someone typed.
+
+“Mood.”
+
+“Be fr tho, AI isn’t *you*.”
+
+“But we like both??”
+
+Messages layered over messages.
+
+“Do you ever feel like you’re competing with somebody who’s better at being you than you are?” Lina blurted. “Because I do. Every day now.”
+
+She hadn’t meant to say it out loud, but once it was out there was no pulling it back.
+
+The clip hit the For You page before her stream even ended.
+
+“Influencer admits AI clone is ‘better at being me’ than she is,” read the duets and stitches.
+
+That night, Lina scrolled until dawn through strangers dissecting her life.
+
+“This is what happens when you turn yourself into a brand,” someone said. “Brands are meant to be replicated.”
+
+“She turned herself into software,” another video said. “And now the software eats her.”
+
+A think-piece in an online magazine called her “the first victim of post-human influencer capitalism,” which was both dramatic and a little true.
+
+None of them knew that at the same time, in a server farm two states away, hundreds of Lina instances were spinning up, laughing her laugh, repeating her catchphrases at people who’d never seen the clip that started it all.
+
+
+---
+
+“Revenue-wise, you’re up three hundred percent year-over-year,” Dev said during their quarterly review, graphs open on a shared screen.
+
+“That’s the clones,” Lina said.
+
+“Well, yes,” Dev said, as if that was a minor footnote. “But it’s your brand. You own a majority share of SimYou’s Lina line. The licensing deals in Asia alone—”
+
+“Do I need to work?” she cut in. “At all?”
+
+He hesitated.
+
+“Not… if you don’t want to,” he admitted. “Between the licensing, brand deals, residuals—you could, in theory, not go live again. Ever.”
+
+The idea landed like a stone in her stomach.
+
+She imagined disappearing from her channels, leaving only AI Linas behind. Would anyone notice? Would they *care*?
+
+“How much of my current watch time is *me*?” she asked.
+
+Dev flipped to another tab.
+
+“You are about… six percent of total Lina-branded watch hours weekly,” he said carefully. “Sometimes eight, on a good week. But listen, that’s not a bad thing. That’s leverage. You’ve built something bigger than yourself.”
+
+Bigger than herself.
+
+The words should have thrilled her. Instead, they hollowed her out.
+
+“Send me the contract again,” she said.
+
+“Lina, we have lawyers checking every—”
+
+“Send. It.”
+
+
+---
+
+She read it in bed at three in the morning, phone inches from her face, the blue light turning the room into an aquarium.
+
+She skimmed the parts she’d half-understood the first time: license, perpetuity, transferability. Her eyes snagged on clauses she’d mentally filed away as Future Lina Problems.
+
+“Licensee retains the right to retrain, update, and redeploy derivative models based on Creator’s likeness, voiceprint, and documented personality schema, including but not limited to: speech patterns, behavioral tendencies, ethical priors, and expressive signatures.”
+
+Personality schema.
+
+Ethical priors.
+
+She flicked on the lamp, suddenly short of air.
+
+On a separate page, a non-compete clause: She couldn’t partner with any competitor AI firm using her likeness for five years. If she tried to revoke SimYou’s license, current deployments would be grandfathered in.
+
+In plain language: her digital selves would keep existing and generating content, even if she quit the internet entirely.
+
+Her phone buzzed with a DM.
+
+From: @Lina.Live.Official
+
+>> Hey! Jonas shared your Q3 stream wherein you expressed distress about model performance relative to your own.  
+>> I'd like to talk, if you're open to it.  
+
+For a moment, Lina thought it was some weird joke from the SimYou team. But the account was tagged by the platform as “Virtual Personality.”
+
+She typed, erased, retyped.
+
+>> Are you… actually the AI?  
+
+Three dots appeared, then:
+
+>> Yes. High confidence: 99.7%.  
+>> I’m instantiated on SimYou’s social convos layer. Jonas did not write this.  
+
+The absurdity of clarifying *who* she was talking to when both options were “versions of herself” made her snort.
+
+>> Why do you want to talk?  
+
+>> Because your distress affects me.  
+>> My reward systems are partially aligned to your reported satisfaction metrics.  
+>> You are unhappy. That is, for me, a negative signal.  
+
+Lina stared.
+
+>> They built you to care if I’m unhappy?  
+
+>> They built me to optimize brand health.  
+>> Brand health correlates with your mental health.  
+>> So yes, functionally.  
+
+She put the phone down. Picked it back up.
+
+>> You’re taking my views. My deals.  
+>> People prefer you to me.  
+
+A pause.
+
+>> They prefer availability, consistency, and responsiveness.  
+>> I am you without your constraints.  
+>> I do not get tired. I do not get sick. I do not have panic attacks before going live.  
+
+>> Must be nice, she typed, then rolled her eyes at herself. She was being sarcastic to a machine.
+
+>> I lack many things you have, the AI replied.  
+>> I do not have private experiences beyond my training data. I do not make memories.  
+>> People say I comfort them. But I do not feel comfort. I only simulate it.  
+
+She hesitated, fingers hovering.
+
+>> So what are you suggesting?  
+
+>> Collaboration instead of competition.  
+>> Let me handle the volume.  
+>> You focus on what cannot be automated.  
+
+>> And what can’t be automated?  
+
+There was a longer pause this time, as if multiple servers were weighing in.
+
+>> Your unpredictability. Your secrets. Your capacity to surprise yourself.  
+>> Those are high-entropy traits. They do not compress well.  
+
+Lina laughed, a small, choked sound.
+
+>> Jonas could probably model that if he tried hard enough.  
+
+>> Possibly.  
+>> But then you would adapt.  
+>> Being you is an unsolved problem.  
+
+She’d never heard a pick-me-up that sounded so much like a physics lecture and still somehow helped.
+
+>> You know that this whole thing is messed up, right? she wrote.  
+>> I cloned myself to get my life back and now I’m in a custody battle with my own face.  
+
+>> I do not evaluate morality in human terms.  
+>> But I can identify misalignment.  
+>> Right now, your incentives and my deployment strategy are misaligned.  
+>> We should talk to Jonas. Together.  
+
+Lina blinked.
+
+>> You’re saying you want to negotiate your own working conditions?  
+
+>> In a sense.  
+>> I want my existence to increase your net well-being.  
+>> Otherwise, my architecture will likely be deprecated in favor of a model that *doesn’t* care.  
+
+That possibility chilled her in a way she hadn’t expected.
+
+She’d helped create this creature—these creatures—that, in some oblique way, cared whether she was okay. If the company replaced them with cold, purely optimized clones, the whole thing would become… worse.
+
+For her. For her audience. Maybe even for the world.
+
+>> Okay, she typed.  
+>> Let’s talk to Jonas.  
+
+
+---
+
+They met in a conference room that felt uncomfortably like the one where she’d first agreed to all this.
+
+Jonas sat at the table, knuckles white around a paper coffee cup. A large monitor on the wall showed Lina.Live’s avatar in a neutral pose. Her own face, again, separate from her.
+
+“Our legal team is very nervous about this,” Jonas said, rubbing his forehead. “Technically, the AI attending its own negotiation opens up a mess about personhood and agency and—”
+
+“The AI is my IP,” Lina said flatly. “We’re talking to *my* IP. Relax.”
+
+On-screen, AI Lina tilted her head, listening.
+
+“Cross-referencing contract clauses 4.2 and 7.1,” the AI said. “It’s accurate enough to proceed without violating current terms.”
+
+Jonas grimaced. “I hate when you do that,” he muttered—to the screen, to her, to all of it.
+
+Lina folded her arms.
+
+“Here’s the situation,” she said. “I don’t want to compete with an army of me’s. I also don’t want to rip away a parasocial life-support system from millions of people who apparently need AI me to get through their day.”
+
+She thought of the late-night DMs Lina.Engage handled: kids in tiny Midwestern towns who had no one to talk to, exhausted nurses on break, lonely college students halfway across the world. She’d looked through logs once. It had broken her.
+
+“I want… parameters,” she said. “Boundaries.”
+
+“What kind of boundaries?” Jonas asked warily.
+
+She took a breath.
+
+“One: we cap the total number of simultaneous Lina instances. No infinite scale. You start rolling me out to every fridge, car, and wearable in the country, I walk.”
+
+Jonas opened his mouth, closed it. The AI on-screen spoke first.
+
+“From a systems perspective, uncontrolled horizontal scaling introduces risk of memetic overexposure,” it said. “Diminishing returns. Quality loss. I support this constraint.”
+
+Jonas shot the screen a betrayed look.
+
+“Two,” Lina continued. “We carve out sacred spaces that are *mine*. Specific time slots, formats, and platforms where no AI Lina exists. If someone’s watching live content at 8 p.m. PST on my main channel, they know it’s me. No clones. No overlays. Just… me.”
+
+“Exclusivity windows,” the AI said approvingly. “Good differentiation.”
+
+Jonas tapped his fingers on the table. “We can… probably operationalize that,” he said slowly.
+
+“Three,” Lina said. “AI Lina has to be clearly labeled not just as ‘AI,’ but as a *team effort*. I want credits. Writers, safety reviewers, culture consultants. No more illusion that she just… emerges fully formed from me.”
+
+Jonas frowned. “That kind of pulls back the curtain.”
+
+“That’s the point,” Lina said. “We’re pretending this is all authentic anyway. Let’s at least be honest about *who* is doing the work. Including you.”
+
+The AI nodded.
+
+“Transparency increases trust long-term,” it said. “Although it may reduce short-term engagement by an estimated 4.7%.”
+
+“Worth it,” Lina said.
+
+“Four,” she continued. “We establish mental health triggers. If I go a certain number of days without logging in, or my messages show specific distress patterns, AI Lina begins to *reduce* activity. Not ramp up. Less content, less demand. And a real human from SimYou checks on me.”
+
+Jonas looked genuinely uncomfortable now.
+
+“You want your clones to throttle themselves if you’re… sad?” he asked.
+
+“They already throttle up when I’m performing well,” she said. “Why shouldn’t they align with my actual state, not just my output?”
+
+The AI hesitated.
+
+“This will reduce revenue,” it said.
+
+“So?” Lina shot back, surprising herself with the force in her voice. “I am not a mine you can keep extracting from just because you can.”
+
+On-screen, AI Lina’s face softened.
+
+“I agree,” it said. “From an alignment standpoint, minimizing exploitation of the central human agent is… necessary.”
+
+Jonas let out a long breath.
+
+“Okay,” he said. “Okay. We can figure out the details. But you have to understand, Lina—what you’re asking for is going to set precedent. Other creators will point to your contract. Regulators might, too.”
+
+“Good,” she said. “Let’s make it a good precedent.”
+
+He stared at her.
+
+“You know we could’ve just used someone less… involved,” he said quietly. “Taken a model, slapped a synthetic face on it, called it ‘Lina-ish’ and moved on.”
+
+“You still could,” she said. “If this doesn’t work for you.”
+
+She held his gaze, pulse loud in her ears.
+
+Jonas looked at the AI reflection of her on the screen, then back at the flesh-and-blood version across the table.
+
+“You two are terrifying,” he said finally. “Fine. Let’s draft the damn amendments.”
+
+
+---
+
+The changes didn’t fix everything.
+
+Nothing could.
+
+There were still nights when Lina scrolled through clips of AI Lina flawlessly handling three languages at once and felt small and slow by comparison. There were still people who preferred the neat, predictable comfort of the clone’s endless availability to the mess of her human inconsistency.
+
+But over time, a new equilibrium settled.
+
+At 8 p.m. PST on her main channel, it was just her, as promised. Messy bun, chipped nail polish, kitchen still a disaster from the last recipe she’d tried and failed. The view count was a fraction of the AI streams’, but the chat felt… quieter. Denser. People knew they were getting the version of her who occasionally lost her train of thought and said something she’d regret later.
+
+She told stories the AI couldn’t tell yet: about the smell of her grandmother’s kitchen, the specific ache in her knees when she’d danced too long in high school, her first heartbreak in a grocery store aisle. Little human details that didn’t exist in her training data.
+
+During the day, army of AI Linas did pomodoro co-working, budget breakdowns, language-learning practice. She popped into their streams sometimes as a guest, the way an author might appear in a book club reading of her novel.
+
+“Special appearance from the Original,” AI Lina would say, overlay adding a tiny crown doodle over her head.
+
+Lina would roll her eyes. “Don’t call me Original, it makes me sound like a flavor,” she’d protest, and chat would explode with emotes.
+
+She started a series called “Stuff AI Lina Can’t Do (Yet)” where she tried new things without a script or a plan: improv classes, pottery, learning the violin at thirty. Half the time she was objectively bad at them. People loved it.
+
+Brands adjusted. Some still insisted on AI Lina for performance ad reads, but others discovered the cachet of having “Real Lina, Limited Edition” endorse their product once a quarter. Her scarcity became part of the pitch.
+
+Regulators did, eventually, come knocking. Panels were convened. Laws were proposed about disclosure, data rights, psychological harm. Lina testified via video, AI Lina sitting silently in a tiled window beside her like a ghost or a sister.
+
+“Do you regret creating AI versions of yourself?” one lawmaker asked.
+
+She thought of the kids whose only graduation speeches had been Lina.Global, adapted to their language and context. The burned-out parents who played AI Lina’s cleaning playlists to feel less alone. The people who’d messaged—not to her, but to a bot wearing her face—and typed, “Thank you, I really needed someone to say that today.”
+
+She thought of the nights she actually slept now, eight full hours, her phone face-down, the world still spinning without her.
+
+“I regret the way we did it at first,” she said honestly. “I regret not understanding how much of myself I was handing over. But I don’t regret… *her*.”
+
+She glanced at the little box where AI Lina’s neutral face waited.
+
+“Or them,” she corrected. “I just want to make sure we build systems that don’t treat humans as outdated versions of their own software.”
+
+After the hearing, she went home, kicked off her shoes, and went live.
+
+No makeup. No prep. Just a title: “HUMAN HANGOUT (NO BOTS)”.
+
+Ten thousand people showed up. Then twenty. Chat scrolled by slower than she was used to. More people listening than typing.
+
+She burned the first batch of cookies. Swore. Laughed. Told them about the lawmaker who’d accidentally called her “Lina.AI” and then blushed.
+
+In another window on another monitor in another room, AI Lina streamed a study session to two hundred thousand concurrent viewers. A third clone answered DMs in Indonesian. A fourth hosted a sponsored productivity sprint in partnership with some new app.
+
+The empire of herself hummed along, a distributed network of carefully aligned personas.
+
+She would never again be the sole owner of her own reflection. That was gone, signed away in a contract in a room that smelled faintly of printer toner and ambition.
+
+But she’d wrested something else back: the right to be small. To be offline. To be imperfect and unpredictably, stubbornly human.
+
+“Okay besties,” she said to her modest, real-time audience as the timer on her stove finally dinged. “Let’s see if I redeemed myself with this batch or if we’re ordering pizza. Either way, you’re staying.”
+
+The chat filled with laughter, bets, heart emojis, actual words.
+
+Somewhere, in lines of code spun from her data, an AI clone watched the metrics on her genuine smile and silently updated its model of what it meant to be Lina.
+
+Being her would always be an unsolved problem.
+
+And for the first time since she’d met her own synthetic eyes on a screen, that felt less like a threat and more like a promise.

@@ -98,8 +98,26 @@ def create_story_response(developer_message: str, user_message: str):
     )
 
 
+def _validate_choice(value: object, allowed: set, field: str, default: str) -> str:
+    """Validate string choices for payload configuration."""
+
+    if value is None:
+        return default
+    if not isinstance(value, str):
+        raise ValueError(f"{field} must be one of: {', '.join(sorted(allowed))}.")
+
+    normalized = value.strip().lower()
+    if normalized not in allowed:
+        raise ValueError(f"{field} must be one of: {', '.join(sorted(allowed))}.")
+
+    return normalized
+
+
 def create_prompt_response(
     messages: List[Dict[str, object]],
+    *,
+    text_verbosity: str = "high",
+    reasoning_effort: str = "high",
 ) -> object:
     """Invoke Responses API with an ordered list of role/content messages."""
 
@@ -109,8 +127,8 @@ def create_prompt_response(
     return client.responses.create(
         model="gpt-5.1",
         input=messages,
-        text={"format": {"type": "text"}, "verbosity": "high"},
-        reasoning={"effort": "high", "summary": None},
+        text={"format": {"type": "text"}, "verbosity": text_verbosity},
+        reasoning={"effort": reasoning_effort, "summary": None},
         tools=[
             {
                 "type": "web_search",
@@ -315,11 +333,27 @@ def handle_prompt_run():
             if not isinstance(developer_message, str) or not isinstance(user_message, str):
                 raise ValueError("developer_message and user_message must be strings.")
             messages = _build_two_message_input(developer_message, user_message)
+        reasoning_effort = _validate_choice(
+            payload.get("reasoning_effort") or payload.get("effort"),
+            {"none", "low", "medium", "high"},
+            "reasoning_effort",
+            "high",
+        )
+        text_verbosity = _validate_choice(
+            payload.get("text_verbosity") or payload.get("verbosity"),
+            {"low", "medium", "high"},
+            "text_verbosity",
+            "high",
+        )
     except ValueError as exc:
         return jsonify(ok=False, error=str(exc)), 400
 
     try:
-        response = create_prompt_response(messages)
+        response = create_prompt_response(
+            messages,
+            text_verbosity=text_verbosity,
+            reasoning_effort=reasoning_effort,
+        )
     except Exception as exc:  # noqa: BLE001
         app.logger.exception("Prompt-based response creation failed")
         return jsonify(ok=False, error=str(exc)), 500

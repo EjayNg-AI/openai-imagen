@@ -115,6 +115,23 @@
         box-shadow: 0 0.6rem 1.4rem rgba(79, 140, 255, 0.35);
       }
 
+      button.secondary {
+        background: transparent;
+        color: var(--fg);
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        padding: 0.65rem 1.1rem;
+        font-size: 0.98rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: border-color 100ms ease, color 100ms ease;
+      }
+
+      button.secondary:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
       .status {
         min-height: 1.25rem;
         font-size: 0.95rem;
@@ -197,6 +214,10 @@
         <code>scratchpad/examplecode.py</code>.
       </p>
 
+      <div style="margin: 0.25rem 0 1.5rem; display: flex; gap: 0.75rem; flex-wrap: wrap">
+        <button type="button" class="secondary" id="openPromptRunner">Open prompt runner tab</button>
+      </div>
+
       <form id="promptForm" data-endpoint="/api/responses">
         <section>
           <label for="developerMessage">Developer message</label>
@@ -248,6 +269,7 @@
       const status = document.getElementById("status");
       const result = document.getElementById("result");
       const paragraphsBox = document.getElementById("paragraphsBox");
+      const openPromptRunnerBtn = document.getElementById("openPromptRunner");
 
       const showStatus = (message, isError = false) => {
         status.textContent = message;
@@ -259,6 +281,12 @@
           el.disabled = disabled;
         });
       };
+
+      if (openPromptRunnerBtn) {
+        openPromptRunnerBtn.addEventListener("click", () => {
+          window.open("/prompt-runner", "_blank", "noopener");
+        });
+      }
 
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
