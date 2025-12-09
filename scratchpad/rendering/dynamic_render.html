@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>
+      Dynamic Markdown + LaTeX Renderer (MathJax, with early escaping)
+    </title>
+
+    <style>
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        margin: 2rem;
+        line-height: 1.6;
+        background: #f5f5f5;
+      }
+
+      h1 {
+        margin-top: 0;
+      }
+
+      #controls {
+        margin-bottom: 1rem;
+      }
+
+      #add-block-btn {
+        padding: 0.45rem 0.9rem;
+        border-radius: 4px;
+        border: 1px solid #888;
+        background: #fff;
+        cursor: pointer;
+      }
+
+      #add-block-btn:hover {
+        background: #eee;
+      }
+
+      #blocks-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+
+      .block {
+        max-width: 950px;
+        padding: 1rem 1.25rem 1.25rem 1.25rem;
+        background: #ffffff;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+      }
+
+      .block-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+      }
+
+      .block-title {
+        font-weight: 600;
+      }
+
+      .editor {
+        width: 100%;
+        height: 140px;
+        padding: 0.75rem;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        font-family: "Fira Code", "Consolas", "SF Mono", monospace;
+        box-sizing: border-box;
+        resize: vertical;
+      }
+
+      .btn-row {
+        margin: 0.6rem 0 0.8rem 0;
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .render-btn {
+        padding: 0.35rem 0.9rem;
+        border-radius: 4px;
+        border: 1px solid #888;
+        background: #fff;
+        cursor: pointer;
+      }
+
+      .render-btn:hover {
+        background: #eee;
+      }
+
+      .output {
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 0.75rem 1rem;
+        min-height: 60px;
+        background: #fafafa;
+      }
+
+      .error-msg {
+        color: #b00020;
+        font-size: 0.9rem;
+        margin-top: 0.4rem;
+        min-height: 1em;
+      }
+    </style>
+
+    <!-- MathJax config: must be defined BEFORE loading tex-svg.js -->
+    <script>
+      window.MathJax = {
+        tex: {
+          inlineMath: [
+            ["$", "$"],
+            ["\\(", "\\)"],
+          ],
+          displayMath: [
+            ["$$", "$$"],
+            ["\\[", "\\]"],
+          ],
+          packages: { "[+]": ["noerrors", "noundefined"] },
+        },
+        svg: {
+          fontCache: "global",
+        },
+      };
+    </script>
+
+    <!-- Local MathJax component build (tex-svg.js in same folder) -->
+    <script src="./tex-svg.js"></script>
+  </head>
+  <body>
+    <h1>Dynamic Markdown + LaTeX Renderer (MathJax)</h1>
+    <p>
+      Paste <strong>Markdown with LaTeX</strong> into a block and click
+      <em>Render</em>. As a first step, all <code>\(</code>, <code>\)</code>,
+      <code>\[</code>, and <code>\]</code> in your Markdown are converted to
+      <code>\\(</code>, <code>\\)</code>, <code>\\[</code>, and <code>\\]</code>
+      before Markdown is processed.
+    </p>
+
+    <div id="controls">
+      <button id="add-block-btn">Add New Block</button>
+    </div>
+
+    <div id="blocks-container"></div>
+
+    <!-- Local helpers -->
+    <script src="./marked.min.js"></script>
+    <script src="./purify.min.js"></script>
+
+    <script>
+      let blockCounter = 0;
+
+      // Example default content for the first block
+      const defaultMarkdown = String.raw`
+# Example
+
+This is a sample block. You can replace this with your own Markdown + LaTeX.
+
+Given a quadratic equation $$ax^2 + bx + c = 0$$ with $a \ne 0$, the solutions are
+
+$$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}.$$
+
+Inline example: $e^{i\pi} + 1 = 0$.
+
+You can also write things like \[0,1\] or \(0,1\).
+`;
+
+      /**
+       * FIRST STEP: escape \(...\), \[...\] style delimiters in the raw markdown.
+       *  \(
+       *  \)
+       *  \[
+       *  \]
+       * become
+       *  \\(
+       *  \\)
+       *  \\[
+       *  \\]
+       */
+      function escapeTeXDelimitersInMarkdown(md) {
+        return md
+          .replace(/\\\(/g, "\\\\(") // "\(" -> "\\("
+          .replace(/\\\)/g, "\\\\)") // "\)" -> "\\)"
+          .replace(/\\\[/g, "\\\\[") // "\[" -> "\\["
+          .replace(/\\\]/g, "\\\\]"); // "\]" -> "\\]"
+      }
+
+      /**
+       * Create a new block (textarea + output) and append to the page.
+       */
+      function createBlock(initialText = "") {
+        blockCounter += 1;
+        const id = blockCounter;
+
+        const container = document.getElementById("blocks-container");
+
+        const block = document.createElement("div");
+        block.className = "block";
+        block.dataset.blockId = id;
+
+        block.innerHTML = `
+        <div class="block-header">
+          <span class="block-title">Block ${id}</span>
+        </div>
+        <textarea class="editor" id="editor-${id}" placeholder="Paste Markdown + LaTeX here..."></textarea>
+        <div class="btn-row">
+          <button class="render-btn" data-action="render" data-block-id="${id}">
+            Render
+          </button>
+        </div>
+        <div class="output mj-process" id="output-${id}"></div>
+        <div class="error-msg" id="error-${id}"></div>
+      `;
+
+        container.appendChild(block);
+
+        // Set initial content if provided
+        if (initialText) {
+          document.getElementById(`editor-${id}`).value = initialText;
+        }
+
+        // Render once initially (for default example on first block)
+        renderBlock(id);
+      }
+
+      /**
+       * Render a specific block by id:
+       *  1. Escape \(...\), \[...\] in markdown
+       *  2. Markdown → HTML
+       *  3. Sanitize
+       *  4. MathJax typeset
+       */
+      async function renderBlock(blockId) {
+        const editor = document.getElementById(`editor-${blockId}`);
+        const output = document.getElementById(`output-${blockId}`);
+        const errorBox = document.getElementById(`error-${blockId}`);
+
+        if (!editor || !output || !errorBox) return;
+
+        const markdownRaw = editor.value;
+        errorBox.textContent = "";
+
+        // STEP 1: escape TeX delimiters in the markdown itself
+        const markdownEscaped = escapeTeXDelimitersInMarkdown(markdownRaw);
+
+        // STEP 2: Markdown → HTML
+        const rawHtml = marked.parse(markdownEscaped, {
+          mangle: false,
+          headerIds: false,
+          breaks: true,
+        });
+
+        // STEP 3: Sanitize
+        const safeHtml = DOMPurify.sanitize(rawHtml);
+
+        // STEP 4: Inject into output container
+        output.innerHTML = safeHtml;
+
+        // STEP 5: Typeset ONLY this container with MathJax
+        if (window.MathJax && MathJax.typesetPromise) {
+          try {
+            if (MathJax.typesetClear) {
+              MathJax.typesetClear([output]);
+            }
+            await MathJax.typesetPromise([output]);
+          } catch (err) {
+            console.error(`MathJax error in block ${blockId}:`, err);
+            errorBox.textContent = "MathJax error in this block (see console).";
+          }
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", async () => {
+        // Wait for MathJax startup (avoids race with its initialization)
+        if (window.MathJax && MathJax.startup && MathJax.startup.promise) {
+          await MathJax.startup.promise;
+        }
+
+        // Create an initial block with example content
+        createBlock(defaultMarkdown);
+
+        // Button: add new empty block
+        document
+          .getElementById("add-block-btn")
+          .addEventListener("click", () => {
+            createBlock(""); // empty by default; user can paste text
+          });
+
+        // Event delegation for render buttons
+        document
+          .getElementById("blocks-container")
+          .addEventListener("click", (event) => {
+            const btn = event.target;
+            if (btn.matches(".render-btn")) {
+              const id = btn.getAttribute("data-block-id");
+              if (id) {
+                renderBlock(id);
+              }
+            }
+          });
+      });
+    </script>
+  </body>
+</html>
