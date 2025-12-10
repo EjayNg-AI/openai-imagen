@@ -133,51 +133,70 @@ def _validate_choice(value: object, allowed: set, field: str, default: str) -> s
     return normalized
 
 
+def _is_pro_model(model: str) -> bool:
+    """Return True if the provided model string refers to a pro variant."""
+
+    return isinstance(model, str) and "pro" in model.lower()
+
+
 def create_prompt_response(
     messages: List[Dict[str, object]],
     *,
+    model: str = "gpt-5.1",
     text_verbosity: str = "high",
     reasoning_effort: str = "high",
+    background: bool = False,
 ) -> object:
     """Invoke Responses API with an ordered list of role/content messages."""
 
     if not messages:
         raise ValueError("At least one message is required.")
 
-    return client.responses.create(
-        model="gpt-5.1",
-        input=messages,
-        text={"format": {"type": "text"}, "verbosity": text_verbosity},
-        reasoning={"effort": reasoning_effort, "summary": None},
-        tools=[
+    is_pro_model = _is_pro_model(model)
+    text_config: Dict[str, object] = {"format": {"type": "text"}}
+    if not is_pro_model and text_verbosity:
+        text_config["verbosity"] = text_verbosity
+
+    reasoning_config: Dict[str, object] = {"summary": None}
+    if not is_pro_model and reasoning_effort:
+        reasoning_config["effort"] = reasoning_effort
+
+    request_payload: Dict[str, object] = {
+        "model": model or "gpt-5.1",
+        "input": messages,
+        "text": text_config,
+        "reasoning": reasoning_config,
+        "tools": [
             {
                 "type": "web_search",
                 "user_location": {"type": "approximate"},
                 "search_context_size": "high",
             }
         ],
-        store=True,
-    )
+    }
+
+    if background:
+        request_payload["background"] = True
+    else:
+        request_payload["store"] = True
+
+    return client.responses.create(**request_payload)
 
 
-def create_background_prompt_response(messages: List[Dict[str, object]]):
+def create_background_prompt_response(
+    messages: List[Dict[str, object]],
+    *,
+    model: str = "gpt-5-pro",
+    text_verbosity: str = "high",
+    reasoning_effort: str = "high",
+):
     """Invoke Responses API in background mode with the supplied messages."""
 
-    if not messages:
-        raise ValueError("At least one message is required.")
-
-    return client.responses.create(
-        model="gpt-5-pro",
-        input=messages,
-        text={"format": {"type": "text"}},
-        reasoning={"summary": None},
-        tools=[
-            {
-                "type": "web_search",
-                "user_location": {"type": "approximate"},
-                "search_context_size": "high",
-            }
-        ],
+    return create_prompt_response(
+        messages,
+        model=model,
+        text_verbosity=text_verbosity,
+        reasoning_effort=reasoning_effort,
         background=True,
     )
 
@@ -391,6 +410,9 @@ def handle_prompt_run():
     payload = request.get_json(silent=True) or {}
 
     messages: List[Dict[str, object]] = []
+    model = "gpt-5.1"
+    reasoning_effort = "high"
+    text_verbosity = "high"
 
     try:
         if "messages" in payload:
@@ -401,17 +423,31 @@ def handle_prompt_run():
             if not isinstance(developer_message, str) or not isinstance(user_message, str):
                 raise ValueError("developer_message and user_message must be strings.")
             messages = _build_two_message_input(developer_message, user_message)
-        reasoning_effort = _validate_choice(
-            payload.get("reasoning_effort") or payload.get("effort"),
-            {"none", "low", "medium", "high"},
-            "reasoning_effort",
-            "high",
+
+        model_candidate = payload.get("model")
+        if isinstance(model_candidate, str) and model_candidate.strip():
+            model = model_candidate
+
+        is_pro_model = _is_pro_model(model)
+        reasoning_effort = (
+            _validate_choice(
+                payload.get("reasoning_effort") or payload.get("effort"),
+                {"none", "low", "medium", "high"},
+                "reasoning_effort",
+                "high",
+            )
+            if not is_pro_model
+            else None
         )
-        text_verbosity = _validate_choice(
-            payload.get("text_verbosity") or payload.get("verbosity"),
-            {"low", "medium", "high"},
-            "text_verbosity",
-            "high",
+        text_verbosity = (
+            _validate_choice(
+                payload.get("text_verbosity") or payload.get("verbosity"),
+                {"low", "medium", "high"},
+                "text_verbosity",
+                "high",
+            )
+            if not is_pro_model
+            else None
         )
     except ValueError as exc:
         return jsonify(ok=False, error=str(exc)), 400
@@ -419,8 +455,9 @@ def handle_prompt_run():
     try:
         response = create_prompt_response(
             messages,
-            text_verbosity=text_verbosity,
-            reasoning_effort=reasoning_effort,
+            model=model,
+            text_verbosity=text_verbosity or "high",
+            reasoning_effort=reasoning_effort or "high",
         )
     except Exception as exc:  # noqa: BLE001
         app.logger.exception("Prompt-based response creation failed")
@@ -439,6 +476,11 @@ def handle_prompt_run():
 def handle_background_prompt_run():
     payload = request.get_json(silent=True) or {}
 
+    messages: List[Dict[str, object]] = []
+    model = "gpt-5-pro"
+    reasoning_effort = "high"
+    text_verbosity = "high"
+
     try:
         if "messages" in payload:
             messages = _normalize_messages(payload.get("messages"))
@@ -448,11 +490,41 @@ def handle_background_prompt_run():
             if not isinstance(developer_message, str) or not isinstance(user_message, str):
                 raise ValueError("developer_message and user_message must be strings.")
             messages = _build_two_message_input(developer_message, user_message)
+        model_candidate = payload.get("model")
+        if isinstance(model_candidate, str) and model_candidate.strip():
+            model = model_candidate
+
+        is_pro_model = _is_pro_model(model)
+        reasoning_effort = (
+            _validate_choice(
+                payload.get("reasoning_effort") or payload.get("effort"),
+                {"none", "low", "medium", "high"},
+                "reasoning_effort",
+                "high",
+            )
+            if not is_pro_model
+            else None
+        )
+        text_verbosity = (
+            _validate_choice(
+                payload.get("text_verbosity") or payload.get("verbosity"),
+                {"low", "medium", "high"},
+                "text_verbosity",
+                "high",
+            )
+            if not is_pro_model
+            else None
+        )
     except ValueError as exc:
         return jsonify(ok=False, error=str(exc)), 400
 
     try:
-        response = create_background_prompt_response(messages)
+        response = create_background_prompt_response(
+            messages,
+            model=model,
+            text_verbosity=text_verbosity or "high",
+            reasoning_effort=reasoning_effort or "high",
+        )
     except Exception as exc:  # noqa: BLE001
         app.logger.exception("Background prompt creation failed")
         return jsonify(ok=False, error=str(exc)), 500
