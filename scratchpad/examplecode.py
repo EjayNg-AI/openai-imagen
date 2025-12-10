@@ -16,6 +16,26 @@ if not api_key:
 
 client = OpenAI(api_key=api_key)
 
+SCRATCHPAD_DIR = Path(__file__).resolve().parent
+SYSTEM_MESSAGE_FILES = {
+    "synthesizer-planner": SCRATCHPAD_DIR / "synthesizer_planner_system_message.md",
+    "discriminator-approach-evaluator": SCRATCHPAD_DIR
+    / "discriminator_approach_evaluator_system_message.md",
+    "synthesizer-solver": SCRATCHPAD_DIR / "synthesizer_solver_system_message.md",
+    "discriminator-solution-evaluator": SCRATCHPAD_DIR
+    / "discriminator_solution_evaluator_system_message.md",
+    "researcher": SCRATCHPAD_DIR / "researcher_system_message.md",
+}
+
+
+def _read_system_message(key: str) -> str:
+    path = SYSTEM_MESSAGE_FILES.get(key)
+    if not path:
+        raise KeyError(f"Unknown system message key: {key}")
+    if not path.exists():
+        raise FileNotFoundError(f"{path.name} is missing")
+    return path.read_text(encoding="utf-8")
+
 
 SCHEMA_DEFINITION: Dict[str, object] = {
     "type": "object",
@@ -323,6 +343,21 @@ def serve_background_prompt_frontend():
         "prompt_runner_background.html is missing. Generate it in the scratchpad directory.",
         404,
     )
+
+
+@app.get("/api/system-message/<key>")
+def handle_system_message(key: str):
+    try:
+        content = _read_system_message(key)
+    except KeyError:
+        return jsonify(ok=False, error="Unknown system message key."), 404
+    except FileNotFoundError as exc:
+        app.logger.error("System message file missing: %s", exc)
+        return jsonify(ok=False, error=str(exc)), 404
+    except Exception as exc:  # noqa: BLE001
+        app.logger.exception("Failed to read system message %s", key)
+        return jsonify(ok=False, error="Failed to read system message file."), 500
+    return jsonify(ok=True, key=key, content=content)
 
 
 @app.post("/api/responses")

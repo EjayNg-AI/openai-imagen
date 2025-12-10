@@ -413,9 +413,10 @@
         return row;
       };
 
-      const addMessageRow = (role = "user") => {
-        const row = buildMessageRow(role);
+      const addMessageRow = (role = "user", text = "") => {
+        const row = buildMessageRow(role, text);
         messagesContainer.appendChild(row);
+        return row;
       };
 
       addMessageBtn.addEventListener("click", () => addMessageRow("user"));
@@ -521,8 +522,44 @@
         }
       });
 
-      // Seed with two starter rows
-      addMessageRow("developer");
+      const getPrefillKey = () => {
+        const params = new URLSearchParams(window.location.search);
+        return params.get("prefillKey");
+      };
+
+      const fetchSystemMessage = async (key) => {
+        const response = await fetch(`/api/system-message/${encodeURIComponent(key)}`);
+        let data;
+        try {
+          data = await response.json();
+        } catch (error) {
+          throw new Error("Invalid response while loading system message.");
+        }
+        if (!response.ok || !data?.ok || typeof data.content !== "string") {
+          const err = (data && data.error) || `Failed to load system message: ${key}`;
+          throw new Error(err);
+        }
+        return data.content;
+      };
+
+      const applyDeveloperPrefill = async (row) => {
+        const key = getPrefillKey();
+        if (!key) return;
+        const textarea = row.querySelector("textarea");
+        if (!textarea) return;
+        try {
+          showStatus(`Loading developer prefill for ${key}…`);
+          const content = await fetchSystemMessage(key);
+          textarea.value = content;
+          showStatus(`Loaded developer prefill for ${key}.`, "success");
+        } catch (error) {
+          console.error("Developer prefill failed", error);
+          showStatus(error.message || "Failed to load developer prefill.", "error");
+        }
+      };
+
+      const developerRow = addMessageRow("developer");
+      applyDeveloperPrefill(developerRow);
       addMessageRow("user");
     </script>
   </body>

@@ -115,7 +115,8 @@
         box-shadow: 0 0.6rem 1.4rem rgba(79, 140, 255, 0.35);
       }
 
-      button.secondary {
+      button.secondary,
+      a.secondary {
         background: transparent;
         color: var(--fg);
         border: 1px solid var(--border);
@@ -127,7 +128,8 @@
         transition: border-color 100ms ease, color 100ms ease;
       }
 
-      button.secondary:hover {
+      button.secondary:hover,
+      a.secondary:hover {
         border-color: var(--accent);
         color: var(--accent);
       }
@@ -219,6 +221,31 @@
         <button type="button" class="secondary" id="openPromptRunnerBackground">
           Open background prompt runner tab
         </button>
+        <a class="secondary" href="/prompt-runner?prefillKey=synthesizer-planner" target="_blank" rel="noopener">
+          Prefill: Synthesizer planner
+        </a>
+        <a
+          class="secondary"
+          href="/prompt-runner?prefillKey=discriminator-approach-evaluator"
+          target="_blank"
+          rel="noopener"
+        >
+          Prefill: Discriminator approach evaluator
+        </a>
+        <a class="secondary" href="/prompt-runner?prefillKey=synthesizer-solver" target="_blank" rel="noopener">
+          Prefill: Synthesizer solver
+        </a>
+        <a
+          class="secondary"
+          href="/prompt-runner?prefillKey=discriminator-solution-evaluator"
+          target="_blank"
+          rel="noopener"
+        >
+          Prefill: Discriminator solution evaluator
+        </a>
+        <a class="secondary" href="/prompt-runner?prefillKey=researcher" target="_blank" rel="noopener">
+          Prefill: Researcher
+        </a>
       </div>
 
       <form id="promptForm" data-endpoint="/api/responses">
