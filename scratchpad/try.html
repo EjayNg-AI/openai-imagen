@@ -216,6 +216,9 @@
 
       <div style="margin: 0.25rem 0 1.5rem; display: flex; gap: 0.75rem; flex-wrap: wrap">
         <button type="button" class="secondary" id="openPromptRunner">Open prompt runner tab</button>
+        <button type="button" class="secondary" id="openPromptRunnerBackground">
+          Open background prompt runner tab
+        </button>
       </div>
 
       <form id="promptForm" data-endpoint="/api/responses">
@@ -270,6 +273,9 @@
       const result = document.getElementById("result");
       const paragraphsBox = document.getElementById("paragraphsBox");
       const openPromptRunnerBtn = document.getElementById("openPromptRunner");
+      const openPromptRunnerBackgroundBtn = document.getElementById(
+        "openPromptRunnerBackground"
+      );
 
       const showStatus = (message, isError = false) => {
         status.textContent = message;
@@ -285,6 +291,12 @@
       if (openPromptRunnerBtn) {
         openPromptRunnerBtn.addEventListener("click", () => {
           window.open("/prompt-runner", "_blank", "noopener");
+        });
+      }
+
+      if (openPromptRunnerBackgroundBtn) {
+        openPromptRunnerBackgroundBtn.addEventListener("click", () => {
+          window.open("/prompt-runner-background", "_blank", "noopener");
         });
       }
 

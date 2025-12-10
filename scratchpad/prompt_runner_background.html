@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Background Prompt Runner</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-size: 16px;
+        --bg: #080e18;
+        --fg: #e7edf7;
+        --panel: #111827;
+        --panel-alt: #0c121f;
+        --accent: #5aa9ff;
+        --accent-hover: #74b8ff;
+        --muted: #91a0ba;
+        --border: #27344a;
+        --error: #ff6b6b;
+        --success: #8ff7b3;
+        --textarea-bg: #0d1524;
+        --textarea-border: #2b3750;
+      }
+
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        background: radial-gradient(circle at 20% 20%, #0f1a2a, var(--bg));
+        color: var(--fg);
+        min-height: 100vh;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 2.5rem 1.5rem 4rem;
+      }
+
+      main {
+        width: min(1000px, 100%);
+        background: var(--panel);
+        border-radius: 0.9rem;
+        box-shadow: 0 0.85rem 2.4rem rgba(0, 0, 0, 0.5);
+        border: 1px solid var(--border);
+        padding: 2.25rem;
+      }
+
+      h1 {
+        margin: 0 0 0.75rem;
+        font-size: 1.9rem;
+        font-weight: 650;
+      }
+
+      p.lead {
+        margin: 0 0 1.75rem;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      form {
+        display: grid;
+        gap: 1.5rem;
+      }
+
+      .message-row {
+        background: var(--panel-alt);
+        border: 1px solid var(--border);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .row-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+      }
+
+      .row-header label {
+        font-weight: 600;
+      }
+
+      select {
+        background: var(--textarea-bg);
+        border: 1px solid var(--textarea-border);
+        color: var(--fg);
+        border-radius: 0.55rem;
+        padding: 0.55rem 0.75rem;
+        font: inherit;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 6rem;
+        resize: vertical;
+        padding: 0.85rem;
+        border-radius: 0.6rem;
+        border: 1px solid var(--textarea-border);
+        background: var(--textarea-bg);
+        color: var(--fg);
+        font: inherit;
+        line-height: 1.45;
+      }
+
+      textarea:focus,
+      select:focus {
+        outline: 3px solid rgba(90, 169, 255, 0.25);
+        border-color: var(--accent);
+      }
+
+      .row-actions {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      button,
+      .ghost {
+        border: none;
+        border-radius: 0.6rem;
+        padding: 0.75rem 1.4rem;
+        font-size: 1rem;
+        font-weight: 650;
+        cursor: pointer;
+        transition: transform 120ms ease, box-shadow 120ms ease;
+      }
+
+      button.primary {
+        background: linear-gradient(135deg, var(--accent), #82c3ff);
+        color: #0a101b;
+      }
+
+      button.primary:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+        box-shadow: none;
+        transform: none;
+      }
+
+      button.primary:not(:disabled):hover {
+        transform: translateY(-1px);
+        box-shadow: 0 0.7rem 1.6rem rgba(90, 169, 255, 0.35);
+      }
+
+      button.small {
+        padding: 0.45rem 0.8rem;
+        font-size: 0.92rem;
+      }
+
+      .ghost {
+        background: transparent;
+        color: var(--fg);
+        border: 1px solid var(--border);
+      }
+
+      .ghost:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .controls {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+      }
+
+      .hint {
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      .status {
+        min-height: 1.25rem;
+        font-size: 0.95rem;
+        color: var(--muted);
+      }
+
+      .status.error {
+        color: var(--error);
+        font-weight: 600;
+      }
+
+      .status.success {
+        color: var(--success);
+        font-weight: 600;
+      }
+
+      .panel {
+        margin-top: 1.75rem;
+        background: var(--panel-alt);
+        border-radius: 0.75rem;
+        padding: 1.4rem;
+        border: 1px solid var(--border);
+      }
+
+      .panel h2 {
+        margin-top: 0;
+        margin-bottom: 0.7rem;
+        font-size: 1.1rem;
+        font-weight: 650;
+      }
+
+      .panel .panel-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        justify-content: flex-end;
+        margin-bottom: 0.5rem;
+      }
+
+      @media (max-width: 720px) {
+        main {
+          padding: 1.75rem 1.25rem;
+        }
+
+        textarea {
+          min-height: 8rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Background Prompt Runner</h1>
+      <p class="lead">
+        Build a multi-turn conversation and run it via <code>OpenAI.responses.create</code> in
+        background mode. The assistant output box will auto-fill with the textual response once the
+        job completes; the full response payload (including all parameters) appears at the bottom.
+      </p>
+
+      <form id="promptForm" data-endpoint="/api/prompt-run-background">
+        <div class="controls">
+          <button type="button" class="ghost small" id="addMessage">+ Add message</button>
+          <button type="button" class="ghost small" id="addAssistant">+ Add assistant reply</button>
+          <button type="button" class="ghost small" id="addFromOutput">
+            + Assistant from output
+          </button>
+        </div>
+
+        <div class="hint">
+          Background mode uses the fixed <code>gpt-5-pro</code> model without adjustable reasoning
+          or verbosity settings.
+        </div>
+
+        <div id="messagesContainer" class="message-list"></div>
+
+        <div class="controls">
+          <button type="submit" class="primary">Send as background job</button>
+          <div class="status" id="status" aria-live="polite"></div>
+        </div>
+        <div class="hint" id="responseIdDisplay"></div>
+      </form>
+
+      <section class="panel">
+        <div style="display: flex; align-items: center; gap: 0.75rem; justify-content: space-between">
+          <h2 style="margin: 0">Assistant output</h2>
+          <div class="panel-actions">
+            <button type="button" class="ghost small" id="copyOutput">Copy</button>
+          </div>
+        </div>
+        <textarea
+          id="outputBox"
+          readonly
+          placeholder="Assistant output will appear here after the background run completes."
+          style="min-height: 12rem"
+        ></textarea>
+      </section>
+
+      <section class="panel">
+        <div style="display: flex; align-items: center; gap: 0.75rem; justify-content: space-between">
+          <h2 style="margin: 0">Last sent payload</h2>
+          <div class="panel-actions">
+            <button type="button" class="ghost small" id="copyPayload">Copy</button>
+          </div>
+        </div>
+        <textarea
+          id="payloadBox"
+          readonly
+          placeholder="The full payload sent to OpenAI will appear here."
+          style="min-height: 10rem"
+        ></textarea>
+      </section>
+
+      <section class="panel">
+        <div style="display: flex; align-items: center; gap: 0.75rem; justify-content: space-between">
+          <h2 style="margin: 0">Full response output</h2>
+          <div class="panel-actions">
+            <button type="button" class="ghost small" id="copyFullResponse">Copy</button>
+          </div>
+        </div>
+        <textarea
+          id="fullResponseBox"
+          readonly
+          placeholder="When the background run completes, the full model output (including parameters) will appear here."
+          style="min-height: 12rem"
+        ></textarea>
+      </section>
+    </main>
+
+    <script>
+      const form = document.getElementById("promptForm");
+      const messagesContainer = document.getElementById("messagesContainer");
+      const statusEl = document.getElementById("status");
+      const outputBox = document.getElementById("outputBox");
+      const addMessageBtn = document.getElementById("addMessage");
+      const addAssistantBtn = document.getElementById("addAssistant");
+      const addAssistantFromOutputBtn = document.getElementById("addFromOutput");
+      const copyOutputBtn = document.getElementById("copyOutput");
+      const payloadBox = document.getElementById("payloadBox");
+      const copyPayloadBtn = document.getElementById("copyPayload");
+      const fullResponseBox = document.getElementById("fullResponseBox");
+      const copyFullResponseBtn = document.getElementById("copyFullResponse");
+      const responseIdDisplay = document.getElementById("responseIdDisplay");
+      const POLL_INTERVAL_MS = 6000;
+
+      const ROLE_PLACEHOLDERS = {
+        developer:
+          "System or developer guidance. Example: Keep outputs in markdown unless instructed otherwise.",
+        user: "User request or follow-up. Example: Explain prime numbers.",
+        assistant: "Assistant reply to seed the conversation. Example: A concise answer to the user.",
+      };
+
+      const createOption = (value, label, selected) => {
+        const opt = document.createElement("option");
+        opt.value = value;
+        opt.textContent = label;
+        if (selected) opt.selected = true;
+        return opt;
+      };
+
+      const showStatus = (message, type = "") => {
+        statusEl.textContent = message || "";
+        statusEl.classList.remove("error", "success");
+        if (type) statusEl.classList.add(type);
+      };
+
+      const setResponseId = (idText) => {
+        if (!responseIdDisplay) return;
+        responseIdDisplay.textContent = idText ? `response_id: ${idText}` : "";
+      };
+
+      const copyText = async (text, button) => {
+        try {
+          await navigator.clipboard.writeText(text);
+          if (button) {
+            const previous = button.textContent;
+            button.textContent = "Copied!";
+            button.disabled = true;
+            setTimeout(() => {
+              button.textContent = previous;
+              button.disabled = false;
+            }, 800);
+          }
+        } catch (error) {
+          console.error("Clipboard error", error);
+          showStatus("Copy failed. Check clipboard permissions.", "error");
+        }
+      };
+
+      const extractOutputText = (payload) => {
+        if (!payload) return "";
+
+        if (typeof payload.output_text === "string" && payload.output_text.trim()) {
+          return payload.output_text.trim();
+        }
+
+        const response = payload.response || payload;
+        const outputItems = response && response.output;
+        if (!Array.isArray(outputItems)) return "";
+
+        const chunks = [];
+        for (const item of outputItems) {
+          if (!item || item.type !== "message" || !Array.isArray(item.content)) continue;
+          for (const block of item.content) {
+            if (block && block.type === "output_text" && typeof block.text === "string") {
+              const t = block.text.trim();
+              if (t) chunks.push(t);
+            }
+          }
+        }
+
+        return chunks.join("\n\n").trim();
+      };
+
+      const buildMessageRow = (role = "user", text = "") => {
+        const row = document.createElement("div");
+        row.className = "message-row";
+
+        const header = document.createElement("div");
+        header.className = "row-header";
+
+        const label = document.createElement("label");
+        label.textContent = "Role";
+
+        const select = document.createElement("select");
+        select.append(
+          createOption("developer", "Developer", role === "developer"),
+          createOption("user", "User", role === "user"),
+          createOption("assistant", "Assistant", role === "assistant")
+        );
+
+        const actions = document.createElement("div");
+        actions.className = "row-actions";
+
+        const copyBtn = document.createElement("button");
+        copyBtn.type = "button";
+        copyBtn.className = "ghost small";
+        copyBtn.textContent = "Copy";
+
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.className = "ghost small";
+        removeBtn.textContent = "Remove";
+
+        actions.append(copyBtn, removeBtn);
+        header.append(label, select, actions);
+
+        const textarea = document.createElement("textarea");
+        textarea.placeholder = ROLE_PLACEHOLDERS[role];
+        textarea.value = text;
+
+        select.addEventListener("change", () => {
+          const nextRole = select.value;
+          textarea.placeholder = ROLE_PLACEHOLDERS[nextRole] || "";
+        });
+
+        copyBtn.addEventListener("click", () => copyText(textarea.value, copyBtn));
+
+        removeBtn.addEventListener("click", () => {
+          if (messagesContainer.children.length <= 1) {
+            showStatus("At least one message is required.", "error");
+            return;
+          }
+          row.remove();
+        });
+
+        row.append(header, textarea);
+        return row;
+      };
+
+      const addMessageRow = (role = "user") => {
+        const row = buildMessageRow(role);
+        messagesContainer.appendChild(row);
+      };
+
+      addMessageBtn.addEventListener("click", () => addMessageRow("user"));
+      addAssistantBtn.addEventListener("click", () => addMessageRow("assistant"));
+      addAssistantFromOutputBtn.addEventListener("click", () => {
+        const text = outputBox.value || "";
+        const row = buildMessageRow("assistant", text);
+        messagesContainer.appendChild(row);
+      });
+      copyOutputBtn.addEventListener("click", () => copyText(outputBox.value, copyOutputBtn));
+      copyPayloadBtn.addEventListener("click", () => copyText(payloadBox.value, copyPayloadBtn));
+      copyFullResponseBtn.addEventListener("click", () =>
+        copyText(fullResponseBox.value, copyFullResponseBtn)
+      );
+
+      const disableForm = (disabled) => {
+        form.querySelectorAll("textarea, button, select").forEach((el) => {
+          if (el === copyOutputBtn || el === copyPayloadBtn || el === copyFullResponseBtn) return;
+          el.disabled = disabled;
+        });
+      };
+
+      const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+      const pollForCompletion = async (responseId) => {
+        while (true) {
+          const pollResp = await fetch(
+            `/api/prompt-run-background/${encodeURIComponent(responseId)}`
+          );
+          const rawPollText = await pollResp.text();
+          let pollParsed;
+          try {
+            pollParsed = JSON.parse(rawPollText);
+          } catch {
+            pollParsed = rawPollText;
+          }
+
+          const ok = pollResp.ok && pollParsed && pollParsed.ok !== false;
+          if (!ok) {
+            const err =
+              (pollParsed && pollParsed.error) ||
+              (typeof pollParsed === "string" ? pollParsed : null) ||
+              `Polling failed with status ${pollResp.status}`;
+            throw new Error(err);
+          }
+
+          const status =
+            (pollParsed && pollParsed.status) ||
+            (pollParsed && pollParsed.response && pollParsed.response.status) ||
+            "pending";
+
+          showStatus(`Background run status: ${status}`);
+
+          if (
+            (pollParsed && pollParsed.done) ||
+            ["completed", "failed", "cancelled"].includes(status)
+          ) {
+            return pollParsed;
+          }
+
+          await sleep(POLL_INTERVAL_MS);
+        }
+      };
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        showStatus("");
+
+        const rows = Array.from(messagesContainer.querySelectorAll(".message-row"));
+        if (!rows.length) {
+          showStatus("Add at least one message before sending.", "error");
+          return;
+        }
+
+        const messages = [];
+        for (const row of rows) {
+          const select = row.querySelector("select");
+          const textarea = row.querySelector("textarea");
+          const role = select?.value;
+          const text = textarea?.value?.trim();
+          if (!role || !text) {
+            showStatus("Every message needs a role and text.", "error");
+            return;
+          }
+          const type = role === "assistant" ? "output_text" : "input_text";
+          messages.push({ role, content: [{ type, text }] });
+        }
+
+        const endpoint = form.dataset.endpoint || "/api/prompt-run-background";
+        const payload = { messages };
+        const payloadForDisplay = {
+          model: "gpt-5-pro",
+          input: messages,
+          text: { format: { type: "text" } },
+          reasoning: { summary: null },
+          tools: [
+            { type: "web_search", user_location: { type: "approximate" }, search_context_size: "high" },
+          ],
+          background: true,
+        };
+        payloadBox.value = JSON.stringify(payloadForDisplay, null, 2);
+        outputBox.value = "";
+        fullResponseBox.value = "";
+        setResponseId("");
+
+        disableForm(true);
+        showStatus("Starting background request…");
+
+        try {
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          const rawText = await response.text();
+          let parsed;
+          try {
+            parsed = JSON.parse(rawText);
+          } catch {
+            parsed = rawText;
+          }
+
+          const ok = response.ok && parsed && parsed.ok !== false;
+          if (!ok) {
+            const err =
+              (parsed && parsed.error) ||
+              (typeof parsed === "string" ? parsed : null) ||
+              `Request failed with status ${response.status}`;
+            showStatus(err, "error");
+            return;
+          }
+
+          const responseId = parsed.response_id || (parsed.response && parsed.response.id);
+          if (!responseId) {
+            showStatus("No response ID returned for background job.", "error");
+            return;
+          }
+
+          const startingStatus =
+            parsed.status || (parsed.response && parsed.response.status) || "queued";
+          setResponseId(responseId);
+          showStatus(
+            `Background run started (${startingStatus}). response_id: ${responseId}. Polling for completion…`
+          );
+
+          const finalPayload = await pollForCompletion(responseId);
+          const finalStatus =
+            (finalPayload && finalPayload.status) ||
+            (finalPayload && finalPayload.response && finalPayload.response.status) ||
+            "unknown";
+          const extractedText = extractOutputText(finalPayload);
+          const pretty =
+            typeof finalPayload === "object"
+              ? JSON.stringify(finalPayload.response || finalPayload, null, 2)
+              : String(finalPayload);
+          outputBox.value = extractedText || "";
+          fullResponseBox.value = pretty || "";
+
+          const statusType = finalStatus === "completed" ? "success" : finalStatus === "failed" ? "error" : "";
+          showStatus(`Background run finished with status: ${finalStatus}`, statusType);
+        } catch (error) {
+          console.error("Network error", error);
+          showStatus(`Network error: ${error.message}`, "error");
+        } finally {
+          disableForm(false);
+        }
+      });
+
+      // Seed with two starter rows
+      addMessageRow("developer");
+      addMessageRow("user");
+    </script>
+  </body>
+</html>

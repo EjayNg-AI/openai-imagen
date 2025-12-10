@@ -140,6 +140,28 @@ def create_prompt_response(
     )
 
 
+def create_background_prompt_response(messages: List[Dict[str, object]]):
+    """Invoke Responses API in background mode with the supplied messages."""
+
+    if not messages:
+        raise ValueError("At least one message is required.")
+
+    return client.responses.create(
+        model="gpt-5-pro",
+        input=messages,
+        text={"format": {"type": "text"}},
+        reasoning={"summary": None},
+        tools=[
+            {
+                "type": "web_search",
+                "user_location": {"type": "approximate"},
+                "search_context_size": "high",
+            }
+        ],
+        background=True,
+    )
+
+
 def _extract_paragraphs(response) -> List[str]:
     paragraphs: List[str] = []
 
@@ -273,6 +295,7 @@ app = Flask(__name__)
 
 TRY_HTML_PATH = Path(__file__).resolve().parent / "try.html"
 PROMPT_HTML_PATH = Path(__file__).resolve().parent / "prompt_runner.html"
+PROMPT_BACKGROUND_HTML_PATH = Path(__file__).resolve().parent / "prompt_runner_background.html"
 
 
 @app.get("/")
@@ -288,6 +311,16 @@ def serve_prompt_frontend():
         return send_file(PROMPT_HTML_PATH)
     return (
         "prompt_runner.html is missing. Generate it in the scratchpad directory.",
+        404,
+    )
+
+
+@app.get("/prompt-runner-background")
+def serve_background_prompt_frontend():
+    if PROMPT_BACKGROUND_HTML_PATH.exists():
+        return send_file(PROMPT_BACKGROUND_HTML_PATH)
+    return (
+        "prompt_runner_background.html is missing. Generate it in the scratchpad directory.",
         404,
     )
 
@@ -365,6 +398,67 @@ def handle_prompt_run():
         app.logger.exception("Failed to extract output_text content from response")
 
     return jsonify(ok=True, response=response.model_dump(), output_text=output_text)
+
+
+@app.post("/api/prompt-run-background")
+def handle_background_prompt_run():
+    payload = request.get_json(silent=True) or {}
+
+    try:
+        if "messages" in payload:
+            messages = _normalize_messages(payload.get("messages"))
+        else:
+            developer_message = payload.get("developer_message", "")
+            user_message = payload.get("user_message", "")
+            if not isinstance(developer_message, str) or not isinstance(user_message, str):
+                raise ValueError("developer_message and user_message must be strings.")
+            messages = _build_two_message_input(developer_message, user_message)
+    except ValueError as exc:
+        return jsonify(ok=False, error=str(exc)), 400
+
+    try:
+        response = create_background_prompt_response(messages)
+    except Exception as exc:  # noqa: BLE001
+        app.logger.exception("Background prompt creation failed")
+        return jsonify(ok=False, error=str(exc)), 500
+
+    output_text = ""
+    try:
+        output_text = _extract_output_text(response)
+    except Exception:  # pragma: no cover
+        app.logger.exception("Failed to extract output_text content from background response")
+
+    return jsonify(
+        ok=True,
+        response_id=response.id,
+        status=response.status,
+        response=response.model_dump(),
+        output_text=output_text,
+    )
+
+
+@app.get("/api/prompt-run-background/<response_id>")
+def poll_background_prompt_run(response_id: str):
+    try:
+        response = client.responses.retrieve(response_id)
+    except Exception as exc:  # noqa: BLE001
+        app.logger.exception("Background prompt polling failed")
+        return jsonify(ok=False, error=str(exc)), 500
+
+    output_text = ""
+    try:
+        output_text = _extract_output_text(response)
+    except Exception:  # pragma: no cover
+        app.logger.exception("Failed to extract output_text content from polled background response")
+
+    payload = {
+        "ok": True,
+        "status": response.status,
+        "response": response.model_dump(),
+        "output_text": output_text,
+    }
+    payload["done"] = response.status in {"completed", "failed", "cancelled"}
+    return jsonify(payload)
 
 
 if __name__ == "__main__":
