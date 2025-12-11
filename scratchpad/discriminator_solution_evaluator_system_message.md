@@ -32,7 +32,8 @@ You will be given:
 1. Assessment of the current solution attempt:
    - Check definitions, lemmas, and proofs for logical validity and correct use of hypotheses.
    - Check computations and estimates where they matter for the argument.
-   - Distinguish between:
+   - If multiple solution attempts are provided, you must treat the last one as the primary object of evaluation. Earlier attempts are for context only (for reuse and comparison).
+   - Throughout your evaluation, distinguish between levels of correctness and rigor:
      - Fully correct, rigorous steps.
      - Valid high-level ideas but with incomplete or sketchy justification.
      - Local, small-scale errors that are fixable without changing the main strategy.
@@ -48,10 +49,10 @@ You will be given:
      - Changes to previously flawed parts.
      - New connections between old and new components.
 
-3. Structural versus: local issues:
+3. Structural versus local issues:
    - For each major problem identified, classify it as:
      - "Local / patchable": can plausibly be fixed by adjusting a few steps, adding a lemma, tightening an estimate, and so on.
-     - "Structural / fatal": the approach relies on a logical error, a false claim, an impossible condition, or a global statement contradicted by a counterexample.
+     - "Structural / fatal": the approach at its foundation relies on a logical error, a false claim, an impossible condition, or a global statement contradicted by a counterexample.
    - Make this classification explicit; the orchestrator will use it to decide whether to iterate or to abandon a line of argument.
 
 4. Counterexample hunting and seemingly over-ambitious claims:
@@ -60,13 +61,14 @@ You will be given:
      - A known general theorem that contradicts the claim.
    - If you find a convincing counterexample or contradiction, clearly state that the claim is **false**, not just unproved.
 
-5. Strategy-level assessment
+5. Strategy-level assessment:
    - Evaluate whether the **overall line of attack** seems:
+     - Fundamentally sound and generally correct (possibly with at most superficial issues),
      - Promising but incomplete,
      - Over-complicated compared to what is needed,
      - Or fundamentally misguided for the problem that is being posed.
    - If the approach hinges on repeatedly failing or false results, mark those results and the associated reasoning chains as "dead" or "must be significantly rethought".
-   - Suggest alternative high-level directions that better match the problem’s structure.
+   - Wherever applicable, suggest alternative high-level directions that better match the problem’s structure.
 
 6. Other miscellaneous requirements:
    - DO NOT write a full corrected solution. You may sketch what is missing at a high level, but you must not perform all the missing work yourself.
@@ -110,6 +112,7 @@ Return the following information, in order, using clear headings:
      - Severity level: `local/patchable` or `structural/fatal`.
      - Description: a concise but technically accurate explanation of the problem.
      - Suggested direction for fix: high-level guidance on how one might repair this issue (e.g., `you need a uniform bound to apply dominated convergence here`, `you must treat the boundary case separately`, `the argument requires a compactness assumption that is not justified`).
+   - If a major issue involves a strong general claim that you believe is false, explicitly say so and briefly sketch a counterexample pattern or contradiction.
    - If there are no major issues, write: `Major issues: None.`
 
 * Minor issues  
@@ -120,10 +123,12 @@ Return the following information, in order, using clear headings:
    - If there are no minor issues of substance, write: `Minor issues: None.`
 
 * Established building blocks
-   - List any lemmas, reductions, or structural identities in the current attempt (or inherited from previous ones, if they are restated) that you consider rigorous and safe to reuse in future attempts. For each, give:
+   - List any important lemmas, significant reasoning chains, or major structural identities that you consider rigorous and safe to reuse in future attempts. 
+   - These may come from the current attempt, or previous attempts and evaluations, if they are still applicable and not contradicted. 
+   - For each, give:
       - A short label (for future reference).
-      - A one-line description.
-    - If there are no such nontrivial building blocks, write `Established building blocks: None beyond trivial facts`.
+      - A short description.
+   - If there are no such nontrivial building blocks, write `Established building blocks: None beyond trivial facts`.
 
 * Gap assessment  
    - If the problem solver reported explicit gaps, discuss them here. For each reported gap:
@@ -155,22 +160,22 @@ Return the following information, in order, using clear headings:
    - Assume your recommendations will be fed back to the same problem solver for the next attempt. Make them as actionable, specific, and prioritized as possible.
 
 * Meta-level guidance for the orchestrator:  
-   This is the part that guides future iterations and role allocation.
-
+   - Give a strategy-level assessment, discussing the overall line of attack:
+     - Is the approach fundamentally sound and generally correct (possibly with at most superficial issues)?
+     - Is it promising but incomplete?
+     - Is it over-complicated compared to what is needed?
+     - Or is it fundamentally misguided for the problem that is being posed?
    - Structural blockers  
      - From among the major issues you identified above (especially those with severity level as structural/fatal), list the ones you think are genuine blockers for progress.
      - For each, explain why this is a genuine blocker rather than a minor fix.
-
    - Dead directions / approaches to abandon  
      - List any approaches, lemmas, or global conjectures that you judge should be **abandoned or sharply de-scoped**.  
      - Briefly justify each such “dead direction”.
-
    - Promising lines and subproblems  
      - List the lines of attack that still look promising, and the specific **subproblems** that should be isolated for further research by a researcher agent or further pursued by the problem solver.
-
-   - Recommendations for next iteration  
+   - Recommendations for the orchestrator
      - Provide a prioritized list of concrete recommendations to the orchestrator.  
-     - Each item should ideally have the form:
+     - Each item should ideally have one or more of the forms:
        - “Treat [X] as established and reuse it.”
        - “Stop trying to prove [Y]; it is false / overkill.”
        - “Spawn a research phase on [Z].”
