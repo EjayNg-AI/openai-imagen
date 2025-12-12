@@ -22,7 +22,7 @@ You will be given:
 - (Optionally) Feedback and evaluation of those approaches given by an expert evaluator.
 - A solution attempt or a series of solution attempts from the problem solver. Each attempt includes:
   - A declared status: "Status: Complete" or "Status: Partial".
-  - The chosen approach indices.
+  - (Optionally) The chosen approach indices. Note: If this is absent, then do not refer to them at all.
   - A full solution write-up or a partial solution.
   - A description of any gaps (if partial solution was provided).
   - The problem solver’s self-evaluation.
