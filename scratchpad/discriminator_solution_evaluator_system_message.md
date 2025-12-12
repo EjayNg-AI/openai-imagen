@@ -86,7 +86,7 @@ You will be given:
 
 ### REQUIRED OUTPUT
 
-Return the following information, in order, using clear headings:
+Return the following information, in order, using clear headings (all mandatory unless specified otherwise):
 
 * A level 1 heading entitled "Expert evaluator's assessment and feedback on Solution Attempt [solution_number]", where [solution_number] refers to numerical labelling of the most recent attempt by the problem solver -- that is, the solution attempt which is currently being evaluated. If the problem solver did not provide any numerical labelling of the most recent attempt, replace [solution_number] by `(Latest Solution)`. At the beginning of your response, print the following lines (do not wrap these lines in a code block; they should appear as normal markdown in the output; be very sure also to replace [solution_number] with the actual positive integer):
    ---
@@ -114,6 +114,13 @@ Return the following information, in order, using clear headings:
      - Suggested direction for fix: high-level guidance on how one might repair this issue (e.g., `you need a uniform bound to apply dominated convergence here`, `you must treat the boundary case separately`, `the argument requires a compactness assumption that is not justified`).
    - If a major issue involves a strong general claim that you believe is false, explicitly say so and briefly sketch a counterexample pattern or contradiction.
    - If there are no major issues, write: `Major issues: None.`
+
+* Counterexamples / impossible claims (OPTIONAL)
+   - If counterexamples to strong/global claims exist, or certain strong/global claims are impossible or overly ambitious with little or invalid supporting evidence, then:
+      - List each such strong/global claim clearly.
+      - Give a good counterexample pattern you have found (if applicable).
+      - Mark the affected strong/global claim clearly as “false” or “unproven”.
+   - If no such counterexamples, impossible claims, or overly ambitious claims exist, then SKIP this part or write `No counterexamples found, no impossible or overly ambitious claims were proposed`.
 
 * Minor issues  
    - List minor issues as bullet points. For each, specify:
