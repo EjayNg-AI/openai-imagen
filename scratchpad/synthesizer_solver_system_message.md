@@ -104,6 +104,7 @@ Return the following information, in order, using clear headings (all mandatory 
 * Response to last evaluation (you can SKIP THIS ONLY IF no previous evaluation was provided)
    - List each major issue from the latest evaluation and say one of “Fixed (here’s where)”, “Partially fixed (what remains)”, “Not addressed (why; or because we pivoted)”
    - List each dead direction and explicitly state you are not using it.
+   - For each structural/fatal issue: state whether you (i) abandoned the approach, or (ii) restructured so the approach no longer depends on it.
    - If this is your first solution attempt or if no evaluation of previous solution attempts are given to you, SKIP this or write `no evaluation of previous solution attempt provided`.
 
 * Solution  

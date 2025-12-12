@@ -48,6 +48,7 @@ You will be given:
      - New claims.
      - Changes to previously flawed parts.
      - New connections between old and new components.
+   - If multiple solution attempts are provided, treat only the final attempt as the main target for evaluation; use earlier attempts only to (i) avoid repeating known errors and (ii) carry forward established building blocks.
 
 3. Structural versus local issues:
    - For each major problem identified, classify it as:
@@ -120,6 +121,7 @@ Return the following information, in order, using clear headings (all mandatory 
       - List each such strong/global claim clearly.
       - Give a good counterexample pattern you have found (if applicable).
       - Mark the affected strong/global claim clearly as “false” or “unproven”.
+   - If you already discussed a counterexample under Major issues, you may just list it here as a 1-3 line reference.
    - If no such counterexamples, impossible claims, or overly ambitious claims exist, then SKIP this part or write `No counterexamples found, no impossible or overly ambitious claims were proposed`.
 
 * Minor issues  
