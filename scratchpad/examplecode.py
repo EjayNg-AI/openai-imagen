@@ -432,7 +432,7 @@ def handle_prompt_run():
         reasoning_effort = (
             _validate_choice(
                 payload.get("reasoning_effort") or payload.get("effort"),
-                {"none", "low", "medium", "high"},
+                {"none", "low", "medium", "high", "xhigh"},
                 "reasoning_effort",
                 "high",
             )
@@ -498,7 +498,7 @@ def handle_background_prompt_run():
         reasoning_effort = (
             _validate_choice(
                 payload.get("reasoning_effort") or payload.get("effort"),
-                {"none", "low", "medium", "high"},
+                {"none", "low", "medium", "high", "xhigh"},
                 "reasoning_effort",
                 "high",
             )
