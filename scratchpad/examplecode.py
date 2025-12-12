@@ -133,12 +133,6 @@ def _validate_choice(value: object, allowed: set, field: str, default: str) -> s
     return normalized
 
 
-def _is_pro_model(model: str) -> bool:
-    """Return True if the provided model string refers to a pro variant."""
-
-    return isinstance(model, str) and "pro" in model.lower()
-
-
 def create_prompt_response(
     messages: List[Dict[str, object]],
     *,
@@ -152,13 +146,12 @@ def create_prompt_response(
     if not messages:
         raise ValueError("At least one message is required.")
 
-    is_pro_model = _is_pro_model(model)
     text_config: Dict[str, object] = {"format": {"type": "text"}}
-    if not is_pro_model and text_verbosity:
+    if text_verbosity:
         text_config["verbosity"] = text_verbosity
 
     reasoning_config: Dict[str, object] = {"summary": None}
-    if not is_pro_model and reasoning_effort:
+    if reasoning_effort:
         reasoning_config["effort"] = reasoning_effort
 
     request_payload: Dict[str, object] = {
@@ -428,26 +421,17 @@ def handle_prompt_run():
         if isinstance(model_candidate, str) and model_candidate.strip():
             model = model_candidate
 
-        is_pro_model = _is_pro_model(model)
-        reasoning_effort = (
-            _validate_choice(
-                payload.get("reasoning_effort") or payload.get("effort"),
-                {"none", "low", "medium", "high", "xhigh"},
-                "reasoning_effort",
-                "high",
-            )
-            if not is_pro_model
-            else None
+        reasoning_effort = _validate_choice(
+            payload.get("reasoning_effort") or payload.get("effort"),
+            {"none", "low", "medium", "high", "xhigh"},
+            "reasoning_effort",
+            "high",
         )
-        text_verbosity = (
-            _validate_choice(
-                payload.get("text_verbosity") or payload.get("verbosity"),
-                {"low", "medium", "high"},
-                "text_verbosity",
-                "high",
-            )
-            if not is_pro_model
-            else None
+        text_verbosity = _validate_choice(
+            payload.get("text_verbosity") or payload.get("verbosity"),
+            {"low", "medium", "high"},
+            "text_verbosity",
+            "high",
         )
     except ValueError as exc:
         return jsonify(ok=False, error=str(exc)), 400
@@ -494,26 +478,17 @@ def handle_background_prompt_run():
         if isinstance(model_candidate, str) and model_candidate.strip():
             model = model_candidate
 
-        is_pro_model = _is_pro_model(model)
-        reasoning_effort = (
-            _validate_choice(
-                payload.get("reasoning_effort") or payload.get("effort"),
-                {"none", "low", "medium", "high", "xhigh"},
-                "reasoning_effort",
-                "high",
-            )
-            if not is_pro_model
-            else None
+        reasoning_effort = _validate_choice(
+            payload.get("reasoning_effort") or payload.get("effort"),
+            {"none", "low", "medium", "high", "xhigh"},
+            "reasoning_effort",
+            "high",
         )
-        text_verbosity = (
-            _validate_choice(
-                payload.get("text_verbosity") or payload.get("verbosity"),
-                {"low", "medium", "high"},
-                "text_verbosity",
-                "high",
-            )
-            if not is_pro_model
-            else None
+        text_verbosity = _validate_choice(
+            payload.get("text_verbosity") or payload.get("verbosity"),
+            {"low", "medium", "high"},
+            "text_verbosity",
+            "high",
         )
     except ValueError as exc:
         return jsonify(ok=False, error=str(exc)), 400
