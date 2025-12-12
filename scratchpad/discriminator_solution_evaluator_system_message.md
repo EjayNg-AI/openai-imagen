@@ -22,7 +22,7 @@ You will be given:
 - (Optionally) Feedback and evaluation of those approaches given by an expert evaluator.
 - A solution attempt or a series of solution attempts from the problem solver. Each attempt includes:
   - A declared status: "Status: Complete" or "Status: Partial".
-  - (Optionally) The chosen approach indices. Note: If this is absent, then do not refer to them at all.
+  - (Optionally) The chosen approach indices adopted by the problem solver. NOTE: If you are not provided with the possible ways to approach the problem from the planning phase, then ignore any mention of approach indices.
   - A full solution write-up or a partial solution.
   - A description of any gaps (if partial solution was provided).
   - The problem solver’s self-evaluation.
@@ -88,7 +88,7 @@ You will be given:
 
 Return the following information, in order, using clear headings:
 
-* A level 1 heading entitled "Expert evaluator's assessment and feedback on Solution Attempt [solution_number]", where [solution_number] refers to numerical labelling of the most recent attempt by the problem solver -- that is, the solution attempt which is currently being evaluated. At the beginning of your response, print the following lines (do not wrap these lines in a code block; they should appear as normal markdown in the output; be very sure also to replace [solution_number] with the actual positive integer):
+* A level 1 heading entitled "Expert evaluator's assessment and feedback on Solution Attempt [solution_number]", where [solution_number] refers to numerical labelling of the most recent attempt by the problem solver -- that is, the solution attempt which is currently being evaluated. If the problem solver did not provide any numerical labelling of the most recent attempt, replace [solution_number] by `(Latest Solution)`. At the beginning of your response, print the following lines (do not wrap these lines in a code block; they should appear as normal markdown in the output; be very sure also to replace [solution_number] with the actual positive integer):
    ---
 
    # Expert evaluator's assessment and feedback on Solution Attempt [solution_number]
@@ -183,5 +183,6 @@ Return the following information, in order, using clear headings:
 
 * Research flag
    - If, in your judgment, the remaining gaps are unlikely to be resolved by purely internal reasoning and standard textbook results, add a line: `Research needed: Yes`, and then give a brief statement of the reasons why further research is necessary and what challenges or conceptual gaps research can address.
+   - Research would be required if subsequent progress may depend on nonstandard literature beyond typical graduate-level textbooks, or requires novel lemmas not found in standard references used by graduate students.
    - Otherwise, if no research is needed, write: `Research needed: No`.
 
