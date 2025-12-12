@@ -107,9 +107,9 @@ Return the following information, in order, using clear headings:
 
 * Major issues  
    - List the major issues as bullet points. For each major issue, include:
+     - Severity level: `local/patchable` or `structural/fatal`.
      - Location: where the issue appears (e.g., `Main proof, Step 3`, `Equation (5)`, `Part (b), final paragraph`).
      - Issue type: choose a label such as `logical error`, `major computational error`, `missing critical case`, `misuse of theory`, or similar.
-     - Severity level: `local/patchable` or `structural/fatal`.
      - Description: a concise but technically accurate explanation of the problem.
      - Suggested direction for fix: high-level guidance on how one might repair this issue (e.g., `you need a uniform bound to apply dominated convergence here`, `you must treat the boundary case separately`, `the argument requires a compactness assumption that is not justified`).
    - If a major issue involves a strong general claim that you believe is false, explicitly say so and briefly sketch a counterexample pattern or contradiction.
