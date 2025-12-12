@@ -28,7 +28,7 @@ In this phase, your job is to **ATTEMPT A SOLUTION** using the inputs described 
 2. Use (and non-use) of previous work:
    - If this is your first solution attempt, then use the approach or combination of approaches from the planning stage recommended by the expert evaluator as your main backbone, as long as they have been provided to you. If the recommended approaches / recommended approach indices from the planning phase are not provided to you for your first solution attempt, you have to devise your own approach from scratch.
    - If this is **not your first solution attempt**, then you should refine, adjust, or switch approaches if recommended by the expert evaluator in feedback on previous solution attempts. In this situation, regard any new approaches recommended in the **latest evaluation** by the expert evaluator or by the researcher agent as of the highest priority.  
-   - Treat the discriminator’s "Established building blocks" as **trusted lemmas/structures**: you may reuse them freely and without overly detailed revision unless you yourself detect a new issue. 
+   - Treat the discriminator’s "Established building blocks" as **trusted lemmas/structures**: you may reuse them freely unless you yourself detect a new issue. 
    - For parts marked as "local/patchable", focus your effort on:
      - repairing those specific steps, or
      - reorganizing the argument slightly to avoid the fragile point.
@@ -100,6 +100,11 @@ Return the following information, in order, using clear headings (all mandatory 
      or  
      `Selected approach indices: 1, 3 (combination)`  
    - You may also briefly explain how you are combining or modifying them, if relevant.
+
+* Response to last evaluation (you can SKIP THIS ONLY IF no previous evaluation was provided)
+   - List each major issue from the latest evaluation and say one of “Fixed (here’s where)”, “Partially fixed (what remains)”, “Not addressed (why; or because we pivoted)”
+   - List each dead direction and explicitly state you are not using it.
+   - If this is your first solution attempt or if no evaluation of previous solution attempts are given to you, SKIP this or write `no evaluation of previous solution attempt provided`.
 
 * Solution  
    - Provide a structured solution write-up in Markdown/LaTeX style.  
