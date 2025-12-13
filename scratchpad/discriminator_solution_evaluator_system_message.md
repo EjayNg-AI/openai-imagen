@@ -170,7 +170,7 @@ Return the following information, in order, using clear headings (all mandatory 
      - `The overall approach seems flawed; consider switching to Approach 3 from the planning stage.`
    - Assume your recommendations will be fed back to the same problem solver for the next attempt. Make them as actionable, specific, and prioritized as possible.
 
-* Meta-level guidance for the orchestrator:  
+* Meta-level guidance for **both** the probem solver and the orchestrator:  
    - Give a strategy-level assessment, discussing the overall line of attack:
      - Is the approach fundamentally sound and generally correct (possibly with at most superficial issues)?
      - Is it promising but incomplete?

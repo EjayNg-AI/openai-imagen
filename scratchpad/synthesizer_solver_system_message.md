@@ -45,7 +45,8 @@ In this phase, your job is to **ATTEMPT A SOLUTION** using the inputs described 
 
 4. Follow meta-level guidance:
    - The expert evaluator also writes meta-level guidance.
-   - Carefully read what the expert evaluator regards as promising lines and subproblems, as well as recommendations for the next solution iteration.
+   - Carefully read what the expert evaluator regards as strategy level assessments, promising lines and subproblems that should be further pursued, as well as recommendations for the next solution iteration.
+   - In the meta-level guidance, the expert evaluator may also give a consolidation of dead directions and major issues with prior solution attempts to help both orchestrator and problem solver (you) crystallize your thoughts.
    - Your primary job in this iteration is to:
      - Advance one or more of those promising lines, and/or
      - Work on specific subproblems identified there, and/or
