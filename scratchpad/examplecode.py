@@ -543,6 +543,26 @@ def poll_background_prompt_run(response_id: str):
     return jsonify(payload)
 
 
+@app.post("/api/prompt-run-background/<response_id>/cancel")
+def cancel_background_prompt_run(response_id: str):
+    if not response_id:
+        return jsonify(ok=False, error="response_id is required."), 400
+
+    try:
+        response = client.responses.cancel(response_id)
+    except Exception as exc:  # noqa: BLE001
+        app.logger.exception("Background prompt cancellation failed")
+        return jsonify(ok=False, error=str(exc)), 500
+
+    payload = {
+        "ok": True,
+        "status": response.status,
+        "response": response.model_dump(),
+    }
+    payload["done"] = response.status in {"completed", "failed", "cancelled"}
+    return jsonify(payload)
+
+
 if __name__ == "__main__":
     host = os.getenv("TRY_SERVER_HOST", "127.0.0.1")
     port = int(os.getenv("TRY_SERVER_PORT", "2357"))

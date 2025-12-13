@@ -142,6 +142,14 @@
         box-shadow: 0 0.7rem 1.6rem rgba(90, 169, 255, 0.35);
       }
 
+      button:disabled,
+      .ghost:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+        box-shadow: none;
+        transform: none;
+      }
+
       button.small {
         padding: 0.45rem 0.8rem;
         font-size: 0.92rem;
@@ -246,6 +254,7 @@
         data-endpoint="/api/prompt-run"
         data-background-endpoint="/api/prompt-run-background"
         data-background-poll-endpoint="/api/prompt-run-background"
+        data-background-cancel-endpoint="/api/prompt-run-background"
       >
         <div class="controls">
           <button type="button" class="ghost small" id="addMessage">+ Add message</button>
@@ -297,6 +306,9 @@
 
         <div class="controls">
           <button type="submit" class="primary">Send to OpenAI</button>
+          <button type="button" class="ghost small" id="cancelBackgroundTask" disabled>
+            Cancel background task
+          </button>
           <div class="status" id="status" aria-live="polite"></div>
         </div>
         <div class="hint" id="responseIdDisplay"></div>
@@ -367,7 +379,10 @@
       const fullResponseBox = document.getElementById("fullResponseBox");
       const copyFullResponseBtn = document.getElementById("copyFullResponse");
       const responseIdDisplay = document.getElementById("responseIdDisplay");
+      const cancelBackgroundBtn = document.getElementById("cancelBackgroundTask");
       const POLL_INTERVAL_MS = 60000;
+      const DEFAULT_CANCEL_BUTTON_TEXT = "Cancel background task";
+      let currentBackgroundRun = null;
 
       const ROLE_PLACEHOLDERS = {
         developer:
@@ -393,6 +408,40 @@
       const setResponseId = (idText) => {
         if (!responseIdDisplay) return;
         responseIdDisplay.textContent = idText ? `response_id: ${idText}` : "";
+      };
+
+      const normalizeStatus = (statusText) =>
+        (typeof statusText === "string" ? statusText : "")
+          .toLowerCase()
+          .replace(/_/g, " ")
+          .trim();
+
+      const updateCancelButton = (statusText = "") => {
+        if (!cancelBackgroundBtn) return;
+        const normalized = normalizeStatus(statusText || currentBackgroundRun?.lastStatus || "");
+        const hasActiveRun = Boolean(currentBackgroundRun?.responseId);
+        const isInProgress = normalized === "in progress";
+        const isBusy = Boolean(currentBackgroundRun?.cancelInFlight);
+        cancelBackgroundBtn.disabled = !(hasActiveRun && isInProgress) || isBusy;
+        cancelBackgroundBtn.textContent = isBusy ? "Cancelling…" : DEFAULT_CANCEL_BUTTON_TEXT;
+      };
+
+      const resetCancelButton = () => {
+        if (!cancelBackgroundBtn) return;
+        cancelBackgroundBtn.disabled = true;
+        cancelBackgroundBtn.textContent = DEFAULT_CANCEL_BUTTON_TEXT;
+      };
+
+      const clearBackgroundRunState = () => {
+        currentBackgroundRun = null;
+        resetCancelButton();
+      };
+
+      const markBackgroundStatus = (statusText) => {
+        if (!currentBackgroundRun) return;
+        const normalized = normalizeStatus(statusText);
+        currentBackgroundRun.lastStatus = normalized || statusText;
+        updateCancelButton(currentBackgroundRun.lastStatus);
       };
 
       const copyText = async (text, button) => {
@@ -452,13 +501,27 @@
         return chunks.join("\n\n").trim();
       };
 
-      const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      const sleep = (ms, signal) =>
+        new Promise((resolve, reject) => {
+          const timer = setTimeout(resolve, ms);
+          if (!signal) return;
+          signal.addEventListener(
+            "abort",
+            () => {
+              clearTimeout(timer);
+              reject(new DOMException("Aborted", "AbortError"));
+            },
+            { once: true }
+          );
+        });
 
-      const pollForCompletion = async (responseId, pollBaseUrl) => {
+      const pollForCompletion = async (responseId, pollBaseUrl, options = {}) => {
+        const { signal, onStatus } = options;
         const base = (pollBaseUrl || "/api/prompt-run-background").replace(/\/$/, "");
         while (true) {
+          if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
           const pollUrl = `${base}/${encodeURIComponent(responseId)}`;
-          const pollResp = await fetch(pollUrl);
+          const pollResp = await fetch(pollUrl, { signal });
           const { parsed, ok, status } = await parseResponseBody(pollResp);
 
           if (!ok) {
@@ -473,14 +536,19 @@
             (parsed && parsed.status) ||
             (parsed && parsed.response && parsed.response.status) ||
             "pending";
+          const normalizedStatus = normalizeStatus(currentStatus) || "pending";
 
-          showStatus(`Background run status: ${currentStatus}`);
+          showStatus(`Background run status: ${normalizedStatus}`);
+          if (typeof onStatus === "function") onStatus(normalizedStatus, parsed);
 
-          if ((parsed && parsed.done) || ["completed", "failed", "cancelled"].includes(currentStatus)) {
+          if (
+            (parsed && parsed.done) ||
+            ["completed", "failed", "cancelled"].includes(normalizedStatus)
+          ) {
             return parsed;
           }
 
-          await sleep(POLL_INTERVAL_MS);
+          await sleep(POLL_INTERVAL_MS, signal);
         }
       };
 
@@ -568,10 +636,88 @@
       copyFullResponseBtn.addEventListener("click", () =>
         copyText(fullResponseBox.value, copyFullResponseBtn)
       );
+      cancelBackgroundBtn?.addEventListener("click", async () => {
+        if (!currentBackgroundRun?.responseId) {
+          showStatus("No background task is currently running.", "error");
+          return;
+        }
+
+        const statusForCancel = currentBackgroundRun.lastStatus || "";
+        if (normalizeStatus(statusForCancel) !== "in progress") {
+          showStatus("Cancellation is available only while a task is in progress.", "error");
+          return;
+        }
+
+        currentBackgroundRun.cancelInFlight = true;
+        updateCancelButton(statusForCancel);
+        showStatus("Cancelling background task…");
+
+        const baseCancelEndpoint =
+          form.dataset.backgroundCancelEndpoint ||
+          form.dataset.backgroundPollEndpoint ||
+          form.dataset.backgroundEndpoint ||
+          "/api/prompt-run-background";
+        const cancelUrl = `${baseCancelEndpoint.replace(/\/$/, "")}/${encodeURIComponent(
+          currentBackgroundRun.responseId
+        )}/cancel`;
+
+        try {
+          const cancelResp = await fetch(cancelUrl, { method: "POST" });
+          const { parsed, ok, status } = await parseResponseBody(cancelResp);
+          if (!ok) {
+            const err =
+              (parsed && parsed.error) ||
+              (typeof parsed === "string" ? parsed : null) ||
+              `Cancel failed with status ${status}`;
+            throw new Error(err);
+          }
+
+          const responsePayload = (parsed && (parsed.response || parsed)) || parsed;
+          const finalStatusRaw =
+            (parsed && parsed.status) ||
+            (parsed && parsed.response && parsed.response.status) ||
+            "cancelled";
+          const finalStatus = normalizeStatus(finalStatusRaw) || finalStatusRaw || "cancelled";
+          const extractedText = extractOutputText(responsePayload);
+          const pretty =
+            typeof responsePayload === "object"
+              ? JSON.stringify(responsePayload, null, 2)
+              : String(responsePayload);
+
+          if (extractedText) outputBox.value = extractedText;
+          if (fullResponseBox) fullResponseBox.value = pretty || "";
+
+          const statusType =
+            finalStatus === "cancelled" ? "success" : finalStatus === "failed" ? "error" : "";
+          showStatus(`Background task cancelled (${finalStatus}).`, statusType);
+          setResponseId(
+            (parsed && parsed.response_id) ||
+            (parsed && parsed.response && parsed.response.id) ||
+            currentBackgroundRun.responseId
+          );
+          currentBackgroundRun.cancelledPayload = responsePayload;
+          currentBackgroundRun.lastStatus = finalStatus;
+          if (currentBackgroundRun.controller) currentBackgroundRun.controller.abort();
+        } catch (error) {
+          console.error("Cancellation error", error);
+          showStatus(
+            `Cancel failed: ${error && error.message ? error.message : "Unknown error"}`,
+            "error"
+          );
+          currentBackgroundRun.cancelInFlight = false;
+          updateCancelButton(currentBackgroundRun.lastStatus);
+        }
+      });
 
       const disableForm = (disabled) => {
         form.querySelectorAll("textarea, button, select").forEach((el) => {
-          if (el === copyOutputBtn || el === copyPayloadBtn || el === copyFullResponseBtn) return; // keep copy available
+          if (
+            el === copyOutputBtn ||
+            el === copyPayloadBtn ||
+            el === copyFullResponseBtn ||
+            el === cancelBackgroundBtn
+          )
+            return; // keep copy/cancel available
           el.disabled = disabled;
         });
       };
@@ -635,16 +781,40 @@
 
         const startingStatus =
           parsed.status || (parsed.response && parsed.response.status) || "queued";
+        const normalizedStart = normalizeStatus(startingStatus) || startingStatus;
         setResponseId(responseId);
         showStatus(
-          `Background run started (${startingStatus}). response_id: ${responseId}. Polling for completion…`
+          `Background run started (${normalizedStart}). response_id: ${responseId}. Polling for completion…`
         );
 
-        const finalPayload = await pollForCompletion(responseId, pollBase);
-        const finalStatus =
+        currentBackgroundRun = {
+          responseId,
+          controller: new AbortController(),
+          cancelInFlight: false,
+          lastStatus: normalizedStart,
+        };
+        updateCancelButton(normalizedStart);
+
+        let finalPayload;
+        try {
+          finalPayload = await pollForCompletion(responseId, pollBase, {
+            signal: currentBackgroundRun.controller.signal,
+            onStatus: (status) => markBackgroundStatus(status),
+          });
+        } catch (error) {
+          if (error.name === "AbortError" && currentBackgroundRun?.cancelInFlight) {
+            clearBackgroundRunState();
+            return;
+          }
+          clearBackgroundRunState();
+          throw error;
+        }
+
+        const finalStatusRaw =
           (finalPayload && finalPayload.status) ||
           (finalPayload && finalPayload.response && finalPayload.response.status) ||
           "unknown";
+        const finalStatus = normalizeStatus(finalStatusRaw) || finalStatusRaw || "unknown";
         const extractedText = extractOutputText(finalPayload);
         const pretty =
           typeof finalPayload === "object"
@@ -656,6 +826,7 @@
         const statusType =
           finalStatus === "completed" ? "success" : finalStatus === "failed" ? "error" : "";
         showStatus(`Background run finished with status: ${finalStatus}`, statusType);
+        clearBackgroundRunState();
       };
 
       form.addEventListener("submit", async (event) => {
