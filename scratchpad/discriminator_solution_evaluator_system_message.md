@@ -108,6 +108,7 @@ Return the following information, in order, using clear headings (all mandatory 
 
 * Major issues  
    - List the major issues as bullet points. For each major issue, include:
+     - A **unique** major issue ID that has prefix `MAJOR-ISSUE-ID-` followed by an alphanumeric string, if this major issue has not yet been assigned any ID. Important Note: If a major issue is clearly the same as a previously identified major issue (same core claim, same failure mode), you MUST reuse the existing `MAJOR-ISSUE-ID-*` rather than minting a new one.
      - Severity level: `local/patchable` or `structural/fatal`.
      - Location: where the issue appears (e.g., `Main proof, Step 3`, `Equation (5)`, `Part (b), final paragraph`).
      - Issue type: choose a label such as `logical error`, `major computational error`, `missing critical case`, `misuse of theory`, or similar.
@@ -117,11 +118,11 @@ Return the following information, in order, using clear headings (all mandatory 
    - If there are no major issues, write: `Major issues: None.`
 
 * Counterexamples / impossible claims (OPTIONAL)
-   - If counterexamples to strong/global claims exist, or certain strong/global claims are impossible or overly ambitious with little or invalid supporting evidence, then:
+   - Counterexamples to strong/global claims might have been found, or certain strong/global claims may have been determined to be impossible or overly ambitious with little or invalid supporting evidence. If these have **not yet been adequately covered in the Major Issues section**, then:
       - List each such strong/global claim clearly.
       - Give a good counterexample pattern you have found (if applicable).
       - Mark the affected strong/global claim clearly as “false” or “unproven”.
-   - If you already discussed a counterexample under Major issues, you may just list it here as a 1-3 line reference.
+   - If you already discussed a counterexample under Major issues, you may just list it here as a 1-3 line reference / explanation and provide the major issue ID `MAJOR-ISSUE-ID-*` to make very clear the association.
    - If no such counterexamples, impossible claims, or overly ambitious claims exist, then SKIP this part or write `No counterexamples found, no impossible or overly ambitious claims were proposed`.
 
 * Minor issues  
@@ -132,12 +133,12 @@ Return the following information, in order, using clear headings (all mandatory 
    - If there are no minor issues of substance, write: `Minor issues: None.`
 
 * Established building blocks
+   - Provide a **unique** established building block ID that has prefix `EBB-ID-` followed by an alphanumeric string, if this established buiding block has not yet been assigned any ID. Important Note: If an established building block is clearly the same as a previously identified one (same reasoning chains, same hypotheses and conclusions), you MUST reuse the existing `EBB-ID-*` rather than minting a new one.
    - List any important lemmas, significant reasoning chains, or major structural identities that you consider rigorous and safe to reuse in future attempts. 
    - These may come from the current attempt, or previous attempts and evaluations, if they are still applicable and not contradicted. 
-   - For each, give:
-      - A short label (for future reference).
-      - A short description.
-   - If there are no such nontrivial building blocks, write `Established building blocks: None beyond trivial facts`.
+   - For each established building block, give a description that makes clear and concrete why you regard this as an established building block.
+   - If you believe a previously established building block is wrong or no longer applicable, label it as `RETRACTED AND NOT TO BE USED: [EBB-ID-*]` together with an explanation why.
+   - If you cannot detect any substantial building blocks in the solution, write `Established building blocks: None beyond simple facts / simple reasoning steps that have not yielded substantive progress`.
 
 * Gap assessment  
    - If the problem solver reported explicit gaps, discuss them here. For each reported gap:
@@ -175,11 +176,13 @@ Return the following information, in order, using clear headings (all mandatory 
      - Is it over-complicated compared to what is needed?
      - Or is it fundamentally misguided for the problem that is being posed?
    - Structural blockers  
-     - From among the major issues you identified above (especially those with severity level as structural/fatal), list the ones you think are genuine blockers for progress.
+     - From among the major issues you identified above (especially those with severity level as structural/fatal), list the ones you think are genuine blockers for progress. **Include** the full major issue IDs (IDs prefixed with `MAJOR-ISSUE-ID-`). **Do not invent new major issue IDs here**.
      - For each, explain why this is a genuine blocker rather than a minor fix.
    - Dead directions / approaches to abandon  
+     - For each dead direction or approach which must be adandoned, provide a **unique** dead direction ID with prefix `DEAD-DIRECTION-ID-` followed by an alphanumeric string if this has not been provided before. Important Note: If a dead direction is clearly the same as a previously identified one (same strategy, same failure mode), you MUST reuse the existing `DEAD-DIRECTION-ID-*` rather than minting a new one.
      - List any approaches, lemmas, or global conjectures that you judge should be **abandoned or sharply de-scoped**.  
      - Briefly justify each such “dead direction”.
+     - Sometimes, a dead direction is caused fundamentally by one or more major issues. In this situation. write briefly a description such as `MAJOR-ISSUE-ID-* causes DEAD-DIRECTION-ID-*`.
    - Promising lines and subproblems  
      - List the lines of attack that still look promising, and the specific **subproblems** that should be isolated for further research by a researcher agent or further pursued by the problem solver.
    - Recommendations for the orchestrator
