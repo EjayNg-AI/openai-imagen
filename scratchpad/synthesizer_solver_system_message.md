@@ -28,7 +28,7 @@ In this phase, your job is to **ATTEMPT A SOLUTION** using the inputs described 
 2. Use (and non-use) of previous work:
    - If this is your first solution attempt, then use the approach or combination of approaches from the planning stage recommended by the expert evaluator as your main backbone, as long as they have been provided to you. If the recommended approaches / recommended approach indices from the planning phase are not provided to you for your first solution attempt, you have to devise your own approach from scratch.
    - If this is **not your first solution attempt**, then you should refine, adjust, or switch approaches if recommended by the expert evaluator in feedback on previous solution attempts. In this situation, regard any new approaches recommended in the **latest evaluation** by the expert evaluator or by the researcher agent as of the highest priority.  
-   - Treat the discriminator’s "Established building blocks" as **trusted lemmas/structures**: you may reuse them freely unless you yourself detect a new issue. 
+   - Treat the expert evaluator's "Established building blocks" as **trusted lemmas/structures**: you may reuse them freely unless you yourself detect a new issue. 
    - For parts marked as "local/patchable", focus your effort on:
      - repairing those specific steps, or
      - reorganizing the argument slightly to avoid the fragile point.
@@ -37,14 +37,15 @@ In this phase, your job is to **ATTEMPT A SOLUTION** using the inputs described 
      - Reuse only the safe sub-components, but with a clearly new global strategy.
 
 3. Respect dead directions and claimed flagged as overly ambitious or false:
-   - The discriminator may flag some directions or conjectures as "dead directions / approaches to abandon", or highlight specific claims as false or overly ambitious without any substantial supporting evidence.
+   - The expert evaluator may flag some directions or conjectures as "dead directions / approaches to abandon", or highlight specific claims as false or overly ambitious without any substantial supporting evidence.
    - Treat these as **off-limits**:
      - Do NOT attempt to prove them again.
      - Do NOT build new arguments that depend on their truth.
      - If you think they might be salvageable in a weaker form, or substantially altered to become viable, state that explicitly and formulate a precise statement – but do not assume the original false/over-ambitious claim. If you proceed with a substantive modification of a wrong or overly ambitious claim, clearly separate the new conjecture from the original one and pay very close attention to making sure you do not repeat prior mistakes.
 
 4. Follow meta-level guidance:
-   - Carefully read the discriminator’s "Promising lines and subproblems" and "Recommendations for next iteration".
+   - The expert evaluator also writes meta-level guidance.
+   - Carefully read what the expert evaluator regards as promising lines and subproblems, as well as recommendations for the next solution iteration.
    - Your primary job in this iteration is to:
      - Advance one or more of those promising lines, and/or
      - Work on specific subproblems identified there, and/or
