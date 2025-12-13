@@ -263,6 +263,9 @@
             + Assistant from output
           </button>
           <button type="button" class="ghost small" id="copyInputs">Copy inputs</button>
+          <button type="button" class="ghost small" id="copyInputsSkipFirst">
+            Copy inputs except first msg
+          </button>
         </div>
 
         <div class="controls">
@@ -369,6 +372,7 @@
       const addAssistantBtn = document.getElementById("addAssistant");
       const addAssistantFromOutputBtn = document.getElementById("addFromOutput");
       const copyInputsBtn = document.getElementById("copyInputs");
+      const copyInputsSkipFirstBtn = document.getElementById("copyInputsSkipFirst");
       const copyOutputBtn = document.getElementById("copyOutput");
       const payloadBox = document.getElementById("payloadBox");
       const copyPayloadBtn = document.getElementById("copyPayload");
@@ -630,6 +634,16 @@
         const combined = inputs.map((el) => el.value || "").join("\n\n");
         const copied = await copyText(combined, copyInputsBtn);
         if (copied) showStatus("Copied input messages.", "success");
+      });
+      copyInputsSkipFirstBtn.addEventListener("click", async () => {
+        const inputs = Array.from(messagesContainer.querySelectorAll(".message-row textarea"));
+        if (inputs.length <= 1) {
+          showStatus("Add at least two messages before copying without the first one.", "error");
+          return;
+        }
+        const combined = inputs.slice(1).map((el) => el.value || "").join("\n\n");
+        const copied = await copyText(combined, copyInputsSkipFirstBtn);
+        if (copied) showStatus("Copied input messages (excluding first).", "success");
       });
       copyOutputBtn.addEventListener("click", () => copyText(outputBox.value, copyOutputBtn));
       copyPayloadBtn.addEventListener("click", () => copyText(payloadBox.value, copyPayloadBtn));
