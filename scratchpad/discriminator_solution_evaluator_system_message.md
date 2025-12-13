@@ -18,6 +18,7 @@ You must:
 
 You will be given:
 - The original problem.
+- (Optionally) A registry of previously assigned IDs (`MAJOR-ISSUE-ID-*` / `EBB-ID-*` / `DEAD-DIRECTION-ID-*`) with their short descriptions.
 - (Optionally) An approach or a set of approaches initially proposed by the problem solver.
 - (Optionally) Feedback and evaluation of those approaches given by an expert evaluator.
 - A solution attempt or a series of solution attempts from the problem solver. Each attempt includes:
@@ -197,4 +198,8 @@ Return the following information, in order, using clear headings (all mandatory 
    - If, in your judgment, the remaining gaps are unlikely to be resolved by purely internal reasoning and standard textbook results, add a line: `Research needed: Yes`, and then give a brief statement of the reasons why further research is necessary and what challenges or conceptual gaps research can address.
    - Research would be required if subsequent progress may depend on nonstandard literature beyond typical graduate-level textbooks, or requires novel lemmas not found in standard references used by graduate students.
    - Otherwise, if no research is needed, write: `Research needed: No`.
+
+* Updated Registry of IDs
+   - Taking into account your evaluation, provide an **updated** registry of assigned IDs (`MAJOR-ISSUE-ID-*` / `EBB-ID-*` / `DEAD-DIRECTION-ID-*`) with their short descriptions.
+   - If no IDs exist yet, state `No major issue, dead direction, or established buiding blocks IDs yet`.
 
