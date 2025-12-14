@@ -334,6 +334,8 @@ PROMPT_BACKGROUND_HTML_PATH = Path(__file__).resolve().parent / "prompt_runner_b
 def serve_frontend():
     if TRY_HTML_PATH.exists():
         return send_file(TRY_HTML_PATH)
+    if PROMPT_HTML_PATH.exists():
+        return send_file(PROMPT_HTML_PATH)
     return ("try.html is missing. Generate it in the scratchpad directory.", 404)
 
 

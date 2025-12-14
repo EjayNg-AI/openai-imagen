@@ -262,6 +262,7 @@
           <button type="button" class="ghost small" id="addFromOutput">
             + Assistant from output
           </button>
+          <button type="button" class="ghost small" id="forkConversation">Fork conversation</button>
           <button type="button" class="ghost small" id="copyInputs">Copy inputs</button>
           <button type="button" class="ghost small" id="copyInputsSkipFirst">
             Copy inputs except first msg
@@ -384,6 +385,7 @@
       const copyFullResponseBtn = document.getElementById("copyFullResponse");
       const responseIdDisplay = document.getElementById("responseIdDisplay");
       const cancelBackgroundBtn = document.getElementById("cancelBackgroundTask");
+      const forkConversationBtn = document.getElementById("forkConversation");
       const POLL_INTERVAL_MS = 60000;
       const DEFAULT_CANCEL_BUTTON_TEXT = "Cancel background task";
       let currentBackgroundRun = null;
@@ -395,6 +397,11 @@
         assistant: "Assistant reply to seed the conversation. Example: A concise answer to the user.",
       };
 
+      const normalizeRole = (value) => {
+        const lower = typeof value === "string" ? value.trim().toLowerCase() : "";
+        return ["developer", "user", "assistant"].includes(lower) ? lower : "user";
+      };
+
       const createOption = (value, label, selected) => {
         const opt = document.createElement("option");
         opt.value = value;
@@ -402,6 +409,15 @@
         if (selected) opt.selected = true;
         return opt;
       };
+
+      const collectConversationMessages = () =>
+        Array.from(messagesContainer.querySelectorAll(".message-row")).map((row) => {
+          const select = row.querySelector("select");
+          const textarea = row.querySelector("textarea");
+          const role = normalizeRole(select?.value || "user");
+          const text = typeof textarea?.value === "string" ? textarea.value : "";
+          return { role, text };
+        });
 
       const showStatus = (message, type = "") => {
         statusEl.textContent = message || "";
@@ -557,6 +573,7 @@
       };
 
       const buildMessageRow = (role = "user", text = "") => {
+        const normalizedRole = normalizeRole(role);
         const row = document.createElement("div");
         row.className = "message-row";
 
@@ -568,9 +585,9 @@
 
         const select = document.createElement("select");
         select.append(
-          createOption("developer", "Developer", role === "developer"),
-          createOption("user", "User", role === "user"),
-          createOption("assistant", "Assistant", role === "assistant")
+          createOption("developer", "Developer", normalizedRole === "developer"),
+          createOption("user", "User", normalizedRole === "user"),
+          createOption("assistant", "Assistant", normalizedRole === "assistant")
         );
 
         const actions = document.createElement("div");
@@ -590,11 +607,11 @@
         header.append(label, select, actions);
 
         const textarea = document.createElement("textarea");
-        textarea.placeholder = ROLE_PLACEHOLDERS[role];
+        textarea.placeholder = ROLE_PLACEHOLDERS[normalizedRole];
         textarea.value = text;
 
         select.addEventListener("change", () => {
-          const nextRole = select.value;
+          const nextRole = normalizeRole(select.value);
           textarea.placeholder = ROLE_PLACEHOLDERS[nextRole] || "";
         });
 
@@ -613,7 +630,7 @@
       };
 
       const addMessageRow = (role = "user", text = "") => {
-        const row = buildMessageRow(role, text);
+        const row = buildMessageRow(normalizeRole(role), text);
         messagesContainer.appendChild(row);
         return row;
       };
@@ -624,6 +641,37 @@
         const text = outputBox.value || "";
         const row = buildMessageRow("assistant", text);
         messagesContainer.appendChild(row);
+      });
+      forkConversationBtn?.addEventListener("click", () => {
+        const rows = Array.from(messagesContainer.querySelectorAll(".message-row"));
+        if (!rows.length) {
+          showStatus("Add at least one message before forking.", "error");
+          return;
+        }
+
+        const messages = collectConversationMessages();
+        const storageKey = `fork-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(messages));
+        } catch (error) {
+          console.error("Fork storage error", error);
+          showStatus("Unable to store forked conversation (storage blocked).", "error");
+          return;
+        }
+
+        const url = new URL(window.location.href);
+        url.searchParams.set("forkKey", storageKey);
+
+        const anchor = document.createElement("a");
+        anchor.href = url.toString();
+        anchor.target = "_blank";
+        anchor.rel = "noopener";
+        anchor.style.display = "none";
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+
+        showStatus("Opening forked conversation in a new tab.", "success");
       });
       copyInputsBtn.addEventListener("click", async () => {
         const inputs = Array.from(messagesContainer.querySelectorAll(".message-row textarea"));
@@ -935,6 +983,11 @@
         return params.get("prefillKey");
       };
 
+      const getForkKeyFromQuery = () => {
+        const params = new URLSearchParams(window.location.search);
+        return params.get("forkKey");
+      };
+
       const fetchSystemMessage = async (key) => {
         const response = await fetch(`/api/system-message/${encodeURIComponent(key)}`);
         let data;
@@ -966,9 +1019,63 @@
         }
       };
 
-      const developerRow = addMessageRow("developer");
-      applyDeveloperPrefill(developerRow);
-      addMessageRow("user");
+      const applyForkedConversation = () => {
+        const forkKey = getForkKeyFromQuery();
+        if (!forkKey) return false;
+
+        const stored = localStorage.getItem(forkKey);
+        if (!stored) {
+          showStatus("Forked conversation unavailable or expired.", "error");
+          return false;
+        }
+
+        let messages;
+        try {
+          messages = JSON.parse(stored);
+        } catch (error) {
+          console.error("Forked conversation parse error", error);
+          showStatus("Failed to load forked conversation data.", "error");
+          return false;
+        }
+
+        if (!Array.isArray(messages) || !messages.length) {
+          showStatus("Forked conversation had no messages.", "error");
+          return false;
+        }
+
+        messagesContainer.innerHTML = "";
+        messages.forEach((entry) => {
+          const role = normalizeRole(entry?.role || "user");
+          const text = typeof entry?.text === "string" ? entry.text : "";
+          addMessageRow(role, text);
+        });
+
+        showStatus("Forked conversation loaded from previous tab.", "success");
+        try {
+          localStorage.removeItem(forkKey);
+        } catch (error) {
+          console.warn("Could not remove forked conversation key", error);
+        }
+        try {
+          const url = new URL(window.location.href);
+          url.searchParams.delete("forkKey");
+          window.history.replaceState({}, "", url.toString());
+        } catch (error) {
+          console.warn("Could not clean forkKey from URL", error);
+        }
+        return true;
+      };
+
+      const initializeMessages = () => {
+        const forked = applyForkedConversation();
+        if (forked) return;
+
+        const developerRow = addMessageRow("developer");
+        applyDeveloperPrefill(developerRow);
+        addMessageRow("user");
+      };
+
+      initializeMessages();
     </script>
   </body>
 </html>
