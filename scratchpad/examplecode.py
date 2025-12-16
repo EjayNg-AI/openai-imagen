@@ -76,7 +76,7 @@ def create_story_response(developer_message: str, user_message: str, *, paragrap
     paragraph_count = _validate_paragraph_count(paragraph_count)
 
     return client.responses.create(
-        model="gpt-5",
+        model="gpt-5.2",
         input=[
             {
                 "role": "developer",
@@ -104,18 +104,13 @@ def create_story_response(developer_message: str, user_message: str, *, paragrap
                 "strict": True,
                 "schema": _build_paragraph_schema(paragraph_count),
             },
-            "verbosity": "medium",
+            "verbosity": "high",
         },
         reasoning={
             "effort": "medium",
-            "summary": "auto",
+            "summary": None,
         },
         tools=[],
-        store=True,
-        include=[
-            "reasoning.encrypted_content",
-            "web_search_call.action.sources",
-        ],
     )
 
 
@@ -206,5 +201,5 @@ def handle_response_request():
 
 if __name__ == "__main__":
     host = os.getenv("TRY_SERVER_HOST", "127.0.0.1")
-    port = int(os.getenv("TRY_SERVER_PORT", "2357"))
+    port = int(os.getenv("TRY_SERVER_PORT", "2257"))
     app.run(host=host, port=port, debug=os.getenv("FLASK_DEBUG") == "1")
