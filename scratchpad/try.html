@@ -216,38 +216,6 @@
         <code>scratchpad/examplecode.py</code>.
       </p>
 
-      <div style="margin: 0.25rem 0 1.5rem; display: flex; gap: 0.75rem; flex-wrap: wrap">
-        <button type="button" class="secondary" id="openPromptRunner">Open prompt runner tab</button>
-        <button type="button" class="secondary" id="openPromptRunnerBackground">
-          Open background prompt runner tab
-        </button>
-        <a class="secondary" href="/prompt-runner?prefillKey=synthesizer-planner" target="_blank" rel="noopener">
-          Prefill: Synthesizer planner
-        </a>
-        <a
-          class="secondary"
-          href="/prompt-runner?prefillKey=discriminator-approach-evaluator"
-          target="_blank"
-          rel="noopener"
-        >
-          Prefill: Discriminator approach evaluator
-        </a>
-        <a class="secondary" href="/prompt-runner?prefillKey=synthesizer-solver" target="_blank" rel="noopener">
-          Prefill: Synthesizer solver
-        </a>
-        <a
-          class="secondary"
-          href="/prompt-runner?prefillKey=discriminator-solution-evaluator"
-          target="_blank"
-          rel="noopener"
-        >
-          Prefill: Discriminator solution evaluator
-        </a>
-        <a class="secondary" href="/prompt-runner?prefillKey=researcher" target="_blank" rel="noopener">
-          Prefill: Researcher
-        </a>
-      </div>
-
       <form id="promptForm" data-endpoint="/api/responses">
         <section>
           <label for="developerMessage">Developer message</label>
@@ -299,10 +267,6 @@
       const status = document.getElementById("status");
       const result = document.getElementById("result");
       const paragraphsBox = document.getElementById("paragraphsBox");
-      const openPromptRunnerBtn = document.getElementById("openPromptRunner");
-      const openPromptRunnerBackgroundBtn = document.getElementById(
-        "openPromptRunnerBackground"
-      );
 
       const showStatus = (message, isError = false) => {
         status.textContent = message;
@@ -314,18 +278,6 @@
           el.disabled = disabled;
         });
       };
-
-      if (openPromptRunnerBtn) {
-        openPromptRunnerBtn.addEventListener("click", () => {
-          window.open("/prompt-runner", "_blank", "noopener");
-        });
-      }
-
-      if (openPromptRunnerBackgroundBtn) {
-        openPromptRunnerBackgroundBtn.addEventListener("click", () => {
-          window.open("/prompt-runner-background", "_blank", "noopener");
-        });
-      }
 
       form.addEventListener("submit", async (event) => {
         event.preventDefault();

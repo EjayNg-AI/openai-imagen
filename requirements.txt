@@ -2,3 +2,8 @@ flask
 python-dotenv
 openai
 pillow
+python-chess
+pytest
+pytest-cov
+pytest-mock
+
