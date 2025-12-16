@@ -19,35 +19,52 @@ client = OpenAI(api_key=api_key)
 SCRATCHPAD_DIR = Path(__file__).resolve().parent
 
 
-SCHEMA_DEFINITION: Dict[str, object] = {
-    "type": "object",
-    "properties": {
-        "paragraphs": {
-            "type": "array",
-            "description": "An array containing five paragraphs, each ranging from 250 to 350 words.",
-            "minItems": 5,
-            "maxItems": 5,
-            "items": {
-                "type": "object",
-                "properties": {
-                    "text": {
-                        "type": "string",
-                        "description": "The content of the paragraph (plain text).",
-                        "minLength": 1250,
-                        "maxLength": 2450,
-                    }
+def _validate_paragraph_count(value: object, *, default: int = 5) -> int:
+    """Coerce and clamp the paragraph count within safe bounds."""
+
+    if value is None:
+        return default
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        raise ValueError("paragraph_count must be an integer.")
+    if not 1 <= parsed <= 10:
+        raise ValueError("paragraph_count must be between 1 and 10.")
+    return parsed
+
+
+def _build_paragraph_schema(count: int) -> Dict[str, object]:
+    """Create a JSON schema that requires exactly `count` paragraphs."""
+
+    return {
+        "type": "object",
+        "properties": {
+            "paragraphs": {
+                "type": "array",
+                "description": f"An array containing {count} paragraphs, each ranging from 250 to 350 words.",
+                "minItems": count,
+                "maxItems": count,
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "text": {
+                            "type": "string",
+                            "description": "The content of the paragraph (plain text).",
+                            "minLength": 1250,
+                            "maxLength": 2450,
+                        }
+                    },
+                    "required": ["text"],
+                    "additionalProperties": False,
                 },
-                "required": ["text"],
-                "additionalProperties": False,
-            },
-        }
-    },
-    "required": ["paragraphs"],
-    "additionalProperties": False,
-}
+            }
+        },
+        "required": ["paragraphs"],
+        "additionalProperties": False,
+    }
 
 
-def create_story_response(developer_message: str, user_message: str):
+def create_story_response(developer_message: str, user_message: str, *, paragraph_count: int = 5):
     """Invoke the Responses API using the supplied developer and user messages."""
 
     developer_message = developer_message.strip()
@@ -55,6 +72,8 @@ def create_story_response(developer_message: str, user_message: str):
 
     if not developer_message or not user_message:
         raise ValueError("Both developer_message and user_message must be non-empty strings.")
+
+    paragraph_count = _validate_paragraph_count(paragraph_count)
 
     return client.responses.create(
         model="gpt-5",
@@ -81,9 +100,9 @@ def create_story_response(developer_message: str, user_message: str):
         text={
             "format": {
                 "type": "json_schema",
-                "name": "five_paragraphs",
+                "name": f"paragraphs_{paragraph_count}",
                 "strict": True,
-                "schema": SCHEMA_DEFINITION,
+                "schema": _build_paragraph_schema(paragraph_count),
             },
             "verbosity": "medium",
         },
@@ -158,14 +177,20 @@ def handle_response_request():
     payload = request.get_json(silent=True) or {}
     developer_message = payload.get("developer_message", "")
     user_message = payload.get("user_message", "")
+    paragraph_count_raw = payload.get("paragraph_count", 5)
 
     try:
         developer_message, user_message = _validate_messages(developer_message, user_message)
+        paragraph_count = _validate_paragraph_count(paragraph_count_raw)
     except ValueError as exc:
         return jsonify(ok=False, error=str(exc)), 400
 
     try:
-        response = create_story_response(developer_message, user_message)
+        response = create_story_response(
+            developer_message,
+            user_message,
+            paragraph_count=paragraph_count,
+        )
     except Exception as exc:  # noqa: BLE001 - surface API failures to client
         app.logger.exception("OpenAI response creation failed")
         return jsonify(ok=False, error=str(exc)), 500
