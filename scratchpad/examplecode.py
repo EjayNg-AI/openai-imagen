@@ -17,6 +17,7 @@ if not api_key:
 client = OpenAI(api_key=api_key)
 
 SCRATCHPAD_DIR = Path(__file__).resolve().parent
+META_PROMPT_PATH = SCRATCHPAD_DIR / "imagen-meta-prompt.md"
 
 
 def _validate_paragraph_count(value: object, *, default: int = 5) -> int:
@@ -107,7 +108,7 @@ def create_story_response(developer_message: str, user_message: str, *, paragrap
             "verbosity": "high",
         },
         reasoning={
-            "effort": "medium",
+            "effort": "high",
             "summary": None,
         },
         tools=[],
@@ -165,6 +166,19 @@ if not TRY_HTML_PATH.exists():
 @app.get("/")
 def serve_frontend():
     return send_file(TRY_HTML_PATH)
+
+
+@app.get("/api/meta-prompt")
+def get_meta_prompt():
+    try:
+        content = META_PROMPT_PATH.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return jsonify(ok=False, error="Meta prompt template is missing."), 500
+    except OSError:
+        app.logger.exception("Failed to read meta prompt template")
+        return jsonify(ok=False, error="Unable to read meta prompt template."), 500
+
+    return jsonify(ok=True, content=content)
 
 
 @app.post("/api/responses")

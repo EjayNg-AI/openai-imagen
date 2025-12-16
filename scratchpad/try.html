@@ -226,6 +226,9 @@
           ></textarea>
           <div class="helper">
             <span>Guidance for the assistant’s behaviour.</span>
+            <button type="button" class="secondary" id="loadMetaPrompt">
+              Load meta prompt
+            </button>
           </div>
         </section>
 
@@ -293,6 +296,9 @@
       const status = document.getElementById("status");
       const result = document.getElementById("result");
       const paragraphsBox = document.getElementById("paragraphsBox");
+      const loadMetaPromptButton = document.getElementById("loadMetaPrompt");
+
+      const META_PROMPT_PLACEHOLDER = "{{PARAGRAPH_COUNT}}";
 
       const showStatus = (message, isError = false) => {
         status.textContent = message;
@@ -304,6 +310,70 @@
           el.disabled = disabled;
         });
       };
+
+      const getValidatedParagraphCount = () => {
+        const paragraphCount = Number.parseInt(paragraphCountField.value, 10);
+        if (!Number.isFinite(paragraphCount)) {
+          throw new Error("Paragraph count must be a number between 1 and 10.");
+        }
+        if (paragraphCount < 1 || paragraphCount > 10) {
+          throw new Error("Paragraph count must be between 1 and 10.");
+        }
+        return paragraphCount;
+      };
+
+      const loadMetaPrompt = async () => {
+        let paragraphCount;
+        try {
+          paragraphCount = getValidatedParagraphCount();
+        } catch (error) {
+          showStatus(error.message, true);
+          return;
+        }
+
+        disableForm(true);
+        showStatus("Loading meta prompt template…");
+
+        try {
+          const response = await fetch("/api/meta-prompt", {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          });
+          const data = await response.json();
+
+          if (!response.ok || !data.ok) {
+            const errMsg =
+              (data && data.error) ||
+              `Failed to load meta prompt (status ${response.status}).`;
+            showStatus(errMsg, true);
+            return;
+          }
+
+          const template = typeof data.content === "string" ? data.content : "";
+          if (!template.includes(META_PROMPT_PLACEHOLDER)) {
+            const message = `Meta prompt template is missing placeholder ${META_PROMPT_PLACEHOLDER}. Add it to scratchpad/imagen-meta-prompt.md.`;
+            alert(message);
+            showStatus(message, true);
+            return;
+          }
+
+          const filled = template.replaceAll(
+            META_PROMPT_PLACEHOLDER,
+            String(paragraphCount),
+          );
+          developerField.value = filled;
+          showStatus("Meta prompt loaded into developer message.");
+        } catch (error) {
+          console.error("Failed to load meta prompt", error);
+          showStatus(`Unable to load meta prompt: ${error.message}`, true);
+        } finally {
+          disableForm(false);
+        }
+      };
+
+      if (loadMetaPromptButton) {
+        loadMetaPromptButton.addEventListener("click", loadMetaPrompt);
+      }
 
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
