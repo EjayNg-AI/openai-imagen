@@ -178,7 +178,7 @@ def generate():
 
     try:
         result = client.images.generate(
-            model="gpt-image-1",
+            model="gpt-image-1.5",
             prompt=prompt,
             n=n,
             **build_kwargs(data, for_generate=True),
@@ -258,7 +258,7 @@ def edit():
 
     try:
         result = client.images.edit(
-            model="gpt-image-1",
+            model="gpt-image-1.5",
             prompt=prompt,
             image=images,
             **kwargs,
