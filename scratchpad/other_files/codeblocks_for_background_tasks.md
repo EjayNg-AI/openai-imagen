@@ -12,7 +12,7 @@ For background tasks, we must periodically poll the server to determine if the t
 
 This is the basic structure of an API call which allows the model to run in a mode known as "background" mode. (See a more complete example in the next section.)
 
-NOTE: The `store = True` parameter cannot be specified for background API calls, unlike for other OpenAI models.
+NOTE: The `store = False` parameter **cannot** be specified for background API calls, unlike for other OpenAI models.
 
 ```python
 

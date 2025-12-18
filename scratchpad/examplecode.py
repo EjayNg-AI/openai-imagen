@@ -78,16 +78,8 @@ def create_story_response(developer_message: str, user_message: str, *, paragrap
 
     return client.responses.create(
         model="gpt-5.2",
+        instructions = developer_message,
         input=[
-            {
-                "role": "developer",
-                "content": [
-                    {
-                        "type": "input_text",
-                        "text": developer_message,
-                    }
-                ],
-            },
             {
                 "role": "user",
                 "content": [
@@ -111,7 +103,6 @@ def create_story_response(developer_message: str, user_message: str, *, paragrap
             "effort": "high",
             "summary": None,
         },
-        tools=[],
     )
 
 

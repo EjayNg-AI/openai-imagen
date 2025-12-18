@@ -58,10 +58,10 @@ response = client.responses.create(
     "format": {
       "type": "text"
     },
-    "verbosity": "high"  # can be `low`, `medium`, or `high`
+    "verbosity": "high"  # can be "low", "medium" or "high"  
   },
   reasoning={
-    "effort": "high",  # can be `none`, `low`, `medium`, or `high`
+    "effort": "high",  # can be "none", "low", "medium", "high", or "xhigh"  
     "summary": null
   },
   tools=[
