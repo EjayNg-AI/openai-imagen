@@ -919,3 +919,1019 @@ All missing ingredients are standard textbook/standard-literature facts (interse
 - **EBB-ID-KT-LOGCONCAVITY-SLICE:** Log-concavity of two-variable slice via AF/KT on nef divisors.
 - **EBB-ID-SCHUR-CONCAVITY-VIA-TI:** (TI) globalizes via majorization to give minimum at concentrated vectors.
 - **EBB-ID-EXPLICIT-BALANCED-FORMULA:** Balanced maximizer vectors are permutations of \((q+1,\dots,q+1,q,\dots,q)\) where \(d=qn+r\).
+
+---
+
+# Solution Attempt 3 by the problem solver
+
+Status: Complete
+
+## Response to last evaluation
+
+- **MAJOR-ISSUE-ID-STACK-TO-COARSE-JUSTIFICATION:** Fixed (Section 2). I now (i) state precisely what intersection-theory identifications are needed, (ii) give a clean operational-Chow argument for the “pull back to a resolution” step, and (iii) cite standard stack/coarse references (Vistoli/Kresch/Fulton) and a standard nefness reference (Gibney–Keel–Morrison).
+- **MAJOR-ISSUE-ID-DISCRETE-UNIMODALITY-GAP:** Fixed (Section 4). I reinsert a self-contained lemma proving “nonnegative + log-concave + symmetric ⇒ monotone away from the center.”
+- **MAJOR-ISSUE-ID-INTEGER-MAJORIZATION-CHAIN:** Fixed by **restructuring**: I no longer need Hardy–Littlewood–Pólya at all. Instead, I prove the minimum at the concentrated vector by an explicit “concentrating step” argument that uses the same transfer inequality (TI) but applied to the *post-move* vector (Section 6). This avoids any discrete majorization theorem.
+
+No dead directions were provided; none used.
+
+---
+
+## Solution
+
+### 1. Problem restatement, notation, and the explicit extremal vectors
+
+Let \(g,n\in \mathbb Z_{\ge 0}\) with \(2g-2+n>0\). Put
+\[
+d:=\dim \overline{\mathcal M}_{g,n}=3g-3+n.
+\]
+For \(n\ge 1\), define
+\[
+E(g,n)=\Bigl\{\mathbf e=(e_1,\dots,e_n)\in \mathbb Z_{\ge 0}^n:\ \sum_{i=1}^n e_i=d\Bigr\}.
+\]
+For \(\mathbf e\in E(g,n)\) define the descendant integral
+\[
+D(\mathbf e)=\int_{\overline{\mathcal M}_{g,n}} \prod_{i=1}^n \psi_i^{e_i}\in \mathbb Q.
+\]
+
+- \(\mathbf e\) is **balanced** if \(|e_i-e_j|\le 1\) for all \(i,j\).
+- \(\mathbf e\) is **concentrated** if it is a permutation of \((d,0,\dots,0)\).
+
+**Explicit formulas.** Write \(d=qn+r\) with integers \(q\ge 0\), \(0\le r<n\). Then the balanced vectors in \(E(g,n)\) are exactly the permutations of
+\[
+\mathbf b_{\max}:=(\underbrace{q+1,\dots,q+1}_{r\text{ times}},\underbrace{q,\dots,q}_{n-r\text{ times}}).
+\]
+A concentrated vector is any permutation of
+\[
+\mathbf c_{\min}:=(d,0,\dots,0).
+\]
+
+We will prove:
+
+- **(Max)** For \(n>0\), \(D\) achieves its maximum on a balanced vector (hence on a permutation of \(\mathbf b_{\max}\)).
+- **(Min)** For \(n>0\), \(D\) achieves its minimum on a concentrated vector (hence on a permutation of \(\mathbf c_{\min}\)).
+- Discuss \(n=0\) at the end.
+
+---
+
+### 2. Geometric package: interpret \(D(\mathbf e)\) as a nef mixed intersection number on a smooth projective variety
+
+The strategy is: show each \(\psi_i\) behaves as a nef divisor class; then apply Alexandrov–Fenchel/Khovanskii–Teissier (AF/KT) inequalities on a smooth projective model.
+
+#### 2.1. From the stack to the coarse moduli space (intersection numbers with \(\mathbb Q\)-coefficients)
+
+Let \(\mathcal X:=\overline{\mathcal M}_{g,n}\), a smooth proper Deligne–Mumford stack over \(\mathbb C\), and let
+\[
+\pi:\mathcal X\to X:=\overline M_{g,n}
+\]
+be its coarse moduli space (a projective variety with finite quotient singularities).
+
+We use the standard fact that with rational coefficients one can compute degrees of cycles on \(\mathcal X\) on the coarse space \(X\). Concretely:
+
+- There is a pushforward on Chow groups \(\pi_*:A_*(\mathcal X)\to A_*(X)\) and (for tame DM stacks in characteristic \(0\), which includes \(\overline{\mathcal M}_{g,n}\)) \(\pi_*\) becomes an isomorphism after tensoring with \(\mathbb Q\). This is standard in intersection theory on DM stacks; see Vistoli’s foundational work on intersection theory for stacks and Kresch’s development of Chow groups for Artin stacks (specializing to DM stacks).
+
+Therefore we may regard
+\[
+D(\mathbf e)=\deg\Bigl(\bigl(\prod_i \psi_i^{e_i}\bigr)\cap [\mathcal X]\Bigr)
+\]
+as an intersection number computed on \(X\) with \(\mathbb Q\)-Cartier divisor classes corresponding to \(\psi_i\).
+
+#### 2.2. Symmetric group invariance
+
+The symmetric group \(S_n\) acts on \(\overline{\mathcal M}_{g,n}\) and \(\overline M_{g,n}\) by permuting markings, and
+\[
+\sigma^*(\psi_i)=\psi_{\sigma(i)}.
+\]
+Hence \(D(\mathbf e)\) is symmetric in the coordinates \((e_1,\dots,e_n)\).
+
+#### 2.3. Nefness of \(\psi_i\)
+
+We use the standard nefness result:
+
+> **Lemma 2.3 (nefness).** The classes \(\psi_i\) are nef on \(\overline M_{g,n}\) (as \(\mathbb Q\)-Cartier divisor classes).
+
+This is a known positivity theorem in the birational geometry of \(\overline M_{g,n}\). A standard reference is Gibney–Keel–Morrison, *Towards the ample cone of \(\overline M_{g,n}\)*, where nefness of \(\psi\)-classes is established/used in the description of nef cones.
+
+Consequences we will use:
+- On any projective variety, nef divisor classes have nonnegative degree on every curve.
+- On a smooth projective variety, a mixed top intersection of nef divisors is \(\ge 0\) (by approximation of nef divisors by ample divisors in \(N^1(-)_\mathbb R\)).
+
+#### 2.4. Pullback to a resolution and invariance of top intersection numbers
+
+Let \(\rho:\widetilde X\to X\) be a resolution of singularities. Put
+\[
+\widetilde\psi_i:=\rho^*(\psi_i)\in N^1(\widetilde X)_\mathbb Q.
+\]
+Then each \(\widetilde\psi_i\) is nef on the smooth projective variety \(\widetilde X\).
+
+We must justify that top intersection numbers can be computed on \(\widetilde X\). The cleanest framework is **operational Chow theory** (Fulton, *Intersection Theory*).
+
+> **Lemma 2.4 (top intersections computed on a resolution).**  
+> Let \(X\) be a projective variety of dimension \(d\), \(\rho:\widetilde X\to X\) a resolution, and \(\alpha_1,\dots,\alpha_d\) \(\mathbb Q\)-Cartier divisor classes on \(X\). Define
+> \[
+> \int_X \alpha_1\cdots \alpha_d := \deg\bigl((\alpha_1\cdots \alpha_d)\cap [X]\bigr)
+> \]
+> where \(\alpha_1\cdots \alpha_d\) is taken in the operational Chow ring \(A^d(X)_\mathbb Q\). Then
+> \[
+> \int_X \alpha_1\cdots \alpha_d \;=\; \int_{\widetilde X} \rho^*\alpha_1\cdots \rho^*\alpha_d.
+> \]
+
+*Proof.* In operational Chow, Cartier (hence \(\mathbb Q\)-Cartier) divisor classes define operational classes, and pullback \(\rho^*:A^*(X)\to A^*(\widetilde X)\) is defined. By the projection formula in operational Chow (Fulton),
+\[
+(\alpha_1\cdots \alpha_d)\cap [X]
+= (\alpha_1\cdots \alpha_d)\cap \rho_*[\widetilde X]
+= \rho_*\bigl(\rho^*(\alpha_1\cdots \alpha_d)\cap [\widetilde X]\bigr).
+\]
+But \(\rho^*(\alpha_1\cdots \alpha_d)=\rho^*\alpha_1\cdots\rho^*\alpha_d\). Taking degrees of \(0\)-cycles and using \(\deg(\rho_* z)=\deg(z)\) for proper \(\rho\) yields the claimed equality. \(\square\)
+
+Applying Lemma 2.4 to \(\alpha_i=\psi_j\) repeated \(e_j\) times gives
+\[
+D(\mathbf e)
+= \int_{\widetilde X}\prod_{i=1}^n \widetilde\psi_i^{e_i}.
+\tag{2.1}
+\]
+So \(D(\mathbf e)\) is a mixed top intersection number of nef divisor classes on a smooth projective variety.
+
+---
+
+### 3. Balancing moves and the key “transfer inequality” (TI)
+
+#### 3.1. Balancing move (Robin Hood transfer)
+
+Given \(\mathbf e\in E(g,n)\), a **balancing move** is
+\[
+(e_i,e_j)\mapsto (e_i-1,e_j+1)
+\quad\text{with}\quad e_i\ge e_j+2.
+\]
+This reduces the difference \(e_i-e_j\) by \(2\).
+
+#### 3.2. Termination to a balanced vector (standard potential argument)
+
+Let \(\bar e:=d/n\) and define the quadratic potential
+\[
+\Phi(\mathbf e):=\sum_{k=1}^n (e_k-\bar e)^2.
+\]
+If \(e_i\ge e_j+2\) and we apply a balancing move to obtain \(\mathbf e'\), then a direct calculation shows
+\[
+\Phi(\mathbf e)-\Phi(\mathbf e') = 2(e_i-e_j)-2 \ge 2.
+\]
+Hence \(\Phi\) strictly decreases under balancing moves, and since \(E(g,n)\) is finite, the process terminates at a vector with no pair differing by \(\ge 2\), i.e. a balanced vector.
+
+We will use this for the **maximum**.
+
+---
+
+### 4. AF/KT log-concavity on two-variable slices, and the discrete monotonicity lemma
+
+Fix distinct indices \(i\neq j\) and fix all exponents \(e_\ell\) for \(\ell\neq i,j\). Put
+\[
+S:=e_i+e_j,\qquad
+C:=\prod_{\ell\neq i,j}\widetilde\psi_\ell^{e_\ell}.
+\]
+Define for \(k=0,\dots,S\),
+\[
+a_k:=\int_{\widetilde X}\widetilde\psi_i^{k}\,\widetilde\psi_j^{S-k}\, C.
+\tag{4.1}
+\]
+Then \(a_{e_i}=D(\mathbf e)\) for the current \(\mathbf e\).
+
+#### 4.1. Symmetry of the slice
+
+The action swapping the marked points \(i\leftrightarrow j\) is an automorphism of \(X=\overline M_{g,n}\) and preserves intersection numbers; it swaps \(\psi_i\) and \(\psi_j\). Therefore already on \(X\),
+\[
+\int_X \psi_i^k\psi_j^{S-k}\cdot(\cdots)
+=
+\int_X \psi_i^{S-k}\psi_j^k\cdot(\cdots),
+\]
+and then by Lemma 2.4 the same equality holds on \(\widetilde X\). Hence
+\[
+a_k=a_{S-k}\quad\text{for all }k.
+\tag{4.2}
+\]
+
+#### 4.2. Log-concavity from Alexandrov–Fenchel/Khovanskii–Teissier
+
+Because each \(\widetilde\psi_m\) is nef, we can apply the \(2\times 2\) Alexandrov–Fenchel/Khovanskii–Teissier inequality on \(\widetilde X\):
+
+> **AF/KT (nef form).**  
+> For nef divisor classes \(D_1,\dots,D_d\) on a smooth projective \(d\)-fold,
+> \[
+> (D_1\cdots D_d)^2 \;\ge\; (D_1^2D_3\cdots D_d)\,(D_2^2D_3\cdots D_d).
+> \tag{4.3}
+> \]
+
+Now fix \(1\le k\le S-1\). Let the list \((D_1,\dots,D_d)\) be:
+- \(D_1=\widetilde\psi_i\), \(D_2=\widetilde\psi_j\);
+- among \(D_3,\dots,D_d\), take \(k-1\) further copies of \(\widetilde\psi_i\), \(S-k-1\) further copies of \(\widetilde\psi_j\), and for each \(\ell\neq i,j\), take \(e_\ell\) copies of \(\widetilde\psi_\ell\).
+
+This list has length
+\[
+2+(k-1)+(S-k-1)+\sum_{\ell\neq i,j}e_\ell
+= S+\sum_{\ell\neq i,j}e_\ell
+= \sum_{r=1}^n e_r
+= d,
+\]
+so it is valid.
+
+Then:
+- \(D_1\cdots D_d = a_k\),
+- \(D_1^2D_3\cdots D_d = a_{k+1}\),
+- \(D_2^2D_3\cdots D_d = a_{k-1}\).
+
+Plugging into (4.3) gives
+\[
+a_k^2\ge a_{k-1}a_{k+1},\qquad 1\le k\le S-1.
+\tag{4.4}
+\]
+So \((a_k)\) is log-concave. Also \(a_k\ge 0\) (nef intersections are limits of ample intersections).
+
+#### 4.3. Discrete lemma: symmetric log-concave sequences are monotone away from the center
+
+We now prove the discrete inference needed to get the “transfer inequality.”
+
+> **Lemma 4.5 (ratio monotonicity).**  
+> Let \(a_0,a_1,\dots,a_S\ge 0\) satisfy log-concavity \(a_k^2\ge a_{k-1}a_{k+1}\) for all \(1\le k\le S-1\).  
+> Whenever \(a_{k-1},a_k>0\), define \(r_k:=a_k/a_{k-1}\). Then for all \(k\) with \(a_{k-1},a_k,a_{k+1}>0\),
+> \[
+> r_{k+1}\le r_k.
+> \]
+
+*Proof.* Log-concavity gives \(a_k^2\ge a_{k-1}a_{k+1}\). Divide by \(a_{k-1}a_k>0\) to get
+\[
+\frac{a_{k+1}}{a_k}\le \frac{a_k}{a_{k-1}},
+\]
+i.e. \(r_{k+1}\le r_k\). \(\square\)
+
+> **Lemma 4.6 (contiguous support).**  
+> If \(a_k\ge 0\) and log-concave, then \(\{k:\ a_k>0\}\) is an interval (possibly empty).
+
+*Proof.* If \(a_m=0\) and \(a_{m-1}>0\), then \(0=a_m^2\ge a_{m-1}a_{m+1}\) forces \(a_{m+1}=0\). Induct forward and backward. \(\square\)
+
+> **Lemma 4.7 (center monotonicity).**  
+> Suppose \(a_k\ge 0\), log-concave, and symmetric: \(a_k=a_{S-k}\) for all \(k\). Let \(m:=\lfloor S/2\rfloor\). Then for all \(k\ge m+1\),
+> \[
+> a_{k-1}\ge a_k.
+> \tag{4.5}
+> \]
+
+*Proof.* If all \(a_k=0\), it is trivial. Otherwise, by Lemma 4.6, the positive support is an interval, and the inequality is automatic outside the support, so we may assume we are in the positive region and ratios \(r_k=a_k/a_{k-1}\) are defined.
+
+By Lemma 4.5, \(r_k\) is nonincreasing in \(k\).
+
+- If \(S=2m+1\) is odd, symmetry gives \(a_m=a_{m+1}\), hence \(r_{m+1}=1\). Since \(r_k\) is nonincreasing, for all \(k\ge m+1\) we have \(r_k\le r_{m+1}=1\), i.e. \(a_k\le a_{k-1}\).
+
+- If \(S=2m\) is even, symmetry gives \(a_{m-1}=a_{m+1}\). Log-concavity at \(m\) gives
+  \[
+  a_m^2\ge a_{m-1}a_{m+1}=a_{m+1}^2,
+  \]
+  hence \(a_m\ge a_{m+1}\), i.e. \(r_{m+1}=a_{m+1}/a_m\le 1\). Again \(r_k\le r_{m+1}\le 1\) for all \(k\ge m+1\), so \(a_k\le a_{k-1}\).
+
+Thus (4.5) holds. \(\square\)
+
+---
+
+### 5. The transfer inequality (TI)
+
+We can now prove the crucial step used for both extrema.
+
+> **Proposition 5.1 (Transfer Inequality, TI).**  
+> Let \(\mathbf e\in E(g,n)\). If \(e_i\ge e_j+2\) for some \(i\neq j\), and \(\mathbf e'\) is obtained by the balancing move
+> \[
+> (e_i,e_j)\mapsto (e_i-1,e_j+1),
+> \]
+> then
+> \[
+> D(\mathbf e)\le D(\mathbf e').
+> \tag{TI}
+> \]
+
+*Proof.* Fix all other exponents and consider the slice \(a_k\) defined by (4.1). Let \(S=e_i+e_j\) and \(m=\lfloor S/2\rfloor\). The hypothesis \(e_i\ge e_j+2\) implies
+\[
+e_i\ge \left\lfloor\frac{S}{2}\right\rfloor+1=m+1.
+\]
+By Lemma 4.7, \(a_{e_i-1}\ge a_{e_i}\). But \(a_{e_i}=D(\mathbf e)\) and \(a_{e_i-1}=D(\mathbf e')\). Hence \(D(\mathbf e)\le D(\mathbf e')\). \(\square\)
+
+Interpretation: **balancing** (taking 1 from a larger exponent and giving it to a smaller exponent, when they differ by \(\ge 2\)) weakly increases \(D\).
+
+---
+
+### 6. Minimum at the concentrated vector (no majorization needed)
+
+We now show the minimum occurs when the exponents are as concentrated as possible.
+
+Define a **concentrating move** (the opposite of a balancing move) as:
+\[
+(e_i,e_j)\mapsto (e_i+1,e_j-1),
+\quad\text{where }e_j\ge 1.
+\]
+This keeps \(\sum e_k=d\) and makes the distribution more uneven.
+
+> **Lemma 6.1 (concentrating move weakly decreases \(D\)).**  
+> Let \(\mathbf e\in E(g,n)\) with \(e_j\ge 1\), and let \(\mathbf e^+\) be obtained by a concentrating move \((e_i,e_j)\mapsto(e_i+1,e_j-1)\). Then
+> \[
+> D(\mathbf e^+)\le D(\mathbf e).
+> \tag{6.1}
+> \]
+
+*Proof.* In \(\mathbf e^+\), the two modified coordinates satisfy
+\[
+(e_i+1)-(e_j-1)=(e_i-e_j)+2\ge 2
+\]
+because \(e_i-e_j\ge 0\) if we choose \(i\) so that \(e_i\ge e_j\) (we can always do this by swapping the roles of \(i,j\)). Hence, **from \(\mathbf e^+\)** we may apply the balancing move that takes 1 from the larger coordinate \(e_i+1\) and gives it to the smaller coordinate \(e_j-1\), which exactly returns to \(\mathbf e\). Therefore (TI) applied to \(\mathbf e^+\) gives
+\[
+D(\mathbf e^+)\le D(\mathbf e).
+\]
+\(\square\)
+
+> **Theorem 6.2 (minimum at concentrated).**  
+> Assume \(n\ge 1\). Then \(D\) achieves its minimum on \(E(g,n)\) at a concentrated vector, i.e. at a permutation of \((d,0,\dots,0)\).
+
+*Proof.* Let \(\mathbf e\in E(g,n)\). If \(\mathbf e\) is already concentrated, we are done. Otherwise, there exist at least two indices with positive entries. Choose an index \(i\) and then repeatedly choose some \(j\neq i\) with \(e_j>0\) and perform the concentrating move
+\[
+(e_i,e_j)\mapsto(e_i+1,e_j-1).
+\]
+By Lemma 6.1, \(D\) weakly decreases at each step. Since \(e_j\) decreases by 1, after finitely many steps all entries except \(e_i\) become \(0\), so we reach a concentrated vector \(\mathbf c\) (some permutation of \((d,0,\dots,0)\)). Thus
+\[
+D(\mathbf c)\le D(\mathbf e).
+\]
+Hence \(\mathbf c\) is a minimizer. By permutation symmetry of \(D\), all permutations of \((d,0,\dots,0)\) give the same value and are minimizers. \(\square\)
+
+This proves the required **minimum** statement.
+
+---
+
+### 7. Maximum at a balanced vector
+
+Now we prove the maximum statement.
+
+> **Theorem 7.1 (maximum at balanced).**  
+> Assume \(n\ge 1\). Then \(D\) achieves its maximum on \(E(g,n)\) at a balanced vector, hence at a permutation of
+> \[
+> \mathbf b_{\max}=(\underbrace{q+1,\dots,q+1}_{r\text{ times}},\underbrace{q,\dots,q}_{n-r\text{ times}})
+> \quad\text{where }d=qn+r.
+> \]
+
+*Proof.* The finite set \(E(g,n)\) is nonempty, so \(D\) attains a maximum at some \(\mathbf e_{\max}\in E(g,n)\).
+
+If \(\mathbf e_{\max}\) is not balanced, there exist \(i,j\) with \(e_i\ge e_j+2\). Perform the balancing move \((e_i,e_j)\mapsto(e_i-1,e_j+1)\) to obtain \(\mathbf e'\in E(g,n)\). By (TI),
+\[
+D(\mathbf e_{\max})\le D(\mathbf e').
+\]
+But \(\mathbf e_{\max}\) was maximal, so equality holds and \(\mathbf e'\) is also maximal.
+
+Iterating this (and using the termination Lemma from Section 3.2), we reach a balanced vector \(\mathbf b\in E(g,n)\) with
+\[
+D(\mathbf b)=\max_{\mathbf e\in E(g,n)} D(\mathbf e).
+\]
+Balanced vectors of sum \(d\) are exactly permutations of \(\mathbf b_{\max}\), so a maximizer may be taken of that explicit form. \(\square\)
+
+This proves the required **maximum** statement.
+
+---
+
+### 8. The case \(n=0\)
+
+Under the hypothesis \(2g-2+n>0\), if \(n=0\) then \(2g-2>0\), hence \(g\ge 2\), so
+\[
+d=3g-3+n=3g-3>0.
+\]
+But \(E(g,0)\) consists of \(0\)-tuples \(()\) with sum \(d\). A \(0\)-tuple has sum \(0\), so \(E(g,0)\) is empty for all \(g\ge 2\). Therefore:
+
+- For \(n=0\) (with the given stability condition), \(E(g,0)=\varnothing\), so \(D:E(g,0)\to\mathbb Q\) is a function on the empty set.
+- In standard mathematics conventions, “attains a maximum/minimum” is **not a meaningful statement** on an empty domain. So the extremal statement is vacuous/ill-posed in this case.
+
+(If one relaxed stability to allow \((g,n)=(1,0)\), then \(d=0\) and there would be a singleton \(E(1,0)=\{()\}\), but \(\overline{\mathcal M}_{1,0}\) is not stable in the usual sense; this lies outside the problem’s hypotheses.)
+
+---
+
+## Gaps: None
+
+---
+
+## Self-evaluation
+
+Confidence score (0–100): 92
+
+Known or suspected issues:
+- The geometric inputs are now stated in a standard and checkable way, but I still treat as “known” the nefness of \(\psi_i\) on \(\overline M_{g,n}\) and the stack-to-coarse identification with \(\mathbb Q\)-Chow; these are standard results with standard references (Gibney–Keel–Morrison; Vistoli/Kresch/Fulton), but I did not reproduce full proofs (which would be far beyond the scope of this problem).
+- AF/KT for nef divisors is standard; I rely on the known extension from ample to nef by approximation.
+
+Coverage:
+- Maximum on balanced vectors: fully proved (TI + termination).
+- Minimum on concentrated vectors: fully proved (concentrating move + TI).
+- Explicit maximizing/minimizing vectors: provided (\(\mathbf b_{\max}\), \(\mathbf c_{\min}\)).
+- \(n=0\) discussion: fully addressed (domain empty under given hypotheses).
+
+# Expert evaluator's assessment and feedback on Solution Attempt 3
+
+## Status  
+Status: Partial
+
+## Score  
+Score (0–100): 72
+
+## Major issues
+
+- **MAJOR-ISSUE-ID-CONCENTRATING-MOVE-INVALID**
+  - **Severity:** local/patchable
+  - **Location:** Section 6, Lemma 6.1 and Theorem 6.2 (minimum at concentrated vector)
+  - **Issue type:** logical error / false claim as stated
+  - **Description:**  
+    Lemma 6.1 claims that *any* “concentrating move”
+    \[
+    (e_i,e_j)\mapsto(e_i+1,e_j-1)\quad (e_j\ge 1)
+    \]
+    weakly decreases \(D\), by arguing that one can apply (TI) to \(\mathbf e^+\) to return to \(\mathbf e\).  
+    This reverse-step argument only works if, in \(\mathbf e^+\), the coordinate \(e_i+1\) is indeed the **donor** in a balancing move returning to \(\mathbf e\), i.e. if
+    \[
+    (e_i+1) \ge (e_j-1)+2 \iff e_i\ge e_j.
+    \]
+    Without the hypothesis \(e_i\ge e_j\) (in the *pre-move* vector \(\mathbf e\)), Lemma 6.1 is not justified and is in fact **false as stated**.
+    
+    Concrete counterexample (showing the statement of Lemma 6.1 fails): take \((g,n)=(0,5)\), so \(d=n-3=2\). In genus \(0\) one has the explicit formula
+    \[
+    \int_{\overline{\mathcal M}_{0,n}} \prod \psi_i^{a_i}=\frac{(n-3)!}{\prod a_i!}\quad\text{when }\sum a_i=n-3.
+    \]
+    Then
+    \[
+    D(0,2,0,0,0)=\frac{2!}{2!}=1,\qquad D(1,1,0,0,0)=\frac{2!}{1!\,1!}=2.
+    \]
+    The move \((0,2)\mapsto(1,1)\) is of the form \((e_i,e_j)\mapsto(e_i+1,e_j-1)\) (with \(e_j\ge1\)), but it **increases** \(D\) rather than decreasing it. This is exactly the situation \(e_i<e_j\), where your reverse-(TI) argument breaks.
+    
+    Moreover, Theorem 6.2’s algorithm (“choose an index \(i\) and repeatedly choose any \(j\neq i\) with \(e_j>0\) and apply the move”) does not enforce \(e_i\ge e_j\) at each step, so the claimed monotone decrease of \(D\) is not established.
+  - **Suggested direction for fix:**  
+    You can keep the “no majorization” approach, but you must **restrict** the move so that it truly is the reverse of a balancing move:
+    - Either redefine a “concentrating move” to mean: *transfer 1 from a smaller (or equal) coordinate to a larger (or equal) coordinate*, i.e. require \(e_i\ge e_j\ge 1\). Then Lemma 6.1 becomes correct by your reverse-(TI) argument.
+    - Or, in Theorem 6.2, choose \(i\) to be an index of a **current maximum** coordinate (so \(e_i\ge e_j\) for every \(j\)), and only move from \(j\) to this \(i\). Then every step satisfies the needed inequality, and you indeed reach \((d,0,\dots,0)\) in finitely many steps with \(D\) weakly decreasing.
+
+## Counterexamples / impossible claims (OPTIONAL)
+
+- The global claim “every move \((e_i,e_j)\mapsto(e_i+1,e_j-1)\) with \(e_j\ge1\) decreases \(D\)” is **false**; see **MAJOR-ISSUE-ID-CONCENTRATING-MOVE-INVALID** (genus \(0\), \(n=5\), \(d=2\): \(D(1,1,0,0,0)>D(0,2,0,0,0)\)).
+
+## Minor issues
+
+- **Location:** Section 2.1–2.3 (stack \(\to\) coarse and \(\psi_i\) as \(\mathbb Q\)-Cartier on \(X\))  
+  **Nature:** still a bit “packaged” / citation-light at a few crucial points.  
+  **Suggestion:** Add one explicit sentence (and citation) to the effect: “There exists \(m>0\) such that \(L_i^{\otimes m}\) descends to a line bundle \(M_i\) on \(X\); define \(\psi_i:=\frac{1}{m}c_1(M_i)\in N^1(X)_\mathbb Q\).” This pins down the \(\mathbb Q\)-Cartier nature needed for pulling back to \(\widetilde X\).
+
+- **Location:** Section 2.3–2.4  
+  **Nature:** “nef intersections are nonnegative” is true but should be justified (briefly).  
+  **Suggestion:** One line: approximate nef divisors by ample divisors and use continuity of intersection numbers on \(N^1(\widetilde X)_\mathbb R\).
+
+- **Location:** Section 8 (case \(n=0\))  
+  **Nature:** fine; optional minor nuance.  
+  **Suggestion:** You could add: the problem’s descendant integrals are inherently \(n\ge1\) objects since \(\psi\)-classes require markings; for \(n=0\) one typically studies other tautological integrals (e.g. \(\lambda\)-classes).
+
+## Established building blocks
+
+- **EBB-ID-TRANSFER-POTENTIAL-LEMMA1** (reused)  
+  The quadratic potential \(\Phi(\mathbf e)=\sum (e_i-\bar e)^2\) strictly decreases under balancing moves and implies termination at a balanced vector.
+
+- **EBB-ID-KT-LOGCONCAVITY-SLICE** (reused)  
+  The two-variable slice \(a_k=\int_{\widetilde X}\widetilde\psi_i^k\widetilde\psi_j^{S-k}C\) is log-concave by AF/KT for nef divisors, with the divisor-list bookkeeping done correctly.
+
+- **EBB-ID-SYMM-LOGCONCAVE-UNIMODAL** (reused; now fully written)  
+  Lemmas 4.5–4.7: log-concavity \(\Rightarrow\) ratio monotonicity; log-concavity \(\Rightarrow\) contiguous support; plus symmetry \(\Rightarrow\) monotonicity away from the center.
+
+- **EBB-ID-TRANSFER-INEQUALITY-TI** *(new)*  
+  Proposition 5.1 (TI) is correctly derived from the previous building blocks: if \(e_i\ge e_j+2\), then transferring one unit from \(i\) to \(j\) weakly increases \(D\).
+
+- **EBB-ID-EXPLICIT-BALANCED-FORMULA** (reused)  
+  The explicit form of balanced vectors in \(E(g,n)\): for \(d=qn+r\), they are permutations of \((q+1)^r,q^{n-r}\).
+
+## Gap assessment
+
+- **Gaps: None** (solver claim)  
+  Disagree. The minimum proof contains a genuine logical error (Lemma 6.1 as stated is false, and Theorem 6.2 uses it without enforcing its hidden hypothesis). This is **moderate** to fix: the fix is short, but it is not merely cosmetic—one must change the move/algorithm to ensure each step is the reverse of a valid (TI) balancing step.
+
+## Coverage assessment
+
+All subparts addressed: **No**.
+
+- **Maximum on balanced vectors:** addressed and essentially correct (modulo minor foundational packaging, which is acceptable in many contexts).
+- **Minimum on concentrated vectors:** attempted but **not correct as written** due to the invalid “concentrating move decreases \(D\)” lemma.
+- **Explicit extremal vectors:** provided correctly.
+- **Case \(n=0\):** addressed correctly (empty domain under given stability hypothesis).
+
+## Summary
+
+The core of the solution—deriving the transfer inequality (TI) from AF/KT log-concavity on two-variable slices, using symmetry, and then concluding that a maximizer can be taken balanced—is strong, appropriate, and (up to standard foundational references) correct. Your discrete lemma package is now fully included and solid, and the symmetry-on-resolution issue is handled correctly by proving symmetry before passing to \(\widetilde X\).
+
+However, the new “no majorization” minimum argument is currently wrong: Lemma 6.1 is false without an extra hypothesis (\(e_i\ge e_j\)), and Theorem 6.2’s procedure does not ensure that hypothesis at each step. A concrete low-dimensional genus-zero example shows your lemma fails exactly when you move mass *from a larger coordinate to a smaller coordinate* (which is a balancing move, not a concentrating one).
+
+This is a fixable issue: you can salvage the “concentrating” approach by choosing the receiving index \(i\) to be a current maximum coordinate (or by redefining concentrating moves to always move from smaller to larger). Once that is corrected, your approach should yield the minimum at \((d,0,\dots,0)\) cleanly, without invoking majorization theory.
+
+## Recommendations for next iteration (prioritized)
+
+1. **Fix Lemma 6.1 by adding the missing hypothesis \(e_i\ge e_j\)** (and state it explicitly).  
+   Then the reverse-(TI) argument is valid.
+
+2. **Rewrite Theorem 6.2’s algorithm so each step satisfies \(e_i\ge e_j\).**  
+   The simplest: pick \(i\) as an index of a maximum coordinate of the *current* vector (initially), and only transfer from any \(j\neq i\) with \(e_j>0\) into that \(i\). This guarantees the lemma’s hypothesis at every step.
+
+3. **Optionally: revert to the majorization/Schur-concavity proof (Attempt 2) if you want a one-shot global argument.**  
+   Your current attempt avoids it, but the majorization route is standard and robust; either route is fine once fully correct.
+
+4. **Add one explicit descent sentence for \(\psi_i\) as \(\mathbb Q\)-Cartier on \(X\)** with a standard reference, to fully close the foundational loop in Section 2.
+
+## Meta-level guidance for **both** the problem solver and the orchestrator
+
+### Strategy-level assessment
+The overall approach (AF/KT \(\Rightarrow\) log-concavity \(\Rightarrow\) (TI) \(\Rightarrow\) extremizers) is fundamentally sound and well matched to the problem. The only real trouble in Attempt 3 is the replacement of the majorization step by an incorrectly formulated “concentrating move” monotonicity lemma.
+
+### Structural blockers
+- **MAJOR-ISSUE-ID-CONCENTRATING-MOVE-INVALID** is the only genuine blocker: it invalidates the minimum claim as currently written. It is not structural/fatal, but it must be fixed for the solution to be complete.
+
+### Dead directions / approaches to abandon
+- **DEAD-DIRECTION-ID-UNCONSTRAINED-CONCENTRATING** *(new)*  
+  The idea “any move \((e_i,e_j)\mapsto(e_i+1,e_j-1)\) with \(e_j\ge1\) decreases \(D\)” should be abandoned; it is false (see genus \(0\) counterexample).  
+  **MAJOR-ISSUE-ID-CONCENTRATING-MOVE-INVALID causes DEAD-DIRECTION-ID-UNCONSTRAINED-CONCENTRATING.**
+
+### Promising lines and subproblems
+- Keep (TI) as the central monotonicity tool.
+- For the minimum, isolate the subproblem: “Construct a chain from any \(\mathbf e\) to \((d,0,\dots,0)\) consisting only of reverse-balancing steps,” i.e. steps that are reversals of valid (TI) moves.
+
+### Recommendations for the orchestrator
+1. **Treat (TI) and the AF/KT + discrete unimodality derivation as established and reusable** (EBB-ID-TRANSFER-INEQUALITY-TI and related EBBs).
+2. **Do not accept the current minimum proof; require a corrected concentrating algorithm** (move only from smaller to larger, e.g. into a maximum coordinate), or revert to the majorization chain.
+3. **Keep Section 2 as “acceptable with standard references,”** but request the one missing explicit descent sentence for \(\psi_i\) to \(\mathbb Q\)-Cartier divisors on \(X\).
+
+## Research flag
+Research needed: No.
+
+## Updated Registry of IDs
+
+- **MAJOR-ISSUE-ID-CONCENTRATING-MOVE-INVALID:** Lemma 6.1/Theorem 6.2 minimum proof uses an unconstrained “concentrating move” that is not monotone for \(D\); counterexample in genus \(0\).
+- **MAJOR-ISSUE-ID-STACK-TO-COARSE-JUSTIFICATION:** **Resolved to minor-level** in Attempt 3 (now mostly formalized; only small citation/explicit descent sentence remains).
+- **MAJOR-ISSUE-ID-DISCRETE-UNIMODALITY-GAP:** Resolved in Attempt 3 (Lemmas 4.5–4.7 provided).
+- **MAJOR-ISSUE-ID-INTEGER-MAJORIZATION-CHAIN:** Not applicable in Attempt 3 (approach changed); previously relevant only.
+
+- **EBB-ID-TRANSFER-POTENTIAL-LEMMA1:** Balancing moves terminate at a balanced vector via decreasing quadratic potential.
+- **EBB-ID-KT-LOGCONCAVITY-SLICE:** Log-concavity of two-variable slice via AF/KT for nef divisors.
+- **EBB-ID-SYMM-LOGCONCAVE-UNIMODAL:** Symmetric log-concave sequences are monotone away from center (ratio method + contiguous support).
+- **EBB-ID-TRANSFER-INEQUALITY-TI:** Transfer inequality: if \(e_i\ge e_j+2\), then moving one unit \(i\to j\) weakly increases \(D\).
+- **EBB-ID-EXPLICIT-BALANCED-FORMULA:** Balanced extremizers are permutations of \((q+1)^r,q^{n-r}\) for \(d=qn+r\).
+- **DEAD-DIRECTION-ID-UNCONSTRAINED-CONCENTRATING:** Unrestricted moves \((e_i,e_j)\mapsto(e_i+1,e_j-1)\) are not monotone for \(D\); must be constrained (move from smaller to larger) or replaced by majorization.
+
+---
+
+# Solution Attempt 4 by the problem solver
+
+Status: Complete
+
+## Response to last evaluation
+
+- **MAJOR-ISSUE-ID-CONCENTRATING-MOVE-INVALID:** Fixed (Section 6). I **abandon** the dead direction **DEAD-DIRECTION-ID-UNCONSTRAINED-CONCENTRATING** and replace it with a *constrained* concentrating move: always move one unit from a smaller (or equal) coordinate into a current maximum coordinate, ensuring the move is the reverse of a valid (TI) balancing move.
+- **MAJOR-ISSUE-ID-STACK-TO-COARSE-JUSTIFICATION:** Fixed to the extent needed for an exam-style solution (Section 2). I add the explicit “tensor power descends” sentence for \(L_i\), explain how \(\psi_i\) becomes \(\mathbb Q\)-Cartier on the coarse space, and keep the operational-Chow pullback-to-resolution argument (with standard references: Vistoli/Kresch/Fulton; nefness: Gibney–Keel–Morrison).
+- **DEAD-DIRECTION-ID-UNCONSTRAINED-CONCENTRATING:** Not used (explicitly abandoned).
+
+---
+
+## Solution
+
+### 1. Setup, notation, and explicit candidate extremizers
+
+Let \(g,n\in \mathbb Z_{\ge 0}\) with \(2g-2+n>0\). Put
+\[
+d:=\dim \overline{\mathcal M}_{g,n}=3g-3+n.
+\]
+For \(n\ge 1\), define
+\[
+E(g,n)=\Bigl\{\mathbf e=(e_1,\dots,e_n)\in\mathbb Z_{\ge 0}^n:\ \sum_{i=1}^n e_i=d\Bigr\}.
+\]
+For \(\mathbf e\in E(g,n)\), define the descendant integral
+\[
+D(\mathbf e)=\int_{\overline{\mathcal M}_{g,n}} \prod_{i=1}^n \psi_i^{e_i}\in\mathbb Q.
+\]
+
+- \(\mathbf e\) is **balanced** if \(|e_i-e_j|\le 1\) for all \(i,j\).
+- \(\mathbf e\) is **concentrated** if it is a permutation of \((d,0,\dots,0)\).
+
+**Explicit balanced vectors.** Write the Euclidean division
+\[
+d=qn+r,\qquad q\in\mathbb Z_{\ge 0},\ \ 0\le r<n.
+\]
+Then the balanced vectors in \(E(g,n)\) are exactly the permutations of
+\[
+\mathbf b_{\max}:=(\underbrace{q+1,\dots,q+1}_{r\text{ times}},\underbrace{q,\dots,q}_{n-r\text{ times}}).
+\]
+A concentrated vector is any permutation of
+\[
+\mathbf c_{\min}:=(d,0,\dots,0).
+\]
+
+We prove for \(n>0\):
+
+1. \(D\) attains its **maximum** on a balanced vector (hence on a permutation of \(\mathbf b_{\max}\)).
+2. \(D\) attains its **minimum** on a concentrated vector (hence on a permutation of \(\mathbf c_{\min}\)).
+
+Finally we discuss \(n=0\).
+
+---
+
+### 2. Geometric reduction: \(D(\mathbf e)\) is a mixed nef intersection number on a smooth projective variety
+
+Let \(\mathcal X:=\overline{\mathcal M}_{g,n}\) be the smooth proper Deligne–Mumford stack over \(\mathbb C\), and let
+\[
+\pi:\mathcal X\to X:=\overline M_{g,n}
+\]
+be the coarse moduli space (a projective variety).
+
+#### 2.1. \(\psi_i\) as \(\mathbb Q\)-Cartier divisor classes on \(X\) (descent after tensor power)
+
+Let \(L_i\) be the universal cotangent line bundle at the \(i\)-th marking on \(\mathcal X\), so \(\psi_i=c_1(L_i)\in A^1(\mathcal X)\).
+
+A standard descent fact for DM stacks with finite stabilizers (see e.g. Vistoli’s intersection theory on stacks; also Kresch’s work on Chow groups of stacks) is:
+
+> **Lemma 2.1 (tensor power descends).** For each \(i\), there exists an integer \(m_i>0\) and a line bundle \(M_i\) on \(X\) such that
+> \[
+> \pi^*M_i \cong L_i^{\otimes m_i}.
+> \]
+> In particular, \(\psi_i\) determines a \(\mathbb Q\)-Cartier divisor class on \(X\) via
+> \[
+> \psi_i \ \leftrightarrow\  \frac{1}{m_i}c_1(M_i)\in N^1(X)_\mathbb Q.
+> \]
+
+(Informal justification: the obstruction to descent is the action of stabilizer groups on fibers; stabilizers are finite, so some tensor power kills these characters.)
+
+Henceforth we regard \(\psi_i\) as \(\mathbb Q\)-Cartier classes on \(X\).
+
+#### 2.2. Symmetry under permuting markings
+
+The symmetric group \(S_n\) acts on \(\overline{\mathcal M}_{g,n}\) and \(X=\overline M_{g,n}\) by permuting markings, and it permutes the \(\psi_i\) accordingly. Therefore
+\[
+D(e_1,\dots,e_n)=D(e_{\sigma(1)},\dots,e_{\sigma(n)})\qquad(\sigma\in S_n).
+\tag{2.2}
+\]
+
+#### 2.3. Nefness of \(\psi_i\)
+
+We use the standard positivity result:
+
+> **Lemma 2.2 (nefness of \(\psi_i\)).** The classes \(\psi_i\in N^1(X)_\mathbb Q\) are nef.
+
+This is proved/used in the birational geometry of \(\overline M_{g,n}\); a standard reference is Gibney–Keel–Morrison, *Towards the ample cone of \(\overline M_{g,n}\)*.
+
+#### 2.4. Passing to a resolution (operational Chow) to use AF/KT
+
+Let \(\rho:\widetilde X\to X\) be a resolution of singularities. Define
+\[
+\widetilde\psi_i := \rho^*(\psi_i)\in N^1(\widetilde X)_\mathbb Q.
+\]
+Pullback preserves nefness, so each \(\widetilde\psi_i\) is nef on the smooth projective \(d\)-fold \(\widetilde X\).
+
+We define top intersections on possibly singular \(X\) using **operational Chow** (Fulton, *Intersection Theory*): for \(\mathbb Q\)-Cartier \(\alpha_1,\dots,\alpha_d\) on \(X\),
+\[
+\int_X \alpha_1\cdots\alpha_d := \deg\bigl((\alpha_1\cdots\alpha_d)\cap[X]\bigr).
+\]
+
+Then the standard projection-formula argument in operational Chow gives:
+
+> **Lemma 2.3 (top intersections computed on a resolution).**
+> \[
+> \int_X \alpha_1\cdots\alpha_d \;=\; \int_{\widetilde X}\rho^*\alpha_1\cdots\rho^*\alpha_d.
+> \]
+
+Applying this with the \(\psi_i\)’s repeated \(e_i\) times yields
+\[
+D(\mathbf e)
+= \int_{\widetilde X}\prod_{i=1}^n \widetilde\psi_i^{e_i}.
+\tag{2.3}
+\]
+Thus \(D(\mathbf e)\) is a mixed top intersection number of **nef** divisor classes on a smooth projective variety.
+
+---
+
+### 3. Balancing moves and termination to a balanced vector
+
+A **balancing move** (Robin Hood transfer) is
+\[
+(\dots,e_i,\dots,e_j,\dots)\mapsto (\dots,e_i-1,\dots,e_j+1,\dots)
+\quad\text{with }e_i\ge e_j+2.
+\tag{3.1}
+\]
+
+#### Lemma 3.1 (termination; quadratic potential)
+
+Let \(\bar e:=d/n\) and \(\Phi(\mathbf e):=\sum_{k=1}^n(e_k-\bar e)^2\).  
+If \(\mathbf e'\) is obtained from \(\mathbf e\) by a balancing move, then \(\Phi(\mathbf e')\le \Phi(\mathbf e)-2\). Hence repeated balancing moves terminate at a balanced vector.
+
+*Proof.* Direct calculation gives
+\[
+\Phi(\mathbf e)-\Phi(\mathbf e') = 2(e_i-e_j)-2\ge 2.
+\]
+Since \(E(g,n)\) is finite, termination follows, and the terminal condition is exactly \(|e_i-e_j|\le 1\). \(\square\)
+
+---
+
+### 4. AF/KT log-concavity on two-variable slices and the discrete monotonicity lemma
+
+Fix distinct indices \(i\neq j\), and fix all exponents \(e_\ell\) for \(\ell\neq i,j\). Put
+\[
+S:=e_i+e_j,\qquad C:=\prod_{\ell\neq i,j}\widetilde\psi_\ell^{e_\ell}.
+\]
+Define for \(k=0,1,\dots,S\),
+\[
+a_k:=\int_{\widetilde X}\widetilde\psi_i^{k}\,\widetilde\psi_j^{S-k}\,C.
+\tag{4.1}
+\]
+Then \(a_{e_i}=D(\mathbf e)\) for the current \(\mathbf e\).
+
+#### 4.1. Symmetry of the slice
+
+Swapping markings \(i\leftrightarrow j\) is an automorphism of \(X\), hence preserves intersection numbers on \(X\), and swaps \(\psi_i,\psi_j\). Transporting to \(\widetilde X\) via Lemma 2.3 gives
+\[
+a_k=a_{S-k}\quad\text{for all }k.
+\tag{4.2}
+\]
+
+#### 4.2. Log-concavity from Alexandrov–Fenchel / Khovanskii–Teissier
+
+On the smooth projective \(d\)-fold \(\widetilde X\), the \(2\times 2\) AF/KT inequality for nef divisors says: for nef \(D_1,\dots,D_d\),
+\[
+(D_1\cdots D_d)^2\ge (D_1^2D_3\cdots D_d)\,(D_2^2D_3\cdots D_d).
+\tag{4.3}
+\]
+
+Applying (4.3) with the standard divisor-list bookkeeping (exactly as in Attempt 3) yields:
+
+> **Lemma 4.1 (log-concavity of \((a_k)\)).**
+> \[
+> a_k^2\ge a_{k-1}a_{k+1}\qquad (1\le k\le S-1).
+> \tag{4.4}
+> \]
+
+Also \(a_k\ge 0\) because nef divisors are limits of ample divisors and intersection numbers vary continuously on \(N^1(\widetilde X)_\mathbb R\).
+
+#### 4.3. Discrete lemma: symmetric log-concave \(\Rightarrow\) monotone away from center
+
+We now use the discrete result already established in Attempt 3 (included here for completeness).
+
+> **Lemma 4.2 (center monotonicity).**  
+> Let \(a_0,\dots,a_S\ge 0\) be log-concave \(a_k^2\ge a_{k-1}a_{k+1}\) and symmetric \(a_k=a_{S-k}\). Let \(m=\lfloor S/2\rfloor\). Then for every \(k\ge m+1\),
+> \[
+> a_{k-1}\ge a_k.
+> \tag{4.5}
+> \]
+
+*Proof (sketch, fully standard).* Log-concavity implies ratio monotonicity \(a_{k+1}/a_k\le a_k/a_{k-1}\) where defined, and implies the positive support is an interval. Symmetry forces the ratio at the center to be \(\le 1\) (equal to \(1\) in odd length, \(\le 1\) in even length by log-concavity at the center). Then all subsequent ratios are \(\le 1\), giving \(a_{k-1}\ge a_k\) for \(k\ge m+1\). \(\square\)
+
+---
+
+### 5. The Transfer Inequality (TI)
+
+> **Proposition 5.1 (Transfer Inequality).**  
+> If \(\mathbf e\in E(g,n)\) and \(e_i\ge e_j+2\), and \(\mathbf e'\) is obtained by the balancing move \((e_i,e_j)\mapsto(e_i-1,e_j+1)\), then
+> \[
+> D(\mathbf e)\le D(\mathbf e').
+> \tag{TI}
+> \]
+
+*Proof.* With \(S=e_i+e_j\) and \(m=\lfloor S/2\rfloor\), the hypothesis \(e_i\ge e_j+2\) implies \(e_i\ge m+1\). By Lemma 4.2,
+\[
+a_{e_i-1}\ge a_{e_i}.
+\]
+But \(a_{e_i}=D(\mathbf e)\) and \(a_{e_i-1}=D(\mathbf e')\). \(\square\)
+
+Interpretation: **balancing** (moving 1 from a larger exponent to a smaller exponent when the gap is at least \(2\)) weakly increases \(D\).
+
+---
+
+### 6. Minimum occurs at a concentrated vector (fixed concentrating argument)
+
+Per the evaluator’s counterexample, we **must not** allow arbitrary moves \((e_i,e_j)\mapsto(e_i+1,e_j-1)\). We impose the condition that the recipient coordinate is at least as large as the donor coordinate.
+
+#### 6.1. Valid concentrating move = reverse of a valid balancing move
+
+Call the following a **valid concentrating move**:
+\[
+(e_i,e_j)\mapsto(e_i+1,e_j-1)
+\quad\text{with}\quad e_i\ge e_j\ge 1.
+\tag{6.1}
+\]
+
+> **Lemma 6.1 (valid concentrating move decreases \(D\)).**  
+> If \(\mathbf e^+\) is obtained from \(\mathbf e\) by a valid concentrating move (6.1), then
+> \[
+> D(\mathbf e^+)\le D(\mathbf e).
+> \tag{6.2}
+> \]
+
+*Proof.* In \(\mathbf e^+\), the modified entries are \((e_i+1,e_j-1)\). Since \(e_i\ge e_j\),
+\[
+(e_i+1)-(e_j-1)= (e_i-e_j)+2\ge 2.
+\]
+Therefore, starting from \(\mathbf e^+\), we may apply a balancing move (3.1) from index \(i\) to \(j\), which exactly returns to \(\mathbf e\). By (TI) applied to \(\mathbf e^+\),
+\[
+D(\mathbf e^+) \le D(\mathbf e).
+\]
+\(\square\)
+
+This fixes the logical error: we only use concentrating moves that are literally reversals of (TI)-allowed balancing moves.
+
+#### 6.2. Algorithm to reach \((d,0,\dots,0)\) using only valid concentrating moves
+
+> **Lemma 6.2 (reach a concentrated vector via valid concentrating moves).**  
+> For any \(\mathbf e\in E(g,n)\) with \(n\ge 1\), there exists a finite sequence of valid concentrating moves (6.1) that transforms \(\mathbf e\) into a concentrated vector.
+
+*Proof.* If \(\mathbf e\) is already concentrated, stop. Otherwise, choose an index \(i\) such that \(e_i=\max\{e_1,\dots,e_n\}\).  
+Now, while there exists \(j\neq i\) with \(e_j>0\), apply the move \((e_i,e_j)\mapsto(e_i+1,e_j-1)\).
+
+At each step:
+
+- We have \(e_j\ge 1\) by choice.
+- We have \(e_i\ge e_j\) because \(i\) was chosen as a maximum coordinate initially and we only ever **increase** \(e_i\) and **decrease** \(e_j\). Thus \(e_i\) stays \(\ge\) every other coordinate throughout.
+
+So each step is a **valid concentrating move**.
+
+After exactly \(\sum_{j\neq i} e_j = d-e_i\) steps, all \(e_j\) for \(j\neq i\) become \(0\), and \(e_i\) becomes \(d\). So we reach \((d,0,\dots,0)\) (up to permutation). \(\square\)
+
+#### 6.3. Minimum theorem
+
+> **Theorem 6.3 (minimum at concentrated).**  
+> Assume \(n\ge 1\). Then \(D\) achieves its minimum on \(E(g,n)\) at a concentrated vector, i.e. at a permutation of \((d,0,\dots,0)\).
+
+*Proof.* Let \(\mathbf e\in E(g,n)\). By Lemma 6.2, we can reach a concentrated vector \(\mathbf c\) by a chain of valid concentrating moves:
+\[
+\mathbf e=\mathbf e^{(0)}\to \mathbf e^{(1)}\to \cdots \to \mathbf e^{(N)}=\mathbf c.
+\]
+By Lemma 6.1, \(D\) weakly decreases at each step:
+\[
+D(\mathbf e^{(0)})\ge D(\mathbf e^{(1)})\ge \cdots \ge D(\mathbf e^{(N)})=D(\mathbf c).
+\]
+Hence \(D(\mathbf c)\le D(\mathbf e)\) for all \(\mathbf e\), so \(\mathbf c\) is a minimizer. By symmetry (2.2), any permutation of \((d,0,\dots,0)\) is also a minimizer. \(\square\)
+
+---
+
+### 7. Maximum occurs at a balanced vector
+
+> **Theorem 7.1 (maximum at balanced).**  
+> Assume \(n\ge 1\). Then \(D\) achieves its maximum on \(E(g,n)\) at a balanced vector, hence at a permutation of \(\mathbf b_{\max}\).
+
+*Proof.* Since \(E(g,n)\) is finite and nonempty, choose \(\mathbf e_{\max}\in E(g,n)\) maximizing \(D\). If \(\mathbf e_{\max}\) is not balanced, there exist \(i,j\) with \(e_i\ge e_j+2\), so we can perform a balancing move \(\mathbf e_{\max}\mapsto \mathbf e'\). By (TI),
+\[
+D(\mathbf e_{\max})\le D(\mathbf e').
+\]
+By maximality, equality holds, so \(\mathbf e'\) is also a maximizer. Iterating and using Lemma 3.1, we reach a balanced vector \(\mathbf b\) that is still a maximizer. Balanced vectors of sum \(d\) are exactly permutations of \(\mathbf b_{\max}\). \(\square\)
+
+---
+
+### 8. The case \(n=0\)
+
+Under the hypothesis \(2g-2+n>0\), if \(n=0\) then \(2g-2>0\), hence \(g\ge 2\). Then
+\[
+d=3g-3>0.
+\]
+But \(E(g,0)\) consists of \(0\)-tuples with sum \(d\), and a \(0\)-tuple has sum \(0\). Hence \(E(g,0)=\varnothing\) for all such \((g,0)\).
+
+So for \(n=0\) (under the problem’s stability condition), \(D:E(g,0)\to\mathbb Q\) is a function on the empty set, and “achieves its maximum/minimum” is not meaningful in the usual sense. (Also, \(\psi\)-classes themselves require markings, so descendant integrals of this type are inherently \(n\ge 1\) objects.)
+
+---
+
+## Gaps: None.
+
+---
+
+## Self-evaluation
+
+Confidence score (0–100): 95
+
+Known or suspected issues:
+- The only “black-box” inputs are standard: nefness of \(\psi_i\) on \(\overline M_{g,n}\), descent of tensor powers of line bundles to the coarse space, and AF/KT for nef divisors (via approximation by ample). These are widely used facts in the literature; I did not reprove them from first principles.
+- All combinatorial/algorithmic steps (especially the corrected minimum argument) have been checked against the evaluator’s counterexample conditions.
+
+Coverage:
+- Maximum at balanced vectors: fully proved.
+- Minimum at concentrated vectors: fully proved with corrected move constraints.
+- Explicit extremizer vectors: provided.
+- \(n=0\): discussed; domain empty under given hypotheses.
+
+---
+
+# Expert evaluator's assessment and feedback on Solution Attempt 4
+
+## Status  
+Status: Solved with minor gaps
+
+## Score  
+Score (0–100): 92
+
+## Major issues  
+Major issues: None.
+
+## Counterexamples / impossible claims (OPTIONAL)
+No counterexamples found, no impossible or overly ambitious claims were proposed (and the previously identified false “unconstrained concentrating move” has been explicitly abandoned and corrected here).
+
+## Minor issues  
+
+- **Location:** Section 4.3, Lemma 4.2 (“center monotonicity”)  
+  **Nature:** proof is explicitly labeled a “sketch,” but this lemma is load-bearing (it is needed to deduce (TI)).  
+  **Suggestion:** Reinsert the full proof (as in Attempt 3):  
+  (i) contiguous support lemma; (ii) define ratios \(r_k=a_k/a_{k-1}\) on the positive interval; (iii) log-concavity \(\Rightarrow r_{k+1}\le r_k\); (iv) symmetry forces \(r_{m+1}\le 1\) (even case) or \(=1\) (odd case); (v) conclude \(a_{k-1}\ge a_k\) for \(k\ge m+1\).
+
+- **Location:** Section 4.2 (“Applying AF/KT yields log-concavity … standard divisor-list bookkeeping”)  
+  **Nature:** the crucial divisor-list identification leading to \(a_k^2\ge a_{k-1}a_{k+1}\) is asserted but not written out in this attempt.  
+  **Suggestion:** Add 5–8 lines explicitly listing \(D_1,\dots,D_d\) as in Attempt 3, and identify \(D_1\cdots D_d=a_k\), \(D_1^2D_3\cdots D_d=a_{k+1}\), \(D_2^2D_3\cdots D_d=a_{k-1}\).
+
+- **Location:** Section 2.1 (descent of \(L_i^{\otimes m_i}\) and the identification of \(\psi_i\) as \(\frac{1}{m_i}c_1(M_i)\in N^1(X)_\mathbb Q\))  
+  **Nature:** conceptually correct and now clearly stated, but still a bit “reference-compressed.”  
+  **Suggestion:** If you want maximal exam rigor, add one precise theorem citation (e.g. a specific proposition/section in Vistoli/Kresch) that:  
+  (i) a line bundle on a DM stack with finite inertia descends after some tensor power; and  
+  (ii) \(\pi_*:A_*(\mathcal X)_\mathbb Q\to A_*(X)_\mathbb Q\) is an isomorphism for tame stacks, so degrees/top intersections agree.
+
+- **Location:** Section 2.3 (nefness of \(\psi_i\))  
+  **Nature:** cited correctly at a high level, but “nefness on \(\overline M_{g,n}\)” sometimes appears in the literature in slightly different formulations (stack vs coarse).  
+  **Suggestion:** State explicitly: “\(L_i\) is nef on the stack; since \(\pi^*M_i\simeq L_i^{\otimes m_i}\), \(M_i\) is nef on \(X\), hence \(\psi_i=\frac{1}{m_i}c_1(M_i)\) is nef as a \(\mathbb Q\)-divisor.” This removes any ambiguity.
+
+## Established building blocks  
+
+- **EBB-ID-TRANSFER-POTENTIAL-LEMMA1** (reused)  
+  The quadratic potential \(\Phi(\mathbf e)=\sum (e_i-\bar e)^2\) strictly decreases under balancing moves, proving termination at a balanced vector.
+
+- **EBB-ID-KT-LOGCONCAVITY-SLICE** (reused)  
+  The two-variable slice \(a_k=\int_{\widetilde X}\widetilde\psi_i^k\,\widetilde\psi_j^{S-k}\,C\) is log-concave by the \(2\times2\) Alexandrov–Fenchel/Khovanskii–Teissier inequality for nef divisors on a smooth projective variety.
+
+- **EBB-ID-SYMM-LOGCONCAVE-UNIMODAL** (reused)  
+  Symmetry \(a_k=a_{S-k}\) plus nonnegative log-concavity implies monotonicity away from the center; this yields the key one-step inequality \(a_{k-1}\ge a_k\) for \(k\ge \lfloor S/2\rfloor+1\).
+
+- **EBB-ID-TRANSFER-INEQUALITY-TI** (reused)  
+  Transfer inequality (TI): if \(e_i\ge e_j+2\), then moving one unit from \(i\) to \(j\) weakly increases \(D\):
+  \[
+  D(\dots,e_i,\dots,e_j,\dots)\le D(\dots,e_i-1,\dots,e_j+1,\dots).
+  \]
+
+- **EBB-ID-EXPLICIT-BALANCED-FORMULA** (reused)  
+  If \(d=qn+r\) with \(0\le r<n\), then balanced vectors are exactly permutations of \((q+1,\dots,q+1,q,\dots,q)\) with \(r\) entries \(q+1\).
+
+- **EBB-ID-CONCENTRATING-MIN-CHAIN** (new)  
+  The corrected minimum argument: choose an index \(i\) of a current maximum coordinate and repeatedly apply **valid concentrating moves** \((e_i,e_j)\mapsto(e_i+1,e_j-1)\) with \(e_i\ge e_j\ge1\). Each step is the reverse of a valid (TI) balancing move, hence decreases \(D\), and the process reaches a concentrated vector in finitely many steps.
+
+## Gap assessment  
+
+- **Gaps: None** (solver claim)  
+  I agree on mathematical substance. The only remaining “gaps” are presentation-level: a couple of proofs are presented as “standard” or as a sketch even though they are short enough to write fully.
+
+## Coverage assessment  
+
+All subparts addressed: **Yes**.
+
+- **Maximum on balanced vectors:** proved via (TI) + termination under balancing moves; explicit balanced vector formula given.  
+- **Minimum on concentrated vectors:** proved via the corrected “maximum-coordinate concentrating chain” + (TI); explicit concentrated vector given.  
+- **Case \(n=0\):** correctly discussed: under \(2g-2+n>0\), \(n=0\Rightarrow g\ge2\Rightarrow d>0\Rightarrow E(g,0)=\varnothing\), so extrema are not meaningful.
+
+## Summary  
+
+This attempt successfully completes the intended proof architecture:
+
+1. Reduce descendant integrals to mixed top intersections of nef divisor classes (after passing to a smooth projective resolution).  
+2. Apply AF/KT to obtain log-concavity of two-variable slices and, using symmetry, deduce the transfer inequality (TI) showing that Robin Hood “balancing” moves weakly increase \(D\).  
+3. Conclude the maximum occurs at balanced vectors by iterating balancing moves to a balanced terminal state.  
+4. Correctly fix the earlier minimum-proof failure by restricting “concentrating” moves: always move mass from a nonzero coordinate into a coordinate that is currently maximal, ensuring each step is a reversal of an admissible (TI) move; thus \(D\) weakly decreases along the chain to \((d,0,\dots,0)\).
+
+Mathematically, the extremal characterizations are now correct and complete. The remaining weaknesses are minor: a couple of arguments are referenced as standard/sketched rather than written out in full detail, and the stack/coarse/resolution package could be marginally more citation-precise. None of these affect correctness.
+
+## Recommendations for next iteration (prioritized)
+
+1. **Write Lemma 4.2 in full (not as a sketch)** to make (TI) fully exam-rigorous.  
+2. **Write out the divisor-list bookkeeping in the AF/KT \(\Rightarrow\) log-concavity step** so the reader can check the exact identification \(a_k^2\ge a_{k-1}a_{k+1}\) without referring back to earlier attempts.  
+3. **Add one sentence clarifying nefness descent:** from \(L_i\) nef on the stack and \(\pi^*M_i\simeq L_i^{\otimes m_i}\), conclude \(M_i\) nef on \(X\), hence \(\psi_i\) nef as a \(\mathbb Q\)-divisor.  
+4. **Optionally add a precise “tame stack” citation** for \(\pi_*:A_*(\mathcal X)_\mathbb Q\cong A_*(X)_\mathbb Q\) to fully justify computing degrees on \(X\).
+
+## Meta-level guidance for **both** the probem solver and the orchestrator  
+
+### Strategy-level assessment  
+The approach is **fundamentally sound and now complete**: AF/KT supplies the correct convexity/concavity (log-concavity) input; discrete unimodality plus symmetry yields (TI); and (TI) yields both extrema by monotone “smoothing” (for the maximum) and monotone “concentrating into a maximum coordinate” (for the minimum). This is well-matched to the problem’s structure.
+
+### Structural blockers  
+None.
+
+### Dead directions / approaches to abandon  
+
+- **DEAD-DIRECTION-ID-UNCONSTRAINED-CONCENTRATING** (reused)  
+  The unconstrained claim “any move \((e_i,e_j)\mapsto(e_i+1,e_j-1)\) with \(e_j\ge1\) decreases \(D\)” must remain abandoned; it is false (genus zero counterexample). The current constrained version is the correct repair.
+
+### Promising lines and subproblems  
+No further subproblems are needed for correctness. The only remaining “subproblem” is expository: consolidating the discrete lemma and the AF/KT bookkeeping into a clean, standalone presentation.
+
+### Recommendations for the orchestrator  
+1. **Treat (TI), the balanced-maximizer argument, and the corrected concentrated-minimizer chain as established and reusable** (EBB-ID-TRANSFER-INEQUALITY-TI, EBB-ID-TRANSFER-POTENTIAL-LEMMA1, EBB-ID-CONCENTRATING-MIN-CHAIN).  
+2. **Do not reopen majorization/HLP machinery**; the constrained concentrating-chain proof is simpler and now correct.  
+3. **Ask only for presentation polishing** (full discrete lemma proof + explicit AF divisor list), not new mathematical ideas.
+
+## Research flag  
+Research needed: No.
+
+## Updated Registry of IDs  
+
+- **MAJOR-ISSUE-ID-CONCENTRATING-MOVE-INVALID:** (Resolved in Attempt 4) The unconstrained concentrating move was not monotone for \(D\); fixed by restricting to moves into a maximum coordinate / requiring \(e_i\ge e_j\ge1\).  
+- **MAJOR-ISSUE-ID-STACK-TO-COARSE-JUSTIFICATION:** (Resolved to minor-level) Stack/coarse/resolution intersection package is now stated clearly with standard references; only minor citation tightening remains.  
+- **MAJOR-ISSUE-ID-DISCRETE-UNIMODALITY-GAP:** Resolved earlier; discrete lemma is present (though now in sketch form).  
+- **MAJOR-ISSUE-ID-INTEGER-MAJORIZATION-CHAIN:** Obsolete/not used in Attempt 4.
+
+- **EBB-ID-TRANSFER-POTENTIAL-LEMMA1:** Quadratic potential decreases under balancing moves; termination at balanced vector.  
+- **EBB-ID-KT-LOGCONCAVITY-SLICE:** AF/KT gives log-concavity of the two-variable slice.  
+- **EBB-ID-SYMM-LOGCONCAVE-UNIMODAL:** Symmetry + log-concavity implies monotonicity away from center.  
+- **EBB-ID-TRANSFER-INEQUALITY-TI:** Transfer inequality for balancing moves.  
+- **EBB-ID-EXPLICIT-BALANCED-FORMULA:** Balanced vectors are permutations of \((q+1)^r,q^{n-r}\) for \(d=qn+r\).  
+- **EBB-ID-CONCENTRATING-MIN-CHAIN:** Constrained concentrating chain to \((d,0,\dots,0)\) with monotone decrease of \(D\).
+
+- **DEAD-DIRECTION-ID-UNCONSTRAINED-CONCENTRATING:** Unrestricted concentrating moves are not monotone for \(D\); must be constrained or replaced.
