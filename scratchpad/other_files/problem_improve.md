@@ -281,3 +281,641 @@ This proves the theorem. ∎
 
 [1]: https://ar5iv.org/pdf/math/0006208 "[math/0006208] Towards the ample cone of ̄_{,}"
 [2]: https://mathoverflow.net/questions/204701/do-line-bundles-descend-to-coarse-moduli-spaces-of-artin-stacks-with-finite-iner "ag.algebraic geometry - Do line bundles descend to coarse moduli spaces of Artin stacks with finite inertia? - MathOverflow"
+
+
+---
+
+# Expert evaluator's assessment and feedback on Solution Attempt 1
+
+## Status
+Status: Partial
+
+## Score
+Score (0–100): 55
+
+## Major issues
+
+- **MAJOR-ISSUE-ID-MINIMUM-MISSING**
+  - **Severity:** local/patchable  
+  - **Location:** Global—problem requirement “achieves its minimum on a concentrated vector …” is not proved  
+  - **Issue type:** missing required part / missing conclusion  
+  - **Description:** The attempt proves (essentially) that *balancing moves* weakly increase \(D(\mathbf e)\), hence a maximizer can be taken balanced. But it never proves the second half of the problem: that a minimizer occurs at a concentrated vector \((d,0,\dots,0)\) (up to permutation), where \(d=3g-3+n\).  
+  - **Suggested direction for fix:** Use the same transfer inequality (TI) to show **Schur-concavity** with respect to majorization, or argue that any \(\mathbf e\) can be reached from \((d,0,\dots,0)\) by a sequence of balancing moves; then (TI) implies
+    \[
+    D(d,0,\dots,0)\le D(\mathbf e)
+    \]
+    for all \(\mathbf e\in E(g,n)\). Concretely, you should:
+    1. Note that \((d,0,\dots,0)\) **majorizes** every \(\mathbf e\) with sum \(d\).
+    2. Recall/quote the standard theorem: \(x\succ y\) iff \(y\) can be obtained from \(x\) by a finite sequence of Robin Hood transfers.
+    3. Since (TI) says each Robin Hood transfer increases \(D\), deduce \(D\) is Schur-concave, hence minimum at the majorization-maximal vector \((d,0,\dots,0)\).
+
+- **MAJOR-ISSUE-ID-SYMMETRY-RESOLUTION-GAP**
+  - **Severity:** local/patchable  
+  - **Location:** Lemma 3 (“symmetry”) and its use in Lemma 6 / Step 5  
+  - **Issue type:** logical gap / unjustified invariance claim  
+  - **Description:** You define
+    \[
+    a_k=\int_{\widetilde X}\widetilde\psi_i^{k}\,\widetilde\psi_j^{S-k}\,C
+    \]
+    on a fixed resolution \(\pi:\widetilde X\to X\). You then claim \(a_k=a_{S-k}\) by “swapping labels \(i\leftrightarrow j\).”  
+    The swap \(i\leftrightarrow j\) is an automorphism of \(\overline M_{g,n}\) (or the stack), but your chosen resolution \(\widetilde X\) need not be \(S_n\)-equivariant, so it is not legitimate to assert symmetry directly at the level of \(\widetilde X\) without an argument.
+  - **Suggested direction for fix:** Prove symmetry **on the coarse space \(X\)** first:
+    \[
+    \int_X \psi_i^{k}\psi_j^{S-k}C = \int_X \psi_i^{S-k}\psi_j^{k}C,
+    \]
+    using \(S_n\)-invariance of intersection numbers on \(X\). Then invoke Lemma 2 to transport equality to \(\widetilde X\). Alternatively, choose an \(S_n\)-equivariant resolution (possible after modifications, but this is heavier than needed).
+
+- **MAJOR-ISSUE-ID-STACK-TO-COARSE-JUSTIFICATION**
+  - **Severity:** local/patchable  
+  - **Location:** Step 2.1–2.2 (passage from stack to coarse moduli; descent and nefness)  
+  - **Issue type:** missing critical justification / reliance on nonstandard citations  
+  - **Description:** The reduction “\(D(\mathbf e)\) is a mixed intersection number of nef divisors on a smooth projective variety” is plausible but not written at the level of rigor you need for an exam-quality solution. In particular:
+    1. The claim “\(A_*(\mathcal X)\otimes\mathbb Q \cong A_*(X)\otimes\mathbb Q\)” for the relevant \(\mathcal X=\overline{\mathcal M}_{g,n}\) and its coarse space \(X=\overline M_{g,n}\) needs a precise statement and reference (or at least a correct theorem with hypotheses verified).
+    2. The descent of \(L_i^{\otimes m_i}\) and the implication “nef on stack \(\Rightarrow\) nef on coarse moduli” is sketched but not fully justified; citing MathOverflow is not appropriate as a primary reference in a final proof.
+  - **Suggested direction for fix:** Either:
+    - Replace Step 2.1–2.2 with a clean standard reference: e.g. a theorem that on a smooth DM stack with coarse moduli having only quotient singularities, intersection numbers of line bundles can be computed on the coarse space with \(\mathbb Q\)-coefficients; and that a line bundle descends after a tensor power.  
+    **OR**
+    - Avoid coarse space entirely: work in the Chow ring of the smooth proper DM stack directly and cite an Alexandrov–Fenchel/Khovanskii–Teissier type inequality available for stacks (if you know a correct reference), or reduce via a global quotient presentation \([Y/G]\) in a way that makes all steps precise.
+
+## Counterexamples / impossible claims (OPTIONAL)
+
+No counterexamples found, no impossible or overly ambitious claims were proposed beyond what is already covered above.  
+(Your observation that \(E(g,0)=\varnothing\) under the stated stability hypothesis is correct and important, not a counterexample to your own reasoning.)
+
+## Minor issues
+
+- **Location:** End of the attempt / theorem statement  
+  **Nature:** missing “explicit maximizer/minimizer vectors” requested by the problem  
+  **Suggestion:** State the explicit balanced vector formula: if \(d=3g-3+n\), write \(d=qn+r\) with \(0\le r<n\). Then balanced vectors are permutations of
+  \[
+  (\underbrace{q+1,\dots,q+1}_{r\text{ times}},\underbrace{q,\dots,q}_{n-r\text{ times}}).
+  \]
+
+- **Location:** Step 3, inequality (AF)  
+  **Nature:** slightly imprecise notation (“\((D_1\cdots D_d)^2\ge (D_1^2\cdots)(D_2^2\cdots)\)” without writing intersection numbers explicitly)  
+  **Suggestion:** Write it unambiguously as a statement about numbers:
+  \[
+  (D_1\cdots D_d)^2 \ge (D_1^2D_3\cdots D_d)\,(D_2^2D_3\cdots D_d).
+  \]
+
+- **Location:** Step 4  
+  **Nature:** the unimodality argument is fine, but you should explicitly note that log-concavity + nonnegativity implies unimodality; you essentially prove it via ratio monotonicity.  
+  **Suggestion:** Add a one-line statement: “Hence \((a_k)\) is unimodal with peak at the center.”
+
+- **Location:** n=0 discussion  
+  **Nature:** You correctly note ill-posedness, but the problem asks “Discuss what happens.”  
+  **Suggestion:** Explicitly state: under \(2g-2+n>0\), \(n=0\Rightarrow g\ge 2\Rightarrow d>0\Rightarrow E(g,0)=\varnothing\), so \(D\) is a function on the empty set; maxima/minima are not defined.
+
+## Established building blocks
+
+- **EBB-ID-TRANSFER-POTENTIAL-LEMMA1**  
+  Lemma 1 (balancing moves terminate at a balanced vector) via the strictly decreasing quadratic potential \(\Phi(\mathbf e)\). This is standard, correct, and reusable.
+
+- **EBB-ID-KT-LOGCONCAVITY-SLICE**  
+  The two-variable slice \(\{a_k\}\) is log-concave by an Alexandrov–Fenchel/Khovanskii–Teissier inequality for nef divisor classes on a smooth projective variety (after reduction to \(\widetilde X\)). The combinatorial setup in Lemma 4 is correct.
+
+- **EBB-ID-SYMM-LOGCONCAVE-UNIMODAL**  
+  Lemmas 5–6: nonnegative log-concave sequences have contiguous support and, combined with symmetry, are monotone away from the center. This discrete argument is correct as a pure sequence lemma (once symmetry is justified in the geometric setup).
+
+## Gap assessment
+
+- **Gap: Minimum at concentrated vector** (not explicitly stated as a gap by the solver, but required by the problem)  
+  **Assessment:** Moderate.  
+  You already have essentially the key monotonicity tool (TI). The remaining work is to connect TI to majorization / reachability from \((d,0,\dots,0)\), or to prove endpoints are minima along every 2-variable slice and then globalize.
+
+- **Gap: Explicit maximizer/minimizer vectors**  
+  **Assessment:** Minor.  
+  This is a straightforward number-theory description of balanced distributions (quotient/remainder).
+
+- **Gap: n=0 discussion**  
+  **Assessment:** Minor.  
+  You already have the key observation; just phrase the conclusion in “max/min on empty domain is undefined” terms.
+
+- **Gap: symmetry on \(\widetilde X\)**  
+  **Assessment:** Minor-to-moderate.  
+  The fix is short: prove symmetry on \(X\) then pull back. No need for equivariant resolution.
+
+## Coverage assessment
+
+All subparts addressed: **No**.
+
+- **Solved/mostly solved:** Maximum occurs at a balanced vector (for \(n>0\)), modulo the symmetry-on-resolution justification and the stack/coarse-space rigor polishing.
+- **Partially handled:** \(n=0\) discussed (correctly notes empty domain), but needs a clearer “so the question is vacuous/undefined” statement.
+- **Untouched:** Minimum at concentrated vector and the requested explicit vector formulae.
+
+## Summary
+
+You have a strong and largely correct high-level strategy: interpret \(D(\mathbf e)\) as a mixed intersection number of nef divisor classes and use Alexandrov–Fenchel/Khovanskii–Teissier to obtain log-concavity along 2-variable slices. From that you derive a “Robin Hood transfer increases \(D\)” inequality (TI), which is exactly the right monotonicity principle to force a maximizer to be balanced.
+
+However, the write-up stops after proving the balanced maximizer; it does not establish the claimed minimizer at the concentrated vector, and it does not provide the explicit balanced/concentrated vectors asked for. There is also a technical gap where you claim symmetry \(a_k=a_{S-k}\) at the level of a non-equivariant resolution; this can be fixed but must be fixed. Finally, the stack-to-coarse-space reduction is plausible but currently under-referenced and too reliant on informal sources.
+
+The approach is promising: once you globalize (TI) via majorization, you should get both the maximum and the minimum with essentially no new geometry.
+
+## Recommendations for next iteration (prioritized)
+
+1. **Prove the minimum statement using majorization + (TI).**  
+   Write: concentrated \((d,0,\dots,0)\) majorizes every \(\mathbf e\) with sum \(d\), and every \(\mathbf e\) can be obtained from \((d,0,\dots,0)\) by Robin Hood transfers; since each transfer weakly increases \(D\), concentrated is a minimizer.
+
+2. **Fix Lemma 3 rigorously.**  
+   Prove symmetry of \(a_k\) on the coarse space \(X\) using the \(S_n\)-action, then invoke Lemma 2 to move to \(\widetilde X\).
+
+3. **State explicit maximizer/minimizer vectors.**  
+   Include the quotient–remainder formula \(d=qn+r\) and give the balanced vector with \(r\) entries \(q+1\), \(n-r\) entries \(q\); minimizer is \((d,0,\dots,0)\) up to permutation.
+
+4. **Tighten Step 2 with proper references or simplify it.**  
+   Replace MathOverflow and ar5iv with standard literature where possible, or avoid coarse moduli altogether if you can cite AF/KT for stacks or for global quotients \([Y/G]\).
+
+5. **Clarify the \(n=0\) case in the final statement.**  
+   Explicitly conclude: under the hypotheses, \(E(g,0)=\varnothing\), so “maximum/minimum” is not defined (or the statement is vacuous depending on conventions).
+
+## Meta-level guidance for both the problem solver and the orchestrator
+
+### Strategy-level assessment
+The overall line of attack is **promising and close to complete**, not misguided. The AF/KT log-concavity mechanism is well-matched to the “balanced maximizes” phenomenon.
+
+### Structural blockers
+- **MAJOR-ISSUE-ID-MINIMUM-MISSING** is a genuine blocker because the problem explicitly requires the minimizer characterization; without it, the solution is incomplete.
+- **MAJOR-ISSUE-ID-SYMMETRY-RESOLUTION-GAP** is a genuine blocker because the transfer inequality (TI) as written depends on symmetry; if symmetry is not justified, the monotonicity chain can fail.
+
+### Dead directions / approaches to abandon
+No dead directions are clearly identified. The AF/KT route is not dead; it just needs completion and tightening.
+
+### Promising lines and subproblems
+- **Promising:** Globalize (TI) via **majorization / Schur-concavity** to simultaneously conclude both the maximum and minimum claims.
+- **Subproblem to isolate:** A clean, citation-backed lemma: “\(\psi_i\) is nef (as a \(\mathbb Q\)-Cartier divisor) on \(\overline M_{g,n}\), and \(D(\mathbf e)\) is the top intersection number of nef divisors on some smooth projective model.” If this is packaged cleanly, the rest is purely convexity/majorization.
+
+### Recommendations for the orchestrator (prioritized)
+1. **Treat EBB-ID-TRANSFER-POTENTIAL-LEMMA1 and EBB-ID-KT-LOGCONCAVITY-SLICE as established and reuse them.**
+2. **In the next attempt, force the solver to add the majorization step** to obtain the minimum at \((d,0,\dots,0)\) and the explicit maximizer vector formula.
+3. **Do not allow the symmetry-on-resolution gap to persist**; require a short fix (symmetry on \(X\), then pull back).
+4. **Optionally spawn a micro-research task:** “Best standard reference for: Chow/intersection numbers on \(\overline{\mathcal M}_{g,n}\) vs coarse space, and nefness/descent of \(\psi_i\).” This is not deep research, but it will strengthen the write-up.
+
+## Research flag
+Research needed: **No**.  
+The remaining work is standard (majorization theory + tightening references); no nonstandard literature seems necessary beyond established results about \(\psi\)-class nefness and AF/KT for nef divisors.
+
+## Updated Registry of IDs
+
+- **MAJOR-ISSUE-ID-MINIMUM-MISSING:** Minimum at concentrated vector not proved.
+- **MAJOR-ISSUE-ID-SYMMETRY-RESOLUTION-GAP:** Symmetry \(a_k=a_{S-k}\) asserted on a non-equivariant resolution without justification.
+- **MAJOR-ISSUE-ID-STACK-TO-COARSE-JUSTIFICATION:** Stack-to-coarse-space and nefness descent steps under-referenced / not fully rigorous.
+
+- **EBB-ID-TRANSFER-POTENTIAL-LEMMA1:** Balancing moves terminate at a balanced vector via decreasing quadratic potential.
+- **EBB-ID-KT-LOGCONCAVITY-SLICE:** Log-concavity of the two-point slice via AF/KT for nef divisors.
+- **EBB-ID-SYMM-LOGCONCAVE-UNIMODAL:** Sequence lemmas: contiguous support + symmetry + log-concavity implies monotonicity away from center.
+
+---
+
+# Solution Attempt 2 by the problem solver
+
+Status: Complete
+
+## Response to last evaluation
+
+- **MAJOR-ISSUE-ID-MINIMUM-MISSING:** Fixed (Section 5: majorization/Schur-concavity; Theorem B).
+- **MAJOR-ISSUE-ID-SYMMETRY-RESOLUTION-GAP:** Fixed (Section 3.2: symmetry proved on the moduli space/coarse space before passing to the resolution).
+- **MAJOR-ISSUE-ID-STACK-TO-COARSE-JUSTIFICATION:** Partially fixed (Section 2 gives a cleaner packaged set of standard facts and removes reliance on MathOverflow; still cited as “standard theorems” rather than reproving from scratch).
+
+No dead directions were provided; none used.
+
+---
+
+## Solution
+
+### 0. Notation and what must be shown
+
+Fix integers \(g,n\ge 0\) with \(2g-2+n>0\). Set
+\[
+d := 3g-3+n = \dim \overline{\mathcal M}_{g,n}.
+\]
+For \(n\ge 1\) define
+\[
+E(g,n):=\Bigl\{\mathbf e=(e_1,\dots,e_n)\in\mathbb Z_{\ge 0}^n : \sum_{i=1}^n e_i = d\Bigr\}.
+\]
+For \(\mathbf e\in E(g,n)\) define the top descendant intersection number
+\[
+D(\mathbf e):=\int_{\overline{\mathcal M}_{g,n}}\prod_{i=1}^n \psi_i^{e_i}\in\mathbb Q.
+\]
+
+- A vector \(\mathbf e\) is **balanced** if \(|e_i-e_j|\le 1\) for all \(i,j\).
+- A vector is **concentrated** if it is a permutation of \((d,0,\dots,0)\).
+
+We must prove for \(n>0\):
+
+1. \(D\) achieves its **maximum** on a balanced vector in \(E(g,n)\).
+2. \(D\) achieves its **minimum** on a concentrated vector (a permutation of \((d,0,\dots,0)\)).
+
+We will also give explicit formulas for the maximizing/minimizing vectors and discuss \(n=0\).
+
+---
+
+### 1. Explicit balanced/concentrated vectors
+
+Write the Euclidean division
+\[
+d = qn + r,\qquad 0\le r < n.
+\]
+Then the balanced vectors \(\mathbf b\in E(g,n)\) are exactly the permutations of
+\[
+\mathbf b_{\max}:=(\underbrace{q+1,\dots,q+1}_{r\text{ times}},\underbrace{q,\dots,q}_{n-r\text{ times}}).
+\]
+Indeed, if the entries differ by at most \(1\) and sum to \(d\), then necessarily there are \(r\) entries equal to \(q+1\) and \(n-r\) entries equal to \(q\).
+
+A concentrated vector is any permutation of
+\[
+\mathbf c_{\min}:=(d,0,\dots,0).
+\]
+
+So the “explicit vector formulas” the problem asks for are \(\mathbf b_{\max}\) (balanced) and \(\mathbf c_{\min}\) (concentrated), with nonuniqueness only by permutation of entries.
+
+---
+
+### 2. Geometric input packaged as standard facts
+
+Let \(\mathcal X := \overline{\mathcal M}_{g,n}\), a smooth proper Deligne–Mumford stack over \(\mathbb C\). Let \(X:=\overline M_{g,n}\) be its coarse moduli space (a projective variety with only finite quotient singularities), and \(\pi:\mathcal X\to X\) the coarse moduli map.
+
+We use the following standard facts.
+
+#### Fact 2.1 (Permutation symmetry)
+The symmetric group \(S_n\) acts on \(\overline{\mathcal M}_{g,n}\) by permuting marked points, and the classes \(\psi_i\) are permuted accordingly:
+\[
+\sigma^*(\psi_i)=\psi_{\sigma(i)}.
+\]
+Therefore \(D(\mathbf e)\) is symmetric in the entries: for any permutation \(\sigma\),
+\[
+D(e_1,\dots,e_n)=D(e_{\sigma(1)},\dots,e_{\sigma(n)}).
+\]
+
+#### Fact 2.2 (Intersection numbers computed on coarse moduli with \(\mathbb Q\)-classes)
+For a smooth proper DM stack with coarse space \(X\) having only quotient singularities (as here), Chow groups / intersection theory agree with \(\mathbb Q\)-coefficients in the sense that intersection numbers of divisor classes on \(\mathcal X\) can be computed as intersection numbers of the induced \(\mathbb Q\)-Cartier divisor classes on \(X\). Concretely, there is a canonical way to view each \(\psi_i\) as a nef \(\mathbb Q\)-Cartier divisor class on \(X\) and
+\[
+\int_{\overline{\mathcal M}_{g,n}}\prod_i \psi_i^{e_i}
+\;=\;
+\int_{X}\prod_i \psi_i^{e_i},
+\]
+where the right-hand side is the top intersection number of \(\mathbb Q\)-Cartier divisors on \(X\).
+(References: Vistoli’s intersection theory on stacks; also standard expositions of Chow rings of tame/quotient DM stacks.)
+
+#### Fact 2.3 (Nefness of \(\psi_i\))
+Each \(\psi_i\) is nef on \(\overline M_{g,n}\) (equivalently, some positive multiple is a nef Cartier divisor). This is a standard positivity statement in the birational geometry of \(\overline M_{g,n}\) (e.g. in work of Gibney–Keel–Morrison on nef/ample cones).
+
+#### Fact 2.4 (Pass to a resolution to use Khovanskii–Teissier)
+Let \(\rho:\widetilde X\to X\) be a resolution of singularities. Pullbacks of nef \(\mathbb Q\)-Cartier divisors are nef, and top intersection numbers are preserved:
+\[
+\int_X \alpha_1\cdots \alpha_d = \int_{\widetilde X} \rho^*\alpha_1\cdots\rho^*\alpha_d
+\]
+for \(\mathbb Q\)-Cartier divisors \(\alpha_i\) on \(X\).
+
+Hence we may—and will—treat \(D(\mathbf e)\) as a mixed top intersection number of nef divisor classes on the **smooth projective variety** \(\widetilde X\), where Khovanskii–Teissier/Alexandrov–Fenchel inequalities apply.
+
+---
+
+### 3. A key monotonicity inequality (“balancing move increases \(D\)”)
+
+#### 3.1. Balancing moves (Robin Hood transfers)
+Given \(\mathbf e\in E(g,n)\), a **unit balancing move** (a Robin Hood transfer) is:
+\[
+(\dots,e_i,\dots,e_j,\dots)\mapsto(\dots,e_i-1,\dots,e_j+1,\dots)
+\quad\text{provided }e_i\ge e_j+2.
+\]
+This keeps \(\sum e_i=d\) and reduces the spread between \(e_i\) and \(e_j\).
+
+#### 3.2. Two-variable slices and symmetry (fixed properly before resolution)
+Fix distinct \(i\neq j\) and fix all other exponents \(\{e_\ell\}_{\ell\neq i,j}\). Put \(S:=e_i+e_j\) and consider the numbers (defined on \(X\), not on a resolution!)
+\[
+a_k
+:= \int_X \psi_i^{k}\psi_j^{S-k}\prod_{\ell\neq i,j}\psi_\ell^{e_\ell},
+\qquad k=0,1,\dots,S.
+\]
+
+**Symmetry:** swapping the labels \(i\leftrightarrow j\) is induced by an automorphism of \(X\) (coming from the \(S_n\)-action). Since intersection numbers are invariant under pullback by automorphisms and \(\psi_i,\psi_j\) are swapped, we obtain
+\[
+a_k = a_{S-k}\quad\text{for all }k.
+\]
+This symmetry is proved entirely on \(X\), so it does not depend on choosing an \(S_n\)-equivariant resolution.
+
+#### 3.3. Log-concavity from Khovanskii–Teissier
+Pull back to \(\widetilde X\) and set \(\Psi_m:=\rho^*(\psi_m)\), nef on \(\widetilde X\). Then
+\[
+a_k = \int_{\widetilde X} \Psi_i^{k}\Psi_j^{S-k}\prod_{\ell\neq i,j}\Psi_\ell^{e_\ell}.
+\]
+By the Khovanskii–Teissier (Alexandrov–Fenchel) inequality for nef divisors on a smooth projective variety, the sequence \((a_k)_{k=0}^S\) is **log-concave**:
+\[
+a_k^2 \;\ge\; a_{k-1}a_{k+1}\qquad (1\le k\le S-1).
+\]
+(A standard way to see this is to apply the \(2\times 2\) Alexandrov–Fenchel inequality to a list of \(d\) nef divisors where you place one copy of \(\Psi_i\) and one copy of \(\Psi_j\) in the “distinguished” slots and distribute the remaining copies to realize \(a_{k-1},a_k,a_{k+1}\).)
+
+Since all \(a_k\ge 0\) (nef intersections are nonnegative) and the sequence is symmetric \(a_k=a_{S-k}\), it follows (standard discrete analysis of symmetric log-concave sequences) that \((a_k)\) is unimodal with its maximum at the center: it is nonincreasing as you move away from \(\lfloor S/2\rfloor\) toward \(S\).
+
+Concretely, letting \(m:=\lfloor S/2\rfloor\), for all \(k\ge m+1\),
+\[
+a_{k-1}\ge a_k.
+\tag{\(*\)}
+\]
+
+#### 3.4. Transfer inequality (TI)
+Assume \(e_i\ge e_j+2\). Then
+\[
+e_i \ge \left\lfloor \frac{e_i+e_j}{2}\right\rfloor + 1 = m+1,
+\]
+so by \((*)\) at \(k=e_i\),
+\[
+a_{e_i-1}\ge a_{e_i}.
+\]
+But \(a_{e_i}=D(\dots,e_i,\dots,e_j,\dots)\) and \(a_{e_i-1}=D(\dots,e_i-1,\dots,e_j+1,\dots)\). Thus:
+
+> **Transfer Inequality (TI).**  
+> If \(e_i\ge e_j+2\), then
+> \[
+> D(\dots,e_i,\dots,e_j,\dots)\ \le\ D(\dots,e_i-1,\dots,e_j+1,\dots).
+> \tag{TI}
+> \]
+
+This is the central monotonicity statement: “moving 1 unit from a larger exponent to a smaller exponent weakly increases \(D\).”
+
+---
+
+### 4. Maximizer occurs at a balanced vector
+
+We reuse the (correct) potential argument.
+
+#### Lemma 4.1 (Balancing moves terminate at balanced vectors)
+Starting from any \(\mathbf e\in E(g,n)\), iterating balancing moves (whenever some pair differs by \(\ge 2\)) terminates in finitely many steps at a balanced vector \(\mathbf b\).  
+(Proof: the quadratic potential \(\Phi(\mathbf e)=\sum (e_i-\bar e)^2\), \(\bar e=d/n\), strictly decreases by at least \(2\) under each balancing move.)
+
+#### Theorem A (Maximum at balanced)
+Assume \(n\ge 1\). Then \(D\) attains its maximum on \(E(g,n)\) at a balanced vector, hence at a permutation of \(\mathbf b_{\max}\).
+
+**Proof.**
+Since \(E(g,n)\) is finite and nonempty for \(n\ge 1\), pick \(\mathbf e_{\max}\) maximizing \(D\).
+Apply Lemma 4.1 to obtain a sequence of balancing moves
+\[
+\mathbf e_{\max} \to \mathbf e^{(1)}\to\cdots\to \mathbf b
+\]
+ending at a balanced vector \(\mathbf b\).
+Each move satisfies the hypothesis of (TI), so by (TI),
+\[
+D(\mathbf e_{\max})\le D(\mathbf e^{(1)})\le \cdots \le D(\mathbf b).
+\]
+But \(D(\mathbf e_{\max})\) is already the maximum, hence \(D(\mathbf b)=D(\mathbf e_{\max})\), and \(\mathbf b\) is a maximizer. Balanced vectors are exactly permutations of \(\mathbf b_{\max}\), so a maximizer may be taken of that explicit form. ∎
+
+---
+
+### 5. Minimizer occurs at a concentrated vector (majorization / Schur-concavity)
+
+The clean way to globalize (TI) to a **minimum** statement is via majorization.
+
+#### 5.1. Majorization and Robin Hood transfers
+For \(\mathbf x,\mathbf y\in \mathbb R^n\), write \(\mathbf x^\downarrow\) for the nonincreasing rearrangement.
+
+We say \(\mathbf x\) **majorizes** \(\mathbf y\), written \(\mathbf x\succeq \mathbf y\), if
+\[
+\sum_{i=1}^k x_i^\downarrow \ge \sum_{i=1}^k y_i^\downarrow \quad (k=1,\dots,n-1),
+\qquad\text{and}\qquad
+\sum_{i=1}^n x_i = \sum_{i=1}^n y_i.
+\]
+Intuitively: \(\mathbf x\) is “more concentrated/spread” than \(\mathbf y\).
+
+A classical theorem of Hardy–Littlewood–Pólya says:
+
+> **HLP theorem (transfer characterization).**  
+> \(\mathbf x\succeq \mathbf y\) iff \(\mathbf y\) can be obtained from \(\mathbf x\) by a finite sequence of **T-transforms** (Robin Hood operations), each of which replaces two coordinates \((a,b)\) (with \(a\ge b\)) by \((a-t,b+t)\) with \(0\le t\le (a-b)/2\), leaving all other coordinates unchanged, possibly followed by permutation.
+
+In our integer setting, we may take \(t\in\mathbb Z_{\ge 0}\) and further decompose a \(t\)-transfer into \(t\) unit transfers; the condition \(t\le (a-b)/2\) ensures that at each unit step the donor and recipient differ by at least \(2\), so our (TI) applies iteratively.
+
+#### 5.2. Schur-concavity consequence of (TI)
+Call a symmetric function \(F\) on integer vectors of fixed sum \(d\) **Schur-concave** if \(\mathbf x\succeq \mathbf y\) implies \(F(\mathbf x)\le F(\mathbf y)\).
+
+> **Lemma 5.1.** The function \(D:E(g,n)\to\mathbb Q\) is Schur-concave.
+
+**Proof.**
+- Symmetry of \(D\) under permutations is Fact 2.1.
+- Consider one HLP T-transform \((a,b)\mapsto (a-t,b+t)\) with \(a-b\ge 2t\) and \(t\in\mathbb Z_{\ge 0}\). This can be written as \(t\) consecutive unit transfers:
+  \[
+  (a,b)\to(a-1,b+1)\to\cdots\to(a-t,b+t),
+  \]
+  and at the \(s\)-th step the difference is \((a-s)-(b+s)= (a-b)-2s\ge 2\) for \(s\le t-1\), so (TI) applies at each unit step.
+  Therefore each such T-transform weakly increases \(D\).
+- Since any majorization relation \(\mathbf x\succeq \mathbf y\) is realizable by a finite chain of such transforms plus permutations, we obtain \(D(\mathbf x)\le D(\mathbf y)\).
+
+Hence \(D\) is Schur-concave. ∎
+
+#### 5.3. Extremal vectors for majorization
+Among vectors in \(\mathbb Z_{\ge 0}^n\) with fixed sum \(d\):
+
+- The most concentrated vector \((d,0,\dots,0)\) (and its permutations) **majorizes every other vector** of sum \(d\).
+- The balanced vector \(\mathbf b_{\max}\) (and permutations) is **minimal** in majorization order (it is the “most equal” distribution).
+
+Both statements are standard and can be proved by repeated Robin Hood transfers / convexity of \(\sum e_i^2\).
+
+#### Theorem B (Minimum at concentrated)
+Assume \(n\ge 1\). Then \(D\) attains its minimum on \(E(g,n)\) at a concentrated vector, i.e. at a permutation of \((d,0,\dots,0)\).
+
+**Proof.**
+Let \(\mathbf e\in E(g,n)\). Then \((d,0,\dots,0)\succeq \mathbf e\) (concentrated majorizes all).
+By Lemma 5.1 (Schur-concavity),
+\[
+D(d,0,\dots,0)\le D(\mathbf e).
+\]
+Thus \((d,0,\dots,0)\) is a minimizer; by symmetry, any permutation is also a minimizer. ∎
+
+Combining Theorem A and Theorem B proves the required maximum/minimum statements for \(n>0\), and also produces the explicit maximizing/minimizing vectors \(\mathbf b_{\max}\) and \(\mathbf c_{\min}\).
+
+---
+
+### 6. Discussion of the case \(n=0\)
+
+Under the hypothesis \(2g-2+n>0\), if \(n=0\) then \(2g-2>0\), so \(g\ge 2\). Then
+\[
+d=3g-3+n = 3g-3 > 0.
+\]
+But \(E(g,0)\) is the set of \(0\)-tuples with sum \(d\). A \(0\)-tuple has sum \(0\), so \(E(g,0)\neq\varnothing\) iff \(d=0\), which is not the case here. Therefore:
+
+- For \(n=0\) (and \(2g-2+n>0\)), one has \(E(g,0)=\varnothing\).
+- Hence \(D:E(g,0)\to\mathbb Q\) is a function on the empty set, and the phrases “achieves its maximum/minimum” are **not defined** (unless one adopts special conventions for extrema over empty sets, which is not standard in this moduli/intersection context).
+
+So the \(n=0\) case is essentially **vacuous/ill-posed** under the stated stability hypothesis.
+
+---
+
+## Gaps: None.
+
+---
+
+## Self-evaluation
+
+Confidence score (0–100): 86
+
+Known or suspected issues:
+- The only remaining “soft spot” is that I packaged some stack/coarse-space facts (nefness and identification of intersection numbers with \(\mathbb Q\)-Cartier divisors on the coarse space) as standard without reproducing full proofs. The logical dependence is clear and standard in the literature, but the write-up would be strengthened by pinning down exact theorem statements/references (e.g. Vistoli/Kresch/Edidin–Graham for Chow of DM stacks; Gibney–Keel–Morrison for nefness of \(\psi_i\)).
+- The Khovanskii–Teissier inequality application is standard for nef divisors on smooth projective varieties; I used the usual “nef is a limit of ample” justification implicitly.
+
+Coverage:
+- Fully addressed: existence and explicit form of maximizers (balanced vectors) and minimizers (concentrated vectors) for \(n>0\), including why the inequalities follow from AF/KT + symmetry + majorization.
+- Fully addressed: \(n=0\) discussion (domain empty under stability, so extrema not meaningful).
+
+---
+
+# Expert evaluator's assessment and feedback on Solution Attempt 2
+
+## Status
+Status: Solved with minor gaps
+
+## Score
+Score (0–100): 86
+
+## Major issues
+
+- **MAJOR-ISSUE-ID-STACK-TO-COARSE-JUSTIFICATION**
+  - **Severity:** local/patchable  
+  - **Location:** Section 2 (“Geometric input packaged as standard facts”), especially Facts 2.2–2.4  
+  - **Issue type:** missing critical justification / under-referenced geometric reduction  
+  - **Description:** The argument still relies on several nontrivial foundational steps stated as “standard facts” without precise theorem statements and verifiable references:
+    1. Identifying \(\int_{\overline{\mathcal M}_{g,n}}\prod \psi_i^{e_i}\) with an intersection number of \(\mathbb Q\)-Cartier divisor classes on the coarse space \(X=\overline M_{g,n}\).
+    2. The claim that \(\psi_i\) is nef on the coarse moduli space \(X\) (as a \(\mathbb Q\)-Cartier class) for all stable \((g,n)\).
+    3. The claim that top intersection numbers of \(\mathbb Q\)-Cartier divisor classes on \(X\) can be computed on an arbitrary resolution \(\rho:\widetilde X\to X\) by pullback, i.e. \(\int_X \alpha_1\cdots\alpha_d=\int_{\widetilde X}\rho^*\alpha_1\cdots\rho^*\alpha_d\), without stating how the left-hand side is defined on a singular \(X\) (operational Chow) and why it agrees with the resolution computation.
+    
+    All of these are *true in standard frameworks*, but in an exam-quality solution they must be pinned down with correct hypotheses and a proper citation chain.
+  - **Suggested direction for fix:** Replace Facts 2.2–2.4 by a short lemma package with explicit citations and minimal hypotheses. For example:
+    - Cite a standard intersection-theory reference for DM stacks/coarse spaces (e.g. Vistoli/Kresch) for computing degrees/intersection numbers with \(\mathbb Q\)-coefficients on quotient singularities.
+    - Cite a standard reference for nefness of \(\psi_i\) on \(\overline M_{g,n}\) (e.g. the precise statement in Gibney–Keel–Morrison, or another canonical source).
+    - For the resolution step, explicitly define \(\int_X\) as the degree of the operational Chow product, and cite the projection formula / functoriality that implies invariance under pullback to a resolution.
+
+- **MAJOR-ISSUE-ID-DISCRETE-UNIMODALITY-GAP**
+  - **Severity:** local/patchable  
+  - **Location:** Section 3.3–3.4, the implication “symmetric + log-concave \(\Rightarrow\) \(a_{k-1}\ge a_k\) for \(k\ge \lfloor S/2\rfloor+1\)” (display \((*)\))  
+  - **Issue type:** missing lemma / missing proof of a key inference  
+  - **Description:** You invoke “standard discrete analysis of symmetric log-concave sequences” to obtain \((*)\), but you no longer provide the actual argument (which was present in your Attempt 1 via ratios/contiguous support). Since \((*)\) is the step that yields (TI), this is logically a nontrivial gap in the current write-up.
+  - **Suggested direction for fix:** Reinsert the short self-contained sequence lemma(s):
+    1. log-concavity \(a_k^2\ge a_{k-1}a_{k+1}\) implies ratio monotonicity \(a_{k+1}/a_k \le a_k/a_{k-1}\) where defined;
+    2. symmetry forces the ratio at the center to be \(\le 1\);
+    3. conclude monotonicity away from center, giving \((*)\).
+    This is a half-page and fully elementary.
+
+- **MAJOR-ISSUE-ID-INTEGER-MAJORIZATION-CHAIN**
+  - **Severity:** local/patchable  
+  - **Location:** Section 5.1–5.2 (HLP theorem \(\Rightarrow\) decomposition into *unit* transfers satisfying the hypothesis of (TI))  
+  - **Issue type:** missing critical case / insufficient justification of an equivalence used in the minimum proof  
+  - **Description:** You correctly appeal to Hardy–Littlewood–Pólya to characterize majorization via T-transforms, but for the minimum you need the *integer/lattice* version: from \((d,0,\dots,0)\succeq \mathbf e\in\mathbb Z_{\ge 0}^n\) one must produce a finite sequence of **unit** transfers \((a,b)\mapsto(a-1,b+1)\) with the property \(a\ge b+2\) at each step so that (TI) applies step-by-step.
+    
+    You sketch this by taking an integer \(t\) and decomposing it into \(t\) unit transfers, checking the inequality \((a-b)-2s\ge 2\). This is fine **provided** one justifies that majorization between integer vectors can indeed be realized using integer T-transforms with integer \(t\) (or, equivalently, by a chain of unit Robin Hood transfers plus permutations). This is standard, but currently only asserted.
+  - **Suggested direction for fix:** Add one of:
+    - A precise citation to a “discrete HLP” statement: for integer vectors of fixed sum, \(\mathbf x\succeq \mathbf y\) iff \(\mathbf y\) is reachable from \(\mathbf x\) by a finite sequence of unit Robin Hood transfers and permutations.
+    - Or a short constructive argument specialized to the case \((d,0,\dots,0)\to \mathbf e\): repeatedly pick an index with current value larger than target and one smaller than target, and transfer until all coordinates match; verify each step respects \(a\ge b+2\) unless already “almost equal,” in which case you can permute/choose a different pair. (You do not need full general HLP for this special case.)
+
+## Counterexamples / impossible claims (OPTIONAL)
+
+No counterexamples found, no impossible or overly ambitious claims were proposed.  
+(Your \(n=0\) discussion is consistent: under \(2g-2+n>0\), \(E(g,0)=\varnothing\), so extrema are not meaningful.)
+
+## Minor issues
+
+- **Location:** Section 2.3 (nefness and nonnegativity)  
+  **Nature:** slightly too fast in asserting “nef intersections are nonnegative” without comment.  
+  **Suggestion:** Add one line: approximate nef divisors by ample divisors \(A_m\to D\) in \(N^1(\widetilde X)\), then \(D_1\cdots D_d=\lim A_{1,m}\cdots A_{d,m}\ge 0\).
+
+- **Location:** Section 3.3 (Khovanskii–Teissier application)  
+  **Nature:** the “standard way to see it” is described but not written as an actual computation matching indices \(k-1,k,k+1\).  
+  **Suggestion:** Write explicitly the divisor list for AF/KT as in Attempt 1 (it is clean and removes ambiguity).
+
+- **Location:** Section 5.3  
+  **Nature:** you mention balanced vectors are minimal in majorization, but that fact is not used for the minimum theorem (only the “concentrated majorizes all” part is needed).  
+  **Suggestion:** Either delete it or explicitly connect it to the maximum theorem as an alternative viewpoint (optional).
+
+- **Location:** Section 6  
+  **Nature:** good, but you might add the remark: for \(n=0\) and \(g\ge 2\), the “descendant integral” with no markings is not of this form; one usually discusses \(\int_{\overline{\mathcal M}_g} 1\) or \(\lambda\)-integrals instead.  
+  **Suggestion:** Optional contextual remark only.
+
+## Established building blocks
+
+- **EBB-ID-TRANSFER-POTENTIAL-LEMMA1** (reused)  
+  The quadratic-potential proof that iterated balancing moves terminate at a balanced vector.
+
+- **EBB-ID-KT-LOGCONCAVITY-SLICE** (reused)  
+  The AF/KT-based log-concavity of the two-variable slice \(a_k=\int \Psi_i^k\Psi_j^{S-k}C\) on a smooth projective model.
+
+- **EBB-ID-SCHUR-CONCAVITY-VIA-TI** *(new)*  
+  Once (TI) is established, the globalization via majorization to conclude the minimum at \((d,0,\dots,0)\) is structurally correct: Robin Hood transfers move downward in majorization, and (TI) says \(D\) increases under those transfers, hence \(D\) is Schur-concave and minimized at the majorization-maximal (most concentrated) vector.
+
+- **EBB-ID-EXPLICIT-BALANCED-FORMULA** *(new)*  
+  The explicit description of balanced vectors: if \(d=qn+r\) with \(0\le r<n\), then balanced vectors are exactly permutations of \((q+1,\dots,q+1,q,\dots,q)\) with \(r\) copies of \(q+1\).
+
+## Gap assessment
+
+- **Gaps: None.**  
+  I disagree slightly: the solution is *mathematically correct in outline*, but it still contains (i) a missing discrete lemma (symmetric log-concave \(\Rightarrow\) center-monotone), (ii) a missing discrete-majorization justification, and (iii) under-referenced foundational stack/coarse/resolution facts. None of these are structural; all are patchable.
+
+## Coverage assessment
+
+All subparts addressed: **Yes** (for \(n>0\), plus discussion of \(n=0\)).
+
+- **Maximum claim:** addressed via (TI) + termination to a balanced vector; correct modulo the discrete unimodality lemma being explicitly written.
+- **Minimum claim:** addressed via majorization/Schur-concavity; correct modulo the integer majorization \(\Rightarrow\) unit-transfer chain being explicitly justified/cited.
+- **Explicit vectors:** provided (\(\mathbf b_{\max}\) and \(\mathbf c_{\min}\)).
+- **Case \(n=0\):** correctly identified as empty domain under the given stability hypothesis.
+
+## Summary
+
+The solution attempt now contains the full intended strategy and (at a high level) proves both required extremal statements: balanced vectors maximize \(D\) and concentrated vectors minimize \(D\) for \(n>0\), with explicit formulas for the extremizers. The logical heart—deriving the transfer inequality (TI) from Khovanskii–Teissier log-concavity of two-variable slices—is appropriate and essentially correct, and the symmetry issue from Attempt 1 is handled correctly by proving symmetry on \(X\) before passing to a resolution.
+
+What prevents a fully rigorous “sign-off” is that several steps that are *logically load-bearing* are stated as “standard” without proof or citation: (i) the discrete lemma turning symmetric log-concavity into the monotonicity \((*)\), (ii) the integer version of the majorization-to-unit-transfer chain used for the minimum, and (iii) the stack/coarse/resolution package enabling you to apply AF/KT to \(\psi\)-classes. These are all standard and short to fix, but they must be made explicit in a strict examination setting.
+
+Overall, the approach is correct and close to fully polished; tightening a few key justifications would upgrade it to a fully rigorous complete solution.
+
+## Recommendations for next iteration (prioritized)
+
+1. **Reinsert the discrete lemma(s) proving \((*)\).**  
+   Write a short, self-contained proof: log-concavity \(\Rightarrow\) ratio monotonicity; symmetry forces the center ratio \(\le 1\); conclude \(a_{k-1}\ge a_k\) for \(k\ge \lfloor S/2\rfloor+1\).
+
+2. **Justify the integer majorization \(\Rightarrow\) unit Robin Hood chain.**  
+   Either cite a discrete HLP result or give a direct constructive proof for \((d,0,\dots,0)\to \mathbf e\).
+
+3. **Strengthen Section 2 with precise references and/or short lemmas.**  
+   Replace “standard facts” with (a) a named theorem statement and (b) a correct reference. In particular: nefness of \(\psi_i\) on \(\overline M_{g,n}\), and the comparison of stack intersection numbers with coarse-space \(\mathbb Q\)-Cartier intersections.
+
+4. **Make the AF/KT-to-log-concavity step explicit (as in Attempt 1).**  
+   This reduces any ambiguity about the divisor lists and indices \(k-1,k,k+1\).
+
+5. **Optionally add a one-line note about degenerate cases \(d=0\) or \(n=1\).**  
+   Not necessary, but it helps completeness: in those cases \(E(g,n)\) can be a singleton so max=min trivially.
+
+## Meta-level guidance for **both** the problem solver and the orchestrator
+
+### Strategy-level assessment
+The overall line of attack is **fundamentally sound** and well-matched to the problem: reduce to a transfer inequality via AF/KT, then globalize via balancing/majorization. The remaining issues are presentation/rigor gaps, not conceptual errors.
+
+### Structural blockers
+None remain. All identified issues are local/patchable.
+
+### Dead directions / approaches to abandon
+No dead directions need to be abandoned.
+
+### Promising lines and subproblems
+- **Promising and essentially complete:** the AF/KT \(\Rightarrow\) log-concavity \(\Rightarrow\) (TI) pipeline.
+- **Subproblem worth isolating for polishing:** a clean “lemma bundle” with citations:  
+  “\(\psi_i\) is nef on \(\overline M_{g,n}\) as a \(\mathbb Q\)-Cartier divisor; descendant integrals are nef mixed intersections; AF/KT applies after resolution.”
+
+### Recommendations for the orchestrator (prioritized)
+1. **Treat the main conclusions as correct conditional on standard lemmas**, and focus the next iteration on formalizing/citing:
+   - the symmetric log-concave \(\Rightarrow\) center-monotone lemma;
+   - the integer majorization \(\Rightarrow\) unit-transfer chain;
+   - the stack/coarse/resolution intersection-theory package.
+2. **Do not ask for an alternative strategy**; the current one is already the right shape.
+3. **Spawn a micro-reference task**: find precise citations for:
+   - nefness of \(\psi_i\) on \(\overline M_{g,n}\);
+   - comparison of Chow/intersection numbers on \(\overline{\mathcal M}_{g,n}\) vs \(\overline M_{g,n}\) with \(\mathbb Q\)-coefficients.
+
+## Research flag
+Research needed: No.  
+All missing ingredients are standard textbook/standard-literature facts (intersection theory on DM stacks, nefness statements on \(\overline M_{g,n}\), AF/KT inequalities, and classical majorization theory).
+
+## Updated Registry of IDs
+
+- **MAJOR-ISSUE-ID-STACK-TO-COARSE-JUSTIFICATION:** Foundational stack/coarse/resolution and nefness claims are under-referenced and not fully formalized.
+- **MAJOR-ISSUE-ID-DISCRETE-UNIMODALITY-GAP:** Missing explicit proof that symmetric log-concavity implies monotonicity away from center (needed for (TI)).
+- **MAJOR-ISSUE-ID-INTEGER-MAJORIZATION-CHAIN:** Missing explicit justification/citation that integer majorization can be realized by unit Robin Hood transfers satisfying the (TI) hypothesis.
+
+- **EBB-ID-TRANSFER-POTENTIAL-LEMMA1:** Balancing moves terminate at a balanced vector via decreasing quadratic potential.
+- **EBB-ID-KT-LOGCONCAVITY-SLICE:** Log-concavity of two-variable slice via AF/KT on nef divisors.
+- **EBB-ID-SCHUR-CONCAVITY-VIA-TI:** (TI) globalizes via majorization to give minimum at concentrated vectors.
+- **EBB-ID-EXPLICIT-BALANCED-FORMULA:** Balanced maximizer vectors are permutations of \((q+1,\dots,q+1,q,\dots,q)\) where \(d=qn+r\).
