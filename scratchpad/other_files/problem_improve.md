@@ -1,3 +1,11 @@
+What follows is a research level problem, followed by a series of attempts by a problem solver. Each attempt by the problem solver is evaluated by an expert evaluator who gives feedback and suggestions on how the solution can be improved or corrected. The problem solver then attempts the problem again. This process occurs iteratively until I (the moderator) decides that the problem solver is close enough and that we can write up the final solution. 
+
+Using the **latest** solution attempt by the problem solver as well as the respective evaluation by the expert evaluator as our primary reference point, list down point by point the major and minor issues that need to be addressed in order to improve the solution. For each issue, provide a brief description of the issue, its location in the solution attempt, and suggestions on how to fix it. For citation requirements, provide precise references if possible, or tell me what kind of references to look for.
+
+Refer to previous solution attempts and their respective evaluations if you require further background and information.
+
+---
+
 # Problem Statement
 
 Let $g,n\in\mathbb{Z}_{\ge 0}$ with $2g-2+n>0$, and let
