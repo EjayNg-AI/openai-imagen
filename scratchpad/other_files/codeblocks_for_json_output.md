@@ -13,7 +13,7 @@ The following `JSON_SCHEMA` requires the model to output **one JSON object** wit
   * each item must be an **object** with exactly one required field:
 
     * **`text`**: a **string** with **1250–2450 characters** (`minLength`, `maxLength`)
-  * `additionalProperties: False` (both at the paragraph-object level and the top level) means **no extra keys are allowed** anywhere.
+  * `additionalProperties: false` (both at the paragraph-object level and the top level) means **no extra keys are allowed** anywhere.
 
 The length constraints apply **per paragraph** (per `text` field), **not** to the whole response.
 
@@ -36,60 +36,64 @@ from openai import OpenAI
 
 client = OpenAI()
 
-    JSON_SCHEMA = {
-        "type": "object",
-        "properties": {
-            "paragraphs": {
-                "type": "array",
-                "description": f"An array containing 4 to 7 paragraphs, each ranging from 250 to 350 words.",
-                "minItems": 4,
-                "maxItems": 7,
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "text": {
-                            "type": "string",
-                            "description": "The content of the paragraph (plain text).",
-                            "minLength": 1250,  # Minimum number of characters
-                            "maxLength": 2450,  # Maximum number of characters
-                        },
-                    },
-                    "required": ["text"],
-                    "additionalProperties": False,
-                },
+JSON_SCHEMA = json.loads(
+    """
+    {
+      "type": "object",
+      "properties": {
+        "paragraphs": {
+          "type": "array",
+          "description": "An array containing 4 to 7 paragraphs, each ranging from 250 to 350 words.",
+          "minItems": 4,
+          "maxItems": 7,
+          "items": {
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string",
+                "description": "The content of the paragraph (plain text).",
+                "minLength": 1250,
+                "maxLength": 2450
+              }
             },
-        },
-        "required": ["paragraphs"],
-        "additionalProperties": False,
+            "required": ["text"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["paragraphs"],
+      "additionalProperties": false
     }
+    """
+)
 
-    response = client.responses.create(
-        model="gpt-5.2",  # or `gpt-5.2-pro`
-        instructions = developer_message,  # developer_message is the system message in proper markdown format
-        input=[
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "input_text",
-                        "text": user_message,  # user_message is the text message the user sends the model
-                    }
-                ],
-            },
-        ],
-        text={
-            "format": {
-                "type": "json_schema",
-                "name": "Produce structured output",   # A descriptive name
-                "strict": True,
-                "schema": JSON_SCHEMA,
-            },
-            "verbosity": "high",  # can be "low", "medium" or "high" 
+response = client.responses.create(
+    model="gpt-5.2",  # or `gpt-5.2-pro`
+    instructions = developer_message,  # developer_message is the system message in proper markdown format
+    input=[
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "input_text",
+                    "text": user_message,  # user_message is the text message the user sends the model
+                }
+            ],
         },
-        reasoning={
-            "effort": "high",  # can be "none", "low", "medium", "high", or "xhigh" 
+    ],
+    text={
+        "format": {
+            "type": "json_schema",
+            "name": "Produce structured output",   # A descriptive name
+            "strict": True,
+            "schema": JSON_SCHEMA,
         },
-    )
+        "verbosity": "high",  # can be "low", "medium" or "high" 
+    },
+    reasoning={
+        "effort": "high",  # can be "none", "low", "medium", "high", or "xhigh" 
+    },
+)
 
 ```
 
@@ -243,50 +247,60 @@ from openai import OpenAI
 
 client = OpenAI()
 
-TEACHER_GRADE_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "student_id": {"type": "string"},
-        "assignment_title": {"type": "string"},
+TEACHER_GRADE_SCHEMA = json.loads(
+    """
+    {
+      "type": "object",
+      "properties": {
+        "student_id": { "type": "string" },
+        "assignment_title": { "type": "string" },
         "overall_letter_grade": {
-            "type": "string",
-            "enum": ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D", "F"],
+          "type": "string",
+          "enum": ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D", "F"]
         },
-        "pass": {"type": "boolean"},
+        "pass": { "type": "boolean" },
         "rubric": {
-            "type": "array",
-            "minItems": 3,
-            "items": {
-                "type": "object",
-                "properties": {
-                    "criterion": {"type": "string"},
-                    "score": {"type": "number", "minimum": 0},
-                    "max_score": {"type": "number", "minimum": 1},
-                    "comments": {"type": "string"},
-                },
-                "required": ["criterion", "score", "max_score", "comments"],
-                "additionalProperties": False,
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "object",
+            "properties": {
+              "criterion": { "type": "string" },
+              "score": { "type": "number", "minimum": 0 },
+              "max_score": { "type": "number", "minimum": 1 },
+              "comments": { "type": "string" }
             },
+            "required": ["criterion", "score", "max_score", "comments"],
+            "additionalProperties": false
+          }
         },
-        "strengths": {"type": "array", "items": {"type": "string"}},
-        "areas_to_improve": {"type": "array", "items": {"type": "string"}},
+        "strengths": { "type": "array", "items": { "type": "string" } },
+        "areas_to_improve": { "type": "array", "items": { "type": "string" } },
         "actionable_revision_plan": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "task": {"type": "string"},
-                    "why_it_matters": {"type": "string"},
-                    "how_to_fix": {"type": "string"},
-                },
-                "required": ["task", "why_it_matters", "how_to_fix"],
-                "additionalProperties": False,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "task": { "type": "string" },
+              "why_it_matters": { "type": "string" },
+              "how_to_fix": { "type": "string" }
             },
-        },
-    },
-    "required": ["student_id", "assignment_title", "overall_letter_grade", "pass", "rubric"],
-    "additionalProperties": False,
-}
+            "required": ["task", "why_it_matters", "how_to_fix"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "student_id",
+        "assignment_title",
+        "overall_letter_grade",
+        "pass",
+        "rubric"
+      ],
+      "additionalProperties": false
+    }
+    """
+)
 
 developer_message = (
     "You are an instructor grading a term paper. "
@@ -574,5 +588,3 @@ Other examples of JSON schema are as follows.
 ```
 
 ---
-
-

@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>JSON Output Lab</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        font-size: 16px;
+        color-scheme: light;
+        --bg: #f5f1e8;
+        --panel: #fffaf0;
+        --panel-alt: #f2ede2;
+        --ink: #1c1a17;
+        --muted: #645c4a;
+        --accent: #0f766e;
+        --accent-2: #b45309;
+        --border: #d5cbb8;
+        --shadow: rgba(24, 22, 18, 0.12);
+        --focus: rgba(15, 118, 110, 0.3);
+        --error: #b42318;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(
+            circle at top left,
+            #fff8e8,
+            transparent 45%
+          ),
+          radial-gradient(circle at 80% 10%, #e6f1ee, transparent 40%),
+          linear-gradient(160deg, #f6f1e7 0%, #efe7d6 100%);
+        color: var(--ink);
+        font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua",
+          "Georgia", serif;
+        padding: 2.5rem clamp(1.25rem, 3vw, 3.5rem) 4rem;
+      }
+
+      body::before,
+      body::after {
+        content: "";
+        position: fixed;
+        width: 360px;
+        height: 360px;
+        border-radius: 50%;
+        filter: blur(40px);
+        opacity: 0.18;
+        z-index: -1;
+      }
+
+      body::before {
+        background: #a7d7cf;
+        top: -120px;
+        left: -80px;
+      }
+
+      body::after {
+        background: #f3c180;
+        right: -120px;
+        bottom: -160px;
+      }
+
+      main {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.9fr);
+        gap: 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      header {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2rem, 3vw, 2.6rem);
+        letter-spacing: -0.02em;
+      }
+
+      header p {
+        margin: 0;
+        max-width: 780px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 1rem;
+        padding: 1.75rem;
+        box-shadow: 0 20px 45px var(--shadow);
+        animation: rise 420ms ease both;
+      }
+
+      .card:nth-of-type(2) {
+        animation-delay: 90ms;
+      }
+
+      .card:nth-of-type(3) {
+        animation-delay: 180ms;
+      }
+
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      form {
+        display: grid;
+        gap: 1.75rem;
+      }
+
+      h2 {
+        margin: 0 0 0.65rem;
+        font-size: 1.2rem;
+      }
+
+      label {
+        font-weight: 600;
+        display: block;
+        margin-bottom: 0.35rem;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 0.65rem 0.75rem;
+        border-radius: 0.65rem;
+        border: 1px solid var(--border);
+        background: #fffef9;
+        font: inherit;
+        color: var(--ink);
+        transition: border-color 120ms ease, box-shadow 120ms ease;
+      }
+
+      textarea {
+        min-height: 8rem;
+        resize: vertical;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--focus);
+      }
+
+      .helper {
+        font-size: 0.92rem;
+        color: var(--muted);
+        margin-top: 0.35rem;
+      }
+
+      .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+      }
+
+      .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+      }
+
+      .segmented {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+      }
+
+      .segmented label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 0.9rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: var(--panel-alt);
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .segmented input {
+        width: auto;
+        accent-color: var(--accent);
+      }
+
+      .actions {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .schema-actions {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        margin-top: 0.65rem;
+        flex-wrap: wrap;
+      }
+
+      .schema-error {
+        margin-top: 0.5rem;
+        font-size: 0.92rem;
+        color: var(--error);
+      }
+
+      button {
+        border: none;
+        border-radius: 999px;
+        padding: 0.7rem 1.6rem;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 120ms ease, box-shadow 120ms ease;
+      }
+
+      button.primary {
+        background: var(--accent);
+        color: #fffaf0;
+        box-shadow: 0 12px 24px rgba(15, 118, 110, 0.25);
+      }
+
+      button.primary:hover:not(:disabled) {
+        transform: translateY(-1px);
+      }
+
+      button.ghost {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--ink);
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+        box-shadow: none;
+      }
+
+      .status {
+        font-size: 0.95rem;
+        color: var(--muted);
+      }
+
+      .status.error {
+        color: var(--error);
+        font-weight: 600;
+      }
+
+      .output-group {
+        display: grid;
+        gap: 1.2rem;
+      }
+
+      .output-group textarea {
+        min-height: 6.5rem;
+        font-family: "SFMono-Regular", "Menlo", "Consolas", "Liberation Mono",
+          monospace;
+        background: #fbfaf6;
+      }
+
+      .output-group textarea.large {
+        min-height: 14rem;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.7rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: #fff7e3;
+        color: var(--accent-2);
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+
+      @media (max-width: 980px) {
+        main {
+          grid-template-columns: 1fr;
+        }
+
+        .grid-2,
+        .grid-3 {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <span class="pill">Experimental JSON output lab</span>
+        <h1>JSON Output Playground</h1>
+        <p>
+          Send developer and user messages to the Responses API with either
+          <code>json_schema</code> or <code>json_object</code> output format.
+          The backend returns the full response plus extracted output_text and
+          parsed JSON so you can inspect everything in one place.
+        </p>
+      </header>
+
+      <section class="card">
+        <form id="experimentForm" data-endpoint="/api/json-output">
+          <section>
+            <h2>Messages</h2>
+            <label for="developerMessage">Developer message</label>
+            <textarea
+              id="developerMessage"
+              placeholder="Describe constraints, style, and JSON requirements for the assistant."
+            ></textarea>
+            <label for="userMessage">User message</label>
+            <textarea
+              id="userMessage"
+              placeholder="Provide the task or data the assistant should process."
+            ></textarea>
+          </section>
+
+          <section>
+            <h2>Output format</h2>
+            <div class="segmented" role="radiogroup" aria-label="Output format">
+              <label>
+                <input
+                  type="radio"
+                  name="formatType"
+                  value="json_schema"
+                  checked
+                />
+                Input JSON schema → return JSON object (text output)
+              </label>
+              <label>
+                <input type="radio" name="formatType" value="json_object" />
+                Return JSON object string (no schema validation)
+              </label>
+            </div>
+            <p class="helper">
+              Both modes return JSON as a text block in the response; the schema
+              option enforces structure, while json_object skips validation.
+            </p>
+
+            <div id="schemaOptions">
+              <div class="grid-2" style="margin-top: 1rem">
+                <div>
+                  <label for="schemaName">Schema name</label>
+                  <input
+                    id="schemaName"
+                    type="text"
+                    placeholder="e.g. structured_output_v1"
+                  />
+                </div>
+              </div>
+              <p class="helper" style="margin-top: 0.5rem">
+                Strict mode is fixed to false for all schema requests.
+              </p>
+              <label for="schemaJson" style="margin-top: 1rem"
+                >Schema JSON</label
+              >
+              <textarea
+                id="schemaJson"
+                placeholder='{"type":"object","properties":{"example":{"type":"string"}},"required":["example"],"additionalProperties":false}'
+              ></textarea>
+              <div class="schema-actions">
+                <button class="ghost" type="button" id="validateSchema">
+                  Validate schema JSON
+                </button>
+                <button class="ghost" type="button" id="prettifySchema">
+                  Prettify schema JSON
+                </button>
+              </div>
+              <div id="schemaError" class="schema-error" role="alert" hidden></div>
+              <p class="helper">
+                Provide a JSON Schema object. The form validates the JSON before
+                submission.
+              </p>
+            </div>
+          </section>
+
+          <section>
+            <h2>Model + response</h2>
+            <div class="grid-3">
+              <div>
+                <label for="modelName">Model</label>
+                <input id="modelName" type="text" value="gpt-5.2" />
+              </div>
+              <div>
+                <label for="verbosity">Verbosity</label>
+                <select id="verbosity">
+                  <option value="low">Low</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+              <div>
+                <label for="reasoningEffort">Reasoning effort</label>
+                <select id="reasoningEffort">
+                  <option value="">(omit)</option>
+                  <option value="none">None</option>
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="xhigh">XHigh</option>
+                </select>
+              </div>
+            </div>
+          </section>
+
+          <section class="actions">
+            <button class="primary" type="submit">Run request</button>
+            <button class="ghost" type="button" id="clearOutputs">
+              Clear outputs
+            </button>
+            <span id="status" class="status">Ready.</span>
+          </section>
+        </form>
+      </section>
+
+      <section class="card">
+        <div class="output-group">
+          <h2>Outputs</h2>
+          <div>
+            <label for="fullResponse">Full model response</label>
+            <textarea
+              id="fullResponse"
+              class="large"
+              readonly
+              placeholder="Full response will appear here."
+            ></textarea>
+          </div>
+          <div>
+            <label for="rawOutput">Raw output_text blocks</label>
+            <textarea
+              id="rawOutput"
+              readonly
+              placeholder="Raw output_text blocks will appear here."
+            ></textarea>
+          </div>
+          <div>
+            <label for="parsedJson">Parsed JSON outputs</label>
+            <textarea
+              id="parsedJson"
+              readonly
+              placeholder="Parsed JSON outputs will appear here."
+            ></textarea>
+          </div>
+          <div>
+            <label for="parseErrors">Parse errors</label>
+            <textarea
+              id="parseErrors"
+              readonly
+              placeholder="Parsing errors (if any) will appear here."
+            ></textarea>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const form = document.getElementById("experimentForm");
+      const status = document.getElementById("status");
+
+      const developerMessage = document.getElementById("developerMessage");
+      const userMessage = document.getElementById("userMessage");
+      const modelName = document.getElementById("modelName");
+      const verbosity = document.getElementById("verbosity");
+      const reasoningEffort = document.getElementById("reasoningEffort");
+
+      const schemaOptions = document.getElementById("schemaOptions");
+      const schemaName = document.getElementById("schemaName");
+      const schemaJson = document.getElementById("schemaJson");
+      const validateSchemaButton = document.getElementById("validateSchema");
+      const prettifySchemaButton = document.getElementById("prettifySchema");
+      const schemaError = document.getElementById("schemaError");
+
+      const fullResponse = document.getElementById("fullResponse");
+      const rawOutput = document.getElementById("rawOutput");
+      const parsedJson = document.getElementById("parsedJson");
+      const parseErrors = document.getElementById("parseErrors");
+      const clearOutputsButton = document.getElementById("clearOutputs");
+
+      const getFormatType = () => {
+        const selected = document.querySelector(
+          'input[name="formatType"]:checked',
+        );
+        return selected ? selected.value : "json_schema";
+      };
+
+      const setStatus = (message, isError = false) => {
+        status.textContent = message;
+        status.classList.toggle("error", isError);
+      };
+
+      const setSchemaError = (message) => {
+        schemaError.textContent = message;
+        schemaError.hidden = !message;
+      };
+
+      const disableForm = (disabled) => {
+        form.querySelectorAll("input, select, textarea, button").forEach((el) => {
+          el.disabled = disabled;
+        });
+      };
+
+      const clearOutputs = () => {
+        fullResponse.value = "";
+        rawOutput.value = "";
+        parsedJson.value = "";
+        parseErrors.value = "";
+      };
+
+      const toggleSchemaFields = () => {
+        const isSchema = getFormatType() === "json_schema";
+        schemaOptions.hidden = !isSchema;
+        schemaOptions
+          .querySelectorAll("input, select, textarea, button")
+          .forEach((el) => {
+            el.disabled = !isSchema;
+          });
+        if (!isSchema) {
+          setSchemaError("");
+        }
+      };
+
+      document
+        .querySelectorAll('input[name="formatType"]')
+        .forEach((radio) => {
+          radio.addEventListener("change", toggleSchemaFields);
+        });
+
+      toggleSchemaFields();
+
+      const validateSchema = () => {
+        if (getFormatType() !== "json_schema") {
+          setStatus("Schema validation is only available in JSON schema mode.", true);
+          return;
+        }
+        const schemaText = schemaJson.value.trim();
+        if (!schemaText) {
+          setSchemaError("Schema JSON is required for validation.");
+          setStatus("Fix schema JSON before continuing.", true);
+          return;
+        }
+        try {
+          JSON.parse(schemaText);
+          setSchemaError("");
+          setStatus("Schema JSON is valid.");
+        } catch (error) {
+          setSchemaError(`Schema JSON error: ${error.message}`);
+          setStatus("Fix schema JSON before continuing.", true);
+        }
+      };
+
+      const prettifySchema = () => {
+        if (getFormatType() !== "json_schema") {
+          setStatus("Schema formatting is only available in JSON schema mode.", true);
+          return;
+        }
+        const schemaText = schemaJson.value.trim();
+        if (!schemaText) {
+          setSchemaError("Schema JSON is required for prettifying.");
+          setStatus("Fix schema JSON before continuing.", true);
+          return;
+        }
+        try {
+          const parsed = JSON.parse(schemaText);
+          schemaJson.value = JSON.stringify(parsed, null, 2);
+          setSchemaError("");
+          setStatus("Schema JSON prettified.");
+        } catch (error) {
+          setSchemaError(`Schema JSON error: ${error.message}`);
+          setStatus("Fix schema JSON before continuing.", true);
+        }
+      };
+
+      if (validateSchemaButton) {
+        validateSchemaButton.addEventListener("click", validateSchema);
+      }
+
+      if (prettifySchemaButton) {
+        prettifySchemaButton.addEventListener("click", prettifySchema);
+      }
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        clearOutputs();
+        setSchemaError("");
+
+        const formatType = getFormatType();
+        const developerText = developerMessage.value.trim();
+        const userText = userMessage.value.trim();
+        const modelText = modelName.value.trim();
+
+        if (!developerText || !userText || !modelText) {
+          setStatus("Developer message, user message, and model are required.", true);
+          return;
+        }
+
+        let schemaPayload = null;
+        if (formatType === "json_schema") {
+          const schemaText = schemaJson.value.trim();
+          if (!schemaText) {
+            setSchemaError("Schema JSON is required for json_schema output.");
+            setStatus("Fix schema JSON before sending.", true);
+            return;
+          }
+          try {
+            schemaPayload = JSON.parse(schemaText);
+          } catch (error) {
+            setSchemaError(`Schema JSON error: ${error.message}`);
+            setStatus("Fix schema JSON before sending.", true);
+            return;
+          }
+        }
+
+        const payload = {
+          developer_message: developerText,
+          user_message: userText,
+          model: modelText,
+          format_type: formatType,
+          schema_name: schemaName.value.trim(),
+          schema_json: schemaPayload,
+          verbosity: verbosity.value,
+          reasoning_effort: reasoningEffort.value || null,
+        };
+
+        const endpoint = form.dataset.endpoint || "/api/json-output";
+
+        disableForm(true);
+        setStatus("Sending request...");
+
+        try {
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          });
+
+          const text = await response.text();
+          let parsed;
+          try {
+            parsed = JSON.parse(text);
+          } catch (error) {
+            parsed = { ok: false, error: text };
+          }
+
+          if (!response.ok || !parsed.ok) {
+            const errMsg =
+              parsed && parsed.error
+                ? parsed.error
+                : `Request failed (${response.status}).`;
+            setStatus(errMsg, true);
+            return;
+          }
+
+          setStatus("Response received.");
+
+          const responseDump = parsed.response
+            ? JSON.stringify(parsed.response, null, 2)
+            : "";
+          fullResponse.value = responseDump;
+
+          rawOutput.value = Array.isArray(parsed.output_texts)
+            ? parsed.output_texts.join("\n\n---\n\n")
+            : "";
+
+          parsedJson.value = Array.isArray(parsed.parsed_outputs)
+            ? JSON.stringify(parsed.parsed_outputs, null, 2)
+            : "";
+
+          parseErrors.value = Array.isArray(parsed.parse_errors)
+            ? parsed.parse_errors.join("\n")
+            : "";
+        } catch (error) {
+          setStatus(`Network error: ${error.message}`, true);
+        } finally {
+          disableForm(false);
+        }
+      });
+
+      if (clearOutputsButton) {
+        clearOutputsButton.addEventListener("click", () => {
+          clearOutputs();
+          setStatus("Outputs cleared.");
+        });
+      }
+    </script>
+  </body>
+</html>
