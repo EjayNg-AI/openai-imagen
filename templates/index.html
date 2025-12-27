@@ -458,6 +458,7 @@
           style="display: none"
           alt="Edited image result"
         />
+        <div id="eGallery" class="gallery" style="display: none"></div>
       </div>
     </fieldset>
 
@@ -1148,23 +1149,22 @@
         startSpinner("#eSpin");
         $("#eImg").style.display = "none"; // Hide previous result
         $("#eLink").style.display = "none";
+        $("#eGallery").style.display = "none";
+        $("#eGallery").innerHTML = "";
 
         const fd = new FormData();
         fd.append("prompt", prompt);
 
         // Append allowed parameters for the Edit endpoint
-        ["size", "quality", "background"].forEach((k) => {
-          const elId = `#e${
-            k.charAt(0).toUpperCase() +
-            k
-              .slice(1)
-              .replace("uality", "Qual")
-              .replace("ize", "Size")
-              .replace("ackground", "Bg")
-          }`;
-          const el = $(elId);
+        const editFieldMap = {
+          size: "#eSize",
+          quality: "#eQual",
+          background: "#eBg",
+        };
+        Object.entries(editFieldMap).forEach(([key, selector]) => {
+          const el = $(selector);
           if (el && el.value !== "auto" && el.value !== "") {
-            fd.append(k, el.value);
+            fd.append(key, el.value);
           }
         });
 
@@ -1293,7 +1293,29 @@
         }
 
         // --- Display Result ---
-        if (res.data_uri && res.url) {
+        if (Array.isArray(res.data_uris) && res.data_uris.length > 0) {
+          res.data_uris.forEach((uri, i) => {
+            const img = new Image();
+            img.src = uri;
+            img.title = `Edited Image ${i + 1}`;
+            img.className = "preview";
+            img.alt = `Edited image ${i + 1} for prompt: ${prompt.substring(
+              0,
+              50
+            )}...`;
+            const url = res.urls && res.urls[i];
+            if (url) {
+              const link = document.createElement("a");
+              link.href = url;
+              link.target = "_blank";
+              link.append(img);
+              $("#eGallery").append(link);
+            } else {
+              $("#eGallery").append(img);
+            }
+          });
+          $("#eGallery").style.display = "grid";
+        } else if (res.data_uri && res.url) {
           $("#eImg").src = res.data_uri;
           $("#eLink").href = res.url;
           $("#eLink").textContent = `Saved copy (${res.url
@@ -1315,6 +1337,7 @@
       function init() {
         $("#eImg").style.display = "none";
         $("#eLink").style.display = "none";
+        $("#eGallery").style.display = "none";
         // Ensure mask section is hidden initially
         $("#maskSection").style.display = "none";
         // Set initial composite operation for mask

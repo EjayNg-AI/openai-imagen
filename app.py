@@ -265,10 +265,15 @@ def edit():
         )
         # API always returns same format as first image
         returned_fmt = images[0].name.rsplit(".", 1)[-1]
-        b64 = result.data[0].b64_json
-        img_bytes = base64.b64decode(b64)
-        url = save_bytes(img_bytes, returned_fmt)
-        return jsonify(ok=True, data_uri=b64_to_datauri(b64, returned_fmt), url=url)
+        data_uris, urls = [], []
+        for item in result.data:
+            b64 = item.b64_json
+            img_bytes = base64.b64decode(b64)
+            data_uris.append(b64_to_datauri(b64, returned_fmt))
+            urls.append(save_bytes(img_bytes, returned_fmt))
+        if len(data_uris) == 1:
+            return jsonify(ok=True, data_uri=data_uris[0], url=urls[0])
+        return jsonify(ok=True, data_uris=data_uris, urls=urls)
     except Exception as e:
         logger.exception("Edit failed")
         return jsonify(ok=False, error=str(e)), 500
