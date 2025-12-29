@@ -260,7 +260,6 @@
         <button type="button" class="ghost small" id="addFromOutput">
           + Assistant from output
         </button>
-        <button type="button" class="ghost small" id="forkConversation">Fork conversation</button>
         <button type="button" class="ghost small" id="copyInputs">Copy inputs</button>
         <button type="button" class="ghost small" id="copyInputsSkipFirst">
           Copy inputs except first msg
@@ -371,7 +370,6 @@
     const copyFullResponseBtn = document.getElementById("copyFullResponse");
     const responseIdDisplay = document.getElementById("responseIdDisplay");
     const cancelBackgroundBtn = document.getElementById("cancelBackgroundTask");
-    const forkConversationBtn = document.getElementById("forkConversation");
     const POLL_INTERVAL_MS = 60000;
     const DEFAULT_CANCEL_BUTTON_TEXT = "Cancel background task";
     let currentBackgroundRun = null;
@@ -395,15 +393,6 @@
       if (selected) opt.selected = true;
       return opt;
     };
-
-    const collectConversationMessages = () =>
-      Array.from(messagesContainer.querySelectorAll(".message-row")).map((row) => {
-        const select = row.querySelector("select");
-        const textarea = row.querySelector("textarea");
-        const role = normalizeRole(select?.value || "user");
-        const text = typeof textarea?.value === "string" ? textarea.value : "";
-        return { role, text };
-      });
 
     const showStatus = (message, type = "") => {
       statusEl.textContent = message || "";
@@ -627,37 +616,6 @@
       const text = outputBox.value || "";
       const row = buildMessageRow("assistant", text);
       messagesContainer.appendChild(row);
-    });
-    forkConversationBtn?.addEventListener("click", () => {
-      const rows = Array.from(messagesContainer.querySelectorAll(".message-row"));
-      if (!rows.length) {
-        showStatus("Add at least one message before forking.", "error");
-        return;
-      }
-
-      const messages = collectConversationMessages();
-      const storageKey = `fork-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-      try {
-        localStorage.setItem(storageKey, JSON.stringify(messages));
-      } catch (error) {
-        console.error("Fork storage error", error);
-        showStatus("Unable to store forked conversation (storage blocked).", "error");
-        return;
-      }
-
-      const url = new URL(window.location.href);
-      url.searchParams.set("forkKey", storageKey);
-
-      const anchor = document.createElement("a");
-      anchor.href = url.toString();
-      anchor.target = "_blank";
-      anchor.rel = "noopener";
-      anchor.style.display = "none";
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-
-      showStatus("Opening forked conversation in a new tab.", "success");
     });
     copyInputsBtn.addEventListener("click", async () => {
       const inputs = Array.from(messagesContainer.querySelectorAll(".message-row textarea"));
@@ -964,100 +922,8 @@
       }
     });
 
-    const getPrefillKey = () => {
-      const params = new URLSearchParams(window.location.search);
-      return params.get("prefillKey");
-    };
-
-    const getForkKeyFromQuery = () => {
-      const params = new URLSearchParams(window.location.search);
-      return params.get("forkKey");
-    };
-
-    const fetchSystemMessage = async (key) => {
-      const response = await fetch(`/api/system-message/${encodeURIComponent(key)}`);
-      let data;
-      try {
-        data = await response.json();
-      } catch (error) {
-        throw new Error("Invalid response while loading system message.");
-      }
-      if (!response.ok || !data?.ok || typeof data.content !== "string") {
-        const err = (data && data.error) || `Failed to load system message: ${key}`;
-        throw new Error(err);
-      }
-      return data.content;
-    };
-
-    const applyDeveloperPrefill = async (row) => {
-      const key = getPrefillKey();
-      if (!key) return;
-      const textarea = row.querySelector("textarea");
-      if (!textarea) return;
-      try {
-        showStatus(`Loading developer prefill for ${key}…`);
-        const content = await fetchSystemMessage(key);
-        textarea.value = content;
-        showStatus(`Loaded developer prefill for ${key}.`, "success");
-      } catch (error) {
-        console.error("Developer prefill failed", error);
-        showStatus(error.message || "Failed to load developer prefill.", "error");
-      }
-    };
-
-    const applyForkedConversation = () => {
-      const forkKey = getForkKeyFromQuery();
-      if (!forkKey) return false;
-
-      const stored = localStorage.getItem(forkKey);
-      if (!stored) {
-        showStatus("Forked conversation unavailable or expired.", "error");
-        return false;
-      }
-
-      let messages;
-      try {
-        messages = JSON.parse(stored);
-      } catch (error) {
-        console.error("Forked conversation parse error", error);
-        showStatus("Failed to load forked conversation data.", "error");
-        return false;
-      }
-
-      if (!Array.isArray(messages) || !messages.length) {
-        showStatus("Forked conversation had no messages.", "error");
-        return false;
-      }
-
-      messagesContainer.innerHTML = "";
-      messages.forEach((entry) => {
-        const role = normalizeRole(entry?.role || "user");
-        const text = typeof entry?.text === "string" ? entry.text : "";
-        addMessageRow(role, text);
-      });
-
-      showStatus("Forked conversation loaded from previous tab.", "success");
-      try {
-        localStorage.removeItem(forkKey);
-      } catch (error) {
-        console.warn("Could not remove forked conversation key", error);
-      }
-      try {
-        const url = new URL(window.location.href);
-        url.searchParams.delete("forkKey");
-        window.history.replaceState({}, "", url.toString());
-      } catch (error) {
-        console.warn("Could not clean forkKey from URL", error);
-      }
-      return true;
-    };
-
     const initializeMessages = () => {
-      const forked = applyForkedConversation();
-      if (forked) return;
-
-      const developerRow = addMessageRow("developer");
-      applyDeveloperPrefill(developerRow);
+      addMessageRow("developer");
       addMessageRow("user");
     };
 

@@ -1,4 +1,3 @@
-import json
 import os
 from pathlib import Path
 from typing import Dict, List, Tuple
@@ -15,108 +14,6 @@ if not api_key:
     raise RuntimeError("OPENAI_API_KEY is not set in the environment")
 
 client = OpenAI(api_key=api_key)
-
-SCRATCHPAD_DIR = Path(__file__).resolve().parent
-SYSTEM_MESSAGE_FILES = {
-    "synthesizer-planner": SCRATCHPAD_DIR / "synthesizer_planner_system_message.md",
-    "discriminator-approach-evaluator": SCRATCHPAD_DIR
-    / "discriminator_approach_evaluator_system_message.md",
-    "synthesizer-solver": SCRATCHPAD_DIR / "synthesizer_solver_system_message.md",
-    "discriminator-solution-evaluator": SCRATCHPAD_DIR
-    / "discriminator_solution_evaluator_system_message.md",
-    "researcher": SCRATCHPAD_DIR / "researcher_system_message.md",
-}
-
-
-def _read_system_message(key: str) -> str:
-    path = SYSTEM_MESSAGE_FILES.get(key)
-    if not path:
-        raise KeyError(f"Unknown system message key: {key}")
-    if not path.exists():
-        raise FileNotFoundError(f"{path.name} is missing")
-    return path.read_text(encoding="utf-8")
-
-
-SCHEMA_DEFINITION: Dict[str, object] = {
-    "type": "object",
-    "properties": {
-        "paragraphs": {
-            "type": "array",
-            "description": "An array containing five paragraphs, each ranging from 250 to 350 words.",
-            "minItems": 5,
-            "maxItems": 5,
-            "items": {
-                "type": "object",
-                "properties": {
-                    "text": {
-                        "type": "string",
-                        "description": "The content of the paragraph (plain text).",
-                        "minLength": 1250,
-                        "maxLength": 2450,
-                    }
-                },
-                "required": ["text"],
-                "additionalProperties": False,
-            },
-        }
-    },
-    "required": ["paragraphs"],
-    "additionalProperties": False,
-}
-
-
-def create_story_response(developer_message: str, user_message: str):
-    """Invoke the Responses API using the supplied developer and user messages."""
-
-    developer_message = developer_message.strip()
-    user_message = user_message.strip()
-
-    if not developer_message or not user_message:
-        raise ValueError("Both developer_message and user_message must be non-empty strings.")
-
-    return client.responses.create(
-        model="gpt-5",
-        input=[
-            {
-                "role": "developer",
-                "content": [
-                    {
-                        "type": "input_text",
-                        "text": developer_message,
-                    }
-                ],
-            },
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "input_text",
-                        "text": user_message,
-                    }
-                ],
-            },
-        ],
-        text={
-            "format": {
-                "type": "json_schema",
-                "name": "five_paragraphs",
-                "strict": True,
-                "schema": SCHEMA_DEFINITION,
-            },
-            "verbosity": "medium",
-        },
-        reasoning={
-            "effort": "medium",
-            "summary": "auto",
-        },
-        tools=[],
-        store=True,
-        include=[
-            "reasoning.encrypted_content",
-            "web_search_call.action.sources",
-        ],
-    )
-
 
 def _validate_choice(value: object, allowed: set, field: str, default: str) -> str:
     """Validate string choices for payload configuration."""
@@ -192,37 +89,6 @@ def create_background_prompt_response(
         reasoning_effort=reasoning_effort,
         background=True,
     )
-
-
-def _extract_paragraphs(response) -> List[str]:
-    paragraphs: List[str] = []
-
-    for item in getattr(response, "output", []) or []:
-        if getattr(item, "type", None) != "message":
-            continue
-        for block in getattr(item, "content", []) or []:
-            if getattr(block, "type", None) != "output_text":
-                continue
-            text_blob = getattr(block, "text", "")
-            if not isinstance(text_blob, str):
-                continue
-            try:
-                payload = json.loads(text_blob)
-            except json.JSONDecodeError:
-                continue
-            paragraphs_data = payload.get("paragraphs", [])
-            if not isinstance(paragraphs_data, list):
-                continue
-            for entry in paragraphs_data:
-                paragraph_text = entry.get("text") if isinstance(entry, dict) else None
-                if isinstance(paragraph_text, str):
-                    normalized = paragraph_text.strip()
-                    if normalized:
-                        paragraphs.append(normalized)
-            if paragraphs:
-                return paragraphs
-
-    return paragraphs
 
 
 def _extract_output_text(response) -> str:
@@ -326,8 +192,6 @@ def _normalize_messages(messages: object) -> List[Dict[str, object]]:
 app = Flask(__name__)
 
 EXPERIMENT_HTML_PATH = Path(__file__).resolve().parent / "experiment.html"
-PROMPT_HTML_PATH = Path(__file__).resolve().parent / "prompt_runner.html"
-PROMPT_BACKGROUND_HTML_PATH = Path(__file__).resolve().parent / "prompt_runner_background.html"
 
 
 @app.get("/")
@@ -335,67 +199,6 @@ def serve_frontend():
     if EXPERIMENT_HTML_PATH.exists():
         return send_file(EXPERIMENT_HTML_PATH)
     return ("experiment.html is missing. Generate it in the scratchpad directory.", 404)
-
-
-@app.get("/prompt-runner")
-def serve_prompt_frontend():
-    if PROMPT_HTML_PATH.exists():
-        return send_file(PROMPT_HTML_PATH)
-    return (
-        "prompt_runner.html is missing. Generate it in the scratchpad directory.",
-        404,
-    )
-
-
-@app.get("/prompt-runner-background")
-def serve_background_prompt_frontend():
-    if PROMPT_BACKGROUND_HTML_PATH.exists():
-        return send_file(PROMPT_BACKGROUND_HTML_PATH)
-    return (
-        "prompt_runner_background.html is missing. Generate it in the scratchpad directory.",
-        404,
-    )
-
-
-@app.get("/api/system-message/<key>")
-def handle_system_message(key: str):
-    try:
-        content = _read_system_message(key)
-    except KeyError:
-        return jsonify(ok=False, error="Unknown system message key."), 404
-    except FileNotFoundError as exc:
-        app.logger.error("System message file missing: %s", exc)
-        return jsonify(ok=False, error=str(exc)), 404
-    except Exception as exc:  # noqa: BLE001
-        app.logger.exception("Failed to read system message %s", key)
-        return jsonify(ok=False, error="Failed to read system message file."), 500
-    return jsonify(ok=True, key=key, content=content)
-
-
-@app.post("/api/responses")
-def handle_response_request():
-    payload = request.get_json(silent=True) or {}
-    developer_message = payload.get("developer_message", "")
-    user_message = payload.get("user_message", "")
-
-    try:
-        developer_message, user_message = _validate_messages(developer_message, user_message)
-    except ValueError as exc:
-        return jsonify(ok=False, error=str(exc)), 400
-
-    try:
-        response = create_story_response(developer_message, user_message)
-    except Exception as exc:  # noqa: BLE001 - surface API failures to client
-        app.logger.exception("OpenAI response creation failed")
-        return jsonify(ok=False, error=str(exc)), 500
-
-    paragraphs: List[str] = []
-    try:
-        paragraphs = _extract_paragraphs(response)
-    except Exception:  # pragma: no cover - defensive logging
-        app.logger.exception("Failed to extract paragraphs from response")
-
-    return jsonify(ok=True, response=response.model_dump(), paragraphs=paragraphs)
 
 
 @app.post("/api/prompt-run")

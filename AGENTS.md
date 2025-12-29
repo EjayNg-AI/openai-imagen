@@ -17,3 +17,5 @@
 # Change log for agent-driven edits
 
 **Coding agent to summarize agent-driven code edits here.**
+- 2025-12-29: Removed JSON-schema/system-message endpoints and fork/prefill UI logic from experimental files to keep them conversation-only.
+- 2025-12-29: Removed prompt_runner route references from `scratchpad/experiment.py`.
