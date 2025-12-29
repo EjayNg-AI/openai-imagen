@@ -283,6 +283,17 @@
         min-height: 14rem;
       }
 
+      .output-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+      }
+
+      .output-header label {
+        margin-bottom: 0;
+      }
+
       .pill {
         display: inline-flex;
         align-items: center;
@@ -294,6 +305,87 @@
         color: var(--accent-2);
         font-size: 0.85rem;
         font-weight: 600;
+      }
+
+      .render-area {
+        max-width: 1200px;
+        margin: 2rem auto 0;
+      }
+
+      .rendered-body {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .rendered-item {
+        background: #fffef9;
+        border: 1px solid var(--border);
+        border-radius: 0.85rem;
+        padding: 1rem;
+        overflow-x: auto;
+      }
+
+      .rendered-item h3 {
+        margin: 0 0 0.75rem;
+        font-size: 1rem;
+        color: var(--muted);
+      }
+
+      .json-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .json-table td {
+        padding: 0.45rem 0.75rem;
+        border-top: 1px solid var(--border);
+        vertical-align: top;
+      }
+
+      .json-table tr:first-child td {
+        border-top: 0;
+      }
+
+      .json-key {
+        width: 30%;
+        font-weight: 600;
+        color: var(--accent);
+        word-break: break-word;
+      }
+
+      .json-value {
+        font-family: "SFMono-Regular", "Menlo", "Consolas", "Liberation Mono",
+          monospace;
+        word-break: break-word;
+      }
+
+      .json-array {
+        margin: 0.2rem 0 0.2rem 1.2rem;
+        padding: 0;
+      }
+
+      .json-array li {
+        margin: 0.35rem 0;
+      }
+
+      .json-primitive {
+        font-family: "SFMono-Regular", "Menlo", "Consolas", "Liberation Mono",
+          monospace;
+      }
+
+      .json-string {
+        color: var(--accent-2);
+      }
+
+      .json-number,
+      .json-boolean {
+        color: var(--accent);
+      }
+
+      .json-null,
+      .json-empty {
+        color: var(--muted);
+        font-style: italic;
       }
 
       @media (max-width: 980px) {
@@ -456,7 +548,12 @@
             ></textarea>
           </div>
           <div>
-            <label for="parsedJson">Parsed JSON outputs</label>
+            <div class="output-header">
+              <label for="parsedJson">Parsed JSON outputs</label>
+              <button class="ghost" type="button" id="renderHtml">
+                Render HTML
+              </button>
+            </div>
             <textarea
               id="parsedJson"
               readonly
@@ -474,6 +571,19 @@
         </div>
       </section>
     </main>
+
+    <div class="render-area">
+      <section class="card">
+        <div class="output-group">
+          <h2>Rendered HTML</h2>
+          <div id="renderedHtml" class="rendered-body">
+            <p class="helper">
+              Rendered HTML output will appear here after you click "Render HTML".
+            </p>
+          </div>
+        </div>
+      </section>
+    </div>
 
     <script>
       const form = document.getElementById("experimentForm");
@@ -497,6 +607,10 @@
       const parsedJson = document.getElementById("parsedJson");
       const parseErrors = document.getElementById("parseErrors");
       const clearOutputsButton = document.getElementById("clearOutputs");
+      const renderHtmlButton = document.getElementById("renderHtml");
+      const renderedHtml = document.getElementById("renderedHtml");
+
+      let lastParsedOutputs = null;
 
       const getFormatType = () => {
         const selected = document.querySelector(
@@ -526,6 +640,152 @@
         rawOutput.value = "";
         parsedJson.value = "";
         parseErrors.value = "";
+        lastParsedOutputs = null;
+        renderPlaceholder(
+          'Rendered HTML output will appear here after you click "Render HTML".',
+        );
+      };
+
+      const renderPlaceholder = (message) => {
+        if (!renderedHtml) {
+          return;
+        }
+        renderedHtml.replaceChildren();
+        const helper = document.createElement("p");
+        helper.className = "helper";
+        helper.textContent = message;
+        renderedHtml.appendChild(helper);
+      };
+
+      const buildPrimitiveNode = (value) => {
+        const span = document.createElement("span");
+        span.className = "json-primitive";
+        if (value === null) {
+          span.classList.add("json-null");
+          span.textContent = "null";
+          return span;
+        }
+        switch (typeof value) {
+          case "string":
+            span.classList.add("json-string");
+            span.textContent = value;
+            break;
+          case "number":
+            span.classList.add("json-number");
+            span.textContent = String(value);
+            break;
+          case "boolean":
+            span.classList.add("json-boolean");
+            span.textContent = value ? "true" : "false";
+            break;
+          default:
+            span.textContent = String(value);
+        }
+        return span;
+      };
+
+      const buildArrayNode = (value) => {
+        if (!value.length) {
+          const empty = document.createElement("span");
+          empty.className = "json-empty";
+          empty.textContent = "[]";
+          return empty;
+        }
+        const list = document.createElement("ol");
+        list.className = "json-array";
+        value.forEach((item) => {
+          const li = document.createElement("li");
+          li.appendChild(buildValueNode(item));
+          list.appendChild(li);
+        });
+        return list;
+      };
+
+      const buildObjectNode = (value) => {
+        const entries = Object.entries(value);
+        if (!entries.length) {
+          const empty = document.createElement("span");
+          empty.className = "json-empty";
+          empty.textContent = "{}";
+          return empty;
+        }
+        const table = document.createElement("table");
+        table.className = "json-table";
+        const body = document.createElement("tbody");
+        entries.forEach(([key, val]) => {
+          const row = document.createElement("tr");
+          const keyCell = document.createElement("td");
+          keyCell.className = "json-key";
+          keyCell.textContent = key;
+          const valueCell = document.createElement("td");
+          valueCell.className = "json-value";
+          valueCell.appendChild(buildValueNode(val));
+          row.appendChild(keyCell);
+          row.appendChild(valueCell);
+          body.appendChild(row);
+        });
+        table.appendChild(body);
+        return table;
+      };
+
+      const buildValueNode = (value) => {
+        if (Array.isArray(value)) {
+          return buildArrayNode(value);
+        }
+        if (value && typeof value === "object") {
+          return buildObjectNode(value);
+        }
+        return buildPrimitiveNode(value);
+      };
+
+      const renderOutputs = (outputs) => {
+        if (!renderedHtml) {
+          return;
+        }
+        renderedHtml.replaceChildren();
+        if (!outputs || !outputs.length) {
+          renderPlaceholder("No parsed JSON outputs to render.");
+          return;
+        }
+        outputs.forEach((output, index) => {
+          const item = document.createElement("div");
+          item.className = "rendered-item";
+          const heading = document.createElement("h3");
+          heading.textContent = `Parsed output ${index + 1}`;
+          item.appendChild(heading);
+          item.appendChild(buildValueNode(output));
+          renderedHtml.appendChild(item);
+        });
+      };
+
+      const handleRenderHtml = () => {
+        if (!renderedHtml) {
+          return;
+        }
+        let outputs = lastParsedOutputs;
+        if (!outputs) {
+          const text = parsedJson.value.trim();
+          if (!text) {
+            setStatus("No parsed JSON available to render.", true);
+            renderPlaceholder("No parsed JSON outputs to render.");
+            return;
+          }
+          try {
+            outputs = JSON.parse(text);
+          } catch (error) {
+            setStatus(`Parsed JSON is invalid: ${error.message}`, true);
+            renderPlaceholder("Parsed JSON is invalid.");
+            return;
+          }
+        }
+        const normalized = Array.isArray(outputs) ? outputs : [outputs];
+        if (!normalized.length) {
+          renderOutputs(normalized);
+          setStatus("No parsed JSON outputs to render.");
+          return;
+        }
+        renderOutputs(normalized);
+        setStatus("Rendered HTML output.");
       };
 
       const toggleSchemaFields = () => {
@@ -688,6 +948,9 @@
           parsedJson.value = Array.isArray(parsed.parsed_outputs)
             ? JSON.stringify(parsed.parsed_outputs, null, 2)
             : "";
+          lastParsedOutputs = Array.isArray(parsed.parsed_outputs)
+            ? parsed.parsed_outputs
+            : null;
 
           parseErrors.value = Array.isArray(parsed.parse_errors)
             ? parsed.parse_errors.join("\n")
@@ -704,6 +967,10 @@
           clearOutputs();
           setStatus("Outputs cleared.");
         });
+      }
+
+      if (renderHtmlButton) {
+        renderHtmlButton.addEventListener("click", handleRenderHtml);
       }
     </script>
   </body>
