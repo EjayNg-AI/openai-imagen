@@ -176,13 +176,76 @@
         opacity: 0.55; /* Make mask semi-transparent */
         /* width/height set by JS */
       }
-      .tools,
-      .outpaint {
+      .tools {
         display: flex;
         flex-wrap: wrap;
         gap: 1rem;
         align-items: center;
         margin: 0.5rem 0;
+      }
+      .outpaint-panel {
+        border: 1px dashed var(--input-border);
+        border-radius: 0.6rem;
+        padding: 0.75rem;
+        background: rgba(15, 22, 37, 0.65);
+      }
+      .outpaint-frame {
+        position: relative;
+        border: 1px dashed var(--input-border);
+        border-radius: 0.6rem;
+        background-color: var(--preview-bg);
+        background-image: linear-gradient(
+            45deg,
+            rgba(255, 255, 255, 0.06) 25%,
+            transparent 25%
+          ),
+          linear-gradient(-45deg, rgba(255, 255, 255, 0.06) 25%, transparent 25%),
+          linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.06) 75%),
+          linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.06) 75%);
+        background-size: 18px 18px;
+        background-position: 0 0, 0 9px, 9px -9px, -9px 0px;
+        overflow: hidden;
+        min-height: 200px;
+        margin-top: 0.5rem;
+      }
+      .outpaint-frame.empty::after {
+        content: "Select Image 1 to place it here.";
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .outpaint-image {
+        position: absolute;
+        top: 0;
+        left: 0;
+        cursor: grab;
+        user-select: none;
+        touch-action: none;
+        border: 1px solid var(--input-border);
+        background: var(--preview-bg);
+      }
+      .outpaint-image.dragging {
+        cursor: grabbing;
+      }
+      .outpaint-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem 1.2rem;
+        margin-top: 0.6rem;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+      .outpaint-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.6rem;
+      }
+      .image-input-row {
+        margin-bottom: 0.4rem;
       }
       .dimmed {
         opacity: 0.4;
@@ -341,21 +404,55 @@
         >Prompt<br /><textarea id="ePrompt" rows="5"></textarea></label
       ><br />
 
+      <label
+        ><input type="checkbox" id="useOutpaint" /> Outpaint with mask</label
+      >
+      <small id="outpaintHint"
+        >Requires exactly one image and a fixed canvas size.</small
+      ><br />
+
       <label><input type="checkbox" id="useMask" /> Use in‑painting mask</label
       ><br />
 
       <div id="imgInputs">
-        <label for="image1"
-          >Image 1
-          <input
-            type="file"
-            name="image1"
-            id="image1"
-            accept="image/*" /></label
-        ><br />
+        <div class="image-input-row">
+          <label for="image1"
+            >Image 1
+            <input
+              type="file"
+              name="image1"
+              id="image1"
+              accept="image/*" /></label
+          >
+        </div>
       </div>
       <button id="addImg" type="button">+ add image</button>
-      <small>(max 10)</small><br /><br />
+      <small id="imgLimitNote">(max 10)</small><br /><br />
+
+      <div id="outpaintSection" style="display: none">
+        <div class="outpaint-panel">
+          <div class="outpaint-frame" id="outpaintFrame">
+            <img
+              id="outpaintImg"
+              class="outpaint-image"
+              alt="Outpaint placement preview"
+            />
+          </div>
+          <div class="outpaint-meta">
+            <span id="outpaintCanvasMeta">Canvas: -</span>
+            <span id="outpaintImageMeta">Image: -</span>
+            <span id="outpaintPosMeta">Position: -</span>
+            <span id="outpaintFitMeta">Fit: -</span>
+          </div>
+          <div class="outpaint-actions">
+            <button id="outpaintCenter" type="button">Center</button>
+            <button id="outpaintTopLeft" type="button">Top-left</button>
+          </div>
+          <small id="outpaintSizeNote" style="display: none"
+            >Select a fixed canvas size for outpainting.</small
+          >
+        </div>
+      </div>
 
       <!-- Mask tools (hidden unless #useMask is checked) -->
       <div id="maskSection" style="display: none">
@@ -393,20 +490,6 @@
           <button id="resetMask" type="button">Reset mask</button>
         </div>
 
-        <div class="outpaint">
-          <label for="borderSize"
-            >Border Size (px)
-            <input
-              type="number"
-              id="borderSize"
-              value="256"
-              min="1"
-              max="1024"
-              style="width: 6rem"
-          /></label>
-          <button id="addBorder" type="button">+ Expand all sides</button>
-          <small>(for out-painting)</small>
-        </div>
       </div>
 
       <hr style="margin: 1.5rem 0" />
@@ -465,6 +548,11 @@
     <script>
       const $ = (q) => document.querySelector(q);
       const $$ = (q) => document.querySelectorAll(q);
+      const OUTPAINT_SIZES = {
+        "1024x1024": { w: 1024, h: 1024 },
+        "1536x1024": { w: 1536, h: 1024 },
+        "1024x1536": { w: 1024, h: 1536 },
+      };
 
       /* ---------- toast helpers ---------- */
       let toastTimeout;
@@ -580,11 +668,14 @@
           return;
         }
         imgCount++;
+        const row = document.createElement("div");
+        row.className = "image-input-row";
         const lbl = document.createElement("label");
         const inputId = `image${imgCount}`;
         lbl.setAttribute("for", inputId);
         lbl.innerHTML = `Image ${imgCount} <input type="file" name="${inputId}" id="${inputId}" accept="image/*">`;
-        $("#imgInputs").append(lbl, document.createElement("br"));
+        row.append(lbl);
+        $("#imgInputs").append(row);
       };
 
       /* ---------- spinner helpers ---------- */
@@ -680,8 +771,26 @@
         });
       };
 
+      const editFs = $("#editFs");
+      const outpaintToggle = $("#useOutpaint"),
+        outpaintSection = $("#outpaintSection"),
+        outpaintFrame = $("#outpaintFrame"),
+        outpaintImg = $("#outpaintImg"),
+        outpaintCanvasMeta = $("#outpaintCanvasMeta"),
+        outpaintImageMeta = $("#outpaintImageMeta"),
+        outpaintPosMeta = $("#outpaintPosMeta"),
+        outpaintFitMeta = $("#outpaintFitMeta"),
+        outpaintCenter = $("#outpaintCenter"),
+        outpaintTopLeft = $("#outpaintTopLeft"),
+        outpaintSizeNote = $("#outpaintSizeNote");
+
       /* ---------- Mask UI toggle ---------- */
       $("#useMask").onchange = (e) => {
+        if (outpaintEnabled) {
+          e.target.checked = false;
+          showToast("Disable outpainting to use the manual mask.");
+          return;
+        }
         const show = e.target.checked;
         $("#maskSection").style.display = show ? "block" : "none";
         // Ensure an image is loaded and has rendered dimensions before resizing
@@ -711,10 +820,17 @@
       let drawing = false,
         startX = 0,
         startY = 0,
-        expanded = false, // Flag for outpainting expansion
-        origExt = "png", // Default/initial extension
         naturalW = 0, // Natural dimensions of the base image
-        naturalH = 0;
+        naturalH = 0,
+        outpaintEnabled = false,
+        outpaintDragging = false,
+        outpaintPosX = 0,
+        outpaintPosY = 0,
+        outpaintScale = 1,
+        outpaintStartX = 0,
+        outpaintStartY = 0,
+        outpaintStartPosX = 0,
+        outpaintStartPosY = 0;
 
       function resizeCanvases() {
         // Get rendered dimensions (size on screen)
@@ -958,9 +1074,14 @@
           baseImg.alt = "reference for mask";
           naturalW = 0;
           naturalH = 0;
-          expanded = false; // Reset expanded state
-          delete window._tempExpandedBlob; // Clear any stored blob
+          outpaintPosX = 0;
+          outpaintPosY = 0;
+          if (outpaintImg) {
+            outpaintImg.removeAttribute("src");
+            outpaintImg.alt = "Outpaint placement preview";
+          }
           resizeCanvases(); // Clear canvases visually
+          updateOutpaintPreview();
           $("#maskSection").style.display = "none"; // Hide mask section
           $("#useMask").checked = false; // Uncheck mask checkbox
           return;
@@ -973,11 +1094,14 @@
           return;
         }
 
-        origExt = normaliseName(f.name).split(".").pop();
         const R = new FileReader();
         R.onload = (ev) => {
           baseImg.src = ev.target.result;
           baseImg.alt = `Mask base: ${f.name}`;
+          if (outpaintImg) {
+            outpaintImg.src = ev.target.result;
+            outpaintImg.alt = `Outpaint source: ${f.name}`;
+          }
           // The baseImg.onload event will handle resizing and setting natural dimensions
           // Show mask section immediately if checkbox is already checked
           if ($("#useMask").checked) {
@@ -990,11 +1114,12 @@
           baseImg.src = "#"; // Clear image on error
           naturalW = 0;
           naturalH = 0;
+          updateOutpaintPreview();
         };
         R.readAsDataURL(f);
       });
 
-      // IMPORTANT: This runs *after* a new image (or expanded image) is loaded into baseImg.src
+      // IMPORTANT: This runs *after* a new image is loaded into baseImg.src
       baseImg.onload = () => {
         // Check if the src is valid (not '#' or empty)
         if (
@@ -1015,13 +1140,14 @@
         resizeCanvases();
 
         // If the mask section should be visible (checkbox checked), ensure it is
-        if ($("#useMask").checked) {
+        if (!outpaintEnabled && $("#useMask").checked) {
           $("#maskSection").style.display = "block";
         }
-
-        // If this onload was triggered by expansion, the 'expanded' flag is already true.
-        // If it was triggered by loading a new file, reset the expanded state.
-        // We need a way to distinguish. Let's reset 'expanded' *before* setting src in expansion.
+        if (outpaintEnabled) {
+          centerOutpaintImage();
+        } else {
+          updateOutpaintPreview();
+        }
       };
       baseImg.onerror = () => {
         showToast("Error loading image into preview.");
@@ -1029,113 +1155,270 @@
         naturalW = 0;
         naturalH = 0;
         resizeCanvases(); // Clear canvases
+        updateOutpaintPreview();
       };
 
-      /* ---------- Out‑paint ---------- */
-      $("#addBorder").onclick = async () => {
+      /* ---------- Outpaint placement ---------- */
+      function parseOutpaintSize(value) {
+        const size = OUTPAINT_SIZES[value];
+        return size ? { w: size.w, h: size.h } : null;
+      }
+
+      function getOutpaintSize() {
+        return parseOutpaintSize($("#eSize").value);
+      }
+
+      function outpaintFits(size) {
+        return (
+          size &&
+          naturalW &&
+          naturalH &&
+          naturalW <= size.w &&
+          naturalH <= size.h
+        );
+      }
+
+      function clampOutpaintPosition() {
+        const size = getOutpaintSize();
+        if (!size || !naturalW || !naturalH) return;
+        const maxX = Math.max(0, size.w - naturalW);
+        const maxY = Math.max(0, size.h - naturalH);
+        outpaintPosX = Math.min(Math.max(outpaintPosX, 0), maxX);
+        outpaintPosY = Math.min(Math.max(outpaintPosY, 0), maxY);
+      }
+
+      function setOutpaintPosition(x, y) {
+        outpaintPosX = Math.round(x);
+        outpaintPosY = Math.round(y);
+        clampOutpaintPosition();
+        updateOutpaintPreview();
+      }
+
+      function centerOutpaintImage() {
+        const size = getOutpaintSize();
+        if (!size || !naturalW || !naturalH) return;
+        outpaintPosX = Math.max(0, Math.round((size.w - naturalW) / 2));
+        outpaintPosY = Math.max(0, Math.round((size.h - naturalH) / 2));
+        clampOutpaintPosition();
+        updateOutpaintPreview();
+      }
+
+      function updateOutpaintPreview() {
+        if (!outpaintSection || !outpaintFrame) return;
+        if (!outpaintEnabled) {
+          outpaintSection.style.display = "none";
+          return;
+        }
+        outpaintSection.style.display = "block";
+        const size = getOutpaintSize();
+        if (!size) {
+          if (outpaintSizeNote) outpaintSizeNote.style.display = "block";
+          outpaintFrame.classList.add("empty");
+          outpaintFrame.style.width = "100%";
+          outpaintFrame.style.height = "220px";
+          if (outpaintCanvasMeta) outpaintCanvasMeta.textContent = "Canvas: -";
+          if (outpaintImageMeta) outpaintImageMeta.textContent = "Image: -";
+          if (outpaintPosMeta) outpaintPosMeta.textContent = "Position: -";
+          if (outpaintFitMeta) outpaintFitMeta.textContent = "Fit: -";
+          if (outpaintImg) outpaintImg.style.display = "none";
+          return;
+        }
+        if (outpaintSizeNote) outpaintSizeNote.style.display = "none";
+        const containerWidth = outpaintFrame.parentElement
+          ? outpaintFrame.parentElement.clientWidth
+          : 520;
+        const maxPreview = Math.min(520, containerWidth || 520);
+        outpaintScale = Math.min(
+          maxPreview / size.w,
+          maxPreview / size.h,
+          1
+        );
+        outpaintFrame.style.width = `${size.w * outpaintScale}px`;
+        outpaintFrame.style.height = `${size.h * outpaintScale}px`;
         if (!naturalW || !naturalH || !baseImg.src || baseImg.src === "#") {
-          showToast("Please load 'Image 1' first before expanding.");
+          outpaintFrame.classList.add("empty");
+          if (outpaintCanvasMeta)
+            outpaintCanvasMeta.textContent = `Canvas: ${size.w}x${size.h}`;
+          if (outpaintImageMeta) outpaintImageMeta.textContent = "Image: -";
+          if (outpaintPosMeta) outpaintPosMeta.textContent = "Position: -";
+          if (outpaintFitMeta) outpaintFitMeta.textContent = "Fit: -";
+          if (outpaintImg) outpaintImg.style.display = "none";
           return;
         }
-        const pad = +$("#borderSize").value || 0;
-        if (pad <= 0) {
-          showToast("Please enter a positive border size.");
-          return;
+        outpaintFrame.classList.remove("empty");
+        clampOutpaintPosition();
+        if (outpaintImg) {
+          outpaintImg.style.display = "block";
+          outpaintImg.style.width = `${naturalW * outpaintScale}px`;
+          outpaintImg.style.height = `${naturalH * outpaintScale}px`;
+          outpaintImg.style.left = `${outpaintPosX * outpaintScale}px`;
+          outpaintImg.style.top = `${outpaintPosY * outpaintScale}px`;
         }
+        if (outpaintCanvasMeta)
+          outpaintCanvasMeta.textContent = `Canvas: ${size.w}x${size.h}`;
+        if (outpaintImageMeta)
+          outpaintImageMeta.textContent = `Image: ${naturalW}x${naturalH}`;
+        if (outpaintPosMeta)
+          outpaintPosMeta.textContent = `Position: ${Math.round(
+            outpaintPosX
+          )}, ${Math.round(outpaintPosY)}`;
+        if (outpaintFitMeta)
+          outpaintFitMeta.textContent = outpaintFits(size)
+            ? "Fit: ok"
+            : "Fit: too large";
+      }
 
-        // Disable button during processing
-        disable($("#addBorder"));
-        showToast("Expanding image...", 2000);
+      function setOutpaintMode(enabled) {
+        outpaintEnabled = enabled;
+        if (outpaintToggle) outpaintToggle.checked = enabled;
+        if (outpaintSection)
+          outpaintSection.style.display = enabled ? "block" : "none";
+        const sizeSel = $("#eSize");
+        const autoOpt = sizeSel
+          ? sizeSel.querySelector('option[value="auto"]')
+          : null;
+        if (autoOpt) autoOpt.disabled = enabled;
+        if (outpaintSizeNote)
+          outpaintSizeNote.style.display =
+            enabled && !getOutpaintSize() ? "block" : "none";
 
-        const nw = naturalW + pad * 2;
-        const nh = naturalH + pad * 2;
-
-        const cv = document.createElement("canvas");
-        cv.width = nw;
-        cv.height = nh;
-        const ctx = cv.getContext("2d");
-
-        // Make expanded area transparent initially
-        ctx.clearRect(0, 0, nw, nh);
-        // Draw the original image (using the baseImg element ensures we use the loaded image)
-        try {
-          ctx.drawImage(baseImg, pad, pad, naturalW, naturalH);
-        } catch (e) {
-          console.error("Error drawing image onto expansion canvas:", e);
-          showToast("Error preparing expanded image.");
-          disable($("#addBorder"), false);
-          return;
-        }
-
-        // Convert canvas to PNG Blob
-        let blob;
-        try {
-          blob = await new Promise((resolve) =>
-            cv.toBlob(resolve, "image/png")
-          );
-        } catch (e) {
-          console.error("Error converting expanded canvas to Blob:", e);
-          showToast("Error creating expanded image data.");
-          disable($("#addBorder"), false);
-          return;
-        }
-
-        if (!blob) {
-          showToast("Failed to create expanded image blob.");
-          disable($("#addBorder"), false);
-          return;
-        }
-
-        // --- Update state for expanded image ---
-        expanded = true; // Mark as expanded
-        // Clean up previous blob URL if any
-        if (
-          window._tempExpandedBlobURL &&
-          window._tempExpandedBlobURL.startsWith("blob:")
-        ) {
-          URL.revokeObjectURL(window._tempExpandedBlobURL);
-        }
-        // Store the new blob and create a URL for display
-        window._tempExpandedBlob = blob; // Store blob for submission
-        window._tempExpandedBlobURL = URL.createObjectURL(blob); // Create URL for preview
-
-        // Reset 'expanded' flag *before* setting src to distinguish load types
-        // No, keep expanded=true. baseImg.onload will use the new naturalW/H.
-
-        // Update the baseImg src to show the expanded version. This triggers baseImg.onload.
-        baseImg.src = window._tempExpandedBlobURL;
-        baseImg.alt = `Expanded image ${nw}x${nh}`;
-
-        // Suggest PNG format for output (as expansion creates transparency)
-        // $("#eFmt").value = "png"; // Format selection removed from Edit UI
-        // $("#eFmt").dispatchEvent(new Event("change"));
-
-        // Automatically reset the mask to erase the *original* image area, leaving border transparent
-        // This needs to happen *after* baseImg.onload completes and resizeCanvases runs
-        // Use a small timeout to wait for the DOM updates and canvas resize
-        setTimeout(() => {
-          // Check if the natural dimensions match the expected expanded size
-          if (naturalW === nw && naturalH === nh) {
-            console.log("Auto-masking expanded image...");
-            resetMask(false); // Clear mask to transparent
-            ctxMask.globalCompositeOperation = "source-over"; // Set to draw black
-            ctxMask.fillStyle = "black";
-            // Fill the area where the original image was
-            ctxMask.fillRect(pad, pad, nw - pad * 2, nh - pad * 2);
-            // Set back to erase mode for user interaction
-            ctxMask.globalCompositeOperation = "destination-out";
-            showToast("Image expanded. Original area masked for out-painting.");
+        const useMask = $("#useMask");
+        if (useMask) {
+          if (enabled) {
+            useMask.checked = false;
+            useMask.disabled = true;
+            $("#maskSection").style.display = "none";
           } else {
-            console.warn(
-              "Resize didn't complete in time for auto-masking. Manual masking required.",
-              { naturalW, naturalH, nw, nh }
-            );
-            showToast("Image expanded. Please mask the area to keep.");
-            resetMask(true); // Full reset if auto-mask failed
+            useMask.disabled = false;
           }
-          disable($("#addBorder"), false); // Re-enable button
-        }, 150); // Increased delay slightly
-      };
+        }
+
+        const addBtn = $("#addImg");
+        if (addBtn) disable(addBtn, enabled);
+        const imgLimit = $("#imgLimitNote");
+        if (imgLimit) imgLimit.style.display = enabled ? "none" : "inline";
+        $$("#imgInputs .image-input-row").forEach((row, idx) => {
+          if (idx === 0) return;
+          row.style.display = enabled ? "none" : "block";
+          const input = row.querySelector('input[type="file"]');
+          if (input) {
+            input.disabled = enabled;
+            if (enabled) input.value = "";
+          }
+        });
+
+        if (eBgSel) eBgSel.disabled = enabled;
+        if (enabled && getOutpaintSize() && naturalW && naturalH) {
+          centerOutpaintImage();
+        } else {
+          updateOutpaintPreview();
+        }
+      }
+
+      async function buildOutpaintAssets(size) {
+        if (!size) {
+          throw new Error("Select a fixed canvas size for outpainting.");
+        }
+        if (!naturalW || !naturalH || !baseImg.src || baseImg.src === "#") {
+          throw new Error("Please load 'Image 1' before outpainting.");
+        }
+        if (!outpaintFits(size)) {
+          throw new Error(
+            `Image is ${naturalW}x${naturalH}. Upload a smaller image or choose a larger canvas size.`
+          );
+        }
+        clampOutpaintPosition();
+
+        const canvas = document.createElement("canvas");
+        canvas.width = size.w;
+        canvas.height = size.h;
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, size.w, size.h);
+        ctx.drawImage(baseImg, outpaintPosX, outpaintPosY, naturalW, naturalH);
+
+        const maskCanvas = document.createElement("canvas");
+        maskCanvas.width = size.w;
+        maskCanvas.height = size.h;
+        const mctx = maskCanvas.getContext("2d");
+        mctx.clearRect(0, 0, size.w, size.h);
+        mctx.fillStyle = "rgba(0, 0, 0, 1)";
+        mctx.fillRect(outpaintPosX, outpaintPosY, naturalW, naturalH);
+
+        const imageBlob = await new Promise((resolve) =>
+          canvas.toBlob(resolve, "image/png")
+        );
+        const maskBlob = await new Promise((resolve) =>
+          maskCanvas.toBlob(resolve, "image/png")
+        );
+        if (!imageBlob || !maskBlob) {
+          throw new Error("Failed to export outpaint canvas or mask.");
+        }
+        if (maskBlob.size >= 4000000) {
+          throw new Error(
+            `Mask is ${maskBlob.size} bytes. It must be under 4,000,000 bytes.`
+          );
+        }
+
+        return { imageBlob, maskBlob };
+      }
+
+      if (outpaintToggle) {
+        outpaintToggle.onchange = (e) => {
+          setOutpaintMode(e.target.checked);
+        };
+      }
+      $("#eSize").addEventListener("change", () => {
+        if (outpaintEnabled) updateOutpaintPreview();
+        if (outpaintSizeNote) {
+          outpaintSizeNote.style.display =
+            outpaintEnabled && !getOutpaintSize() ? "block" : "none";
+        }
+      });
+      if (outpaintCenter) {
+        outpaintCenter.onclick = () => {
+          if (outpaintEnabled) centerOutpaintImage();
+        };
+      }
+      if (outpaintTopLeft) {
+        outpaintTopLeft.onclick = () => {
+          if (outpaintEnabled) setOutpaintPosition(0, 0);
+        };
+      }
+      if (outpaintImg) {
+        outpaintImg.addEventListener("pointerdown", (e) => {
+          if (!outpaintEnabled) return;
+          const size = getOutpaintSize();
+          if (!outpaintFits(size)) return;
+          outpaintDragging = true;
+          outpaintImg.classList.add("dragging");
+          outpaintImg.setPointerCapture(e.pointerId);
+          outpaintStartX = e.clientX;
+          outpaintStartY = e.clientY;
+          outpaintStartPosX = outpaintPosX;
+          outpaintStartPosY = outpaintPosY;
+        });
+
+        outpaintImg.addEventListener("pointermove", (e) => {
+          if (!outpaintDragging) return;
+          const dx = (e.clientX - outpaintStartX) / outpaintScale;
+          const dy = (e.clientY - outpaintStartY) / outpaintScale;
+          setOutpaintPosition(outpaintStartPosX + dx, outpaintStartPosY + dy);
+        });
+
+        const stopOutpaintDrag = (e) => {
+          if (!outpaintDragging) return;
+          outpaintDragging = false;
+          outpaintImg.classList.remove("dragging");
+          try {
+            outpaintImg.releasePointerCapture(e.pointerId);
+          } catch (err) {
+            // Ignore release errors.
+          }
+        };
+        outpaintImg.addEventListener("pointerup", stopOutpaintDrag);
+        outpaintImg.addEventListener("pointercancel", stopOutpaintDrag);
+        outpaintImg.addEventListener("pointerleave", stopOutpaintDrag);
+      }
 
       /* ---------- EDIT ---------- */
       $("#eBtn").onclick = async () => {
@@ -1153,20 +1436,34 @@
         $("#eGallery").innerHTML = "";
 
         const fd = new FormData();
-        fd.append("prompt", prompt);
+        const isOutpaint = outpaintEnabled;
+        const sizeVal = $("#eSize").value;
+        const sizeSpec = parseOutpaintSize(sizeVal);
 
-        // Append allowed parameters for the Edit endpoint
-        const editFieldMap = {
-          size: "#eSize",
-          quality: "#eQual",
-          background: "#eBg",
-        };
-        Object.entries(editFieldMap).forEach(([key, selector]) => {
-          const el = $(selector);
-          if (el && el.value !== "auto" && el.value !== "") {
-            fd.append(key, el.value);
+        fd.append("prompt", prompt);
+        if (isOutpaint) {
+          if (!sizeSpec) {
+            showToast("Outpainting requires a fixed canvas size.");
+            stopSpinner("#eSpin");
+            disable($("#eBtn"), false);
+            return;
           }
-        });
+          fd.append("edit_mode", "outpaint");
+          fd.append("size", sizeVal);
+        } else if (sizeVal && sizeVal !== "auto") {
+          fd.append("size", sizeVal);
+        }
+
+        const qualVal = $("#eQual").value;
+        if (qualVal && qualVal !== "auto") {
+          fd.append("quality", qualVal);
+        }
+        if (!isOutpaint) {
+          const bgVal = $("#eBg").value;
+          if (bgVal) {
+            fd.append("background", bgVal);
+          }
+        }
 
         // Handle optional 'n' parameter (assuming backend supports it for edit)
         const nVal = $("#eN").value;
@@ -1183,13 +1480,24 @@
         let refImageFile;
         let refImageName = "image.png"; // Default name
 
-        if (expanded && window._tempExpandedBlob) {
-          // Use the stored expanded blob
-          refImageFile = window._tempExpandedBlob;
-          // Backend auto-masking relies on name starting with 'outpaint' if only one image.
-          refImageName = `outpaint.${origExt || "png"}`; // Use original extension if known
-          console.log("Using expanded image blob for edit:", refImageName);
-          fd.append("image1", refImageFile, refImageName);
+        if (isOutpaint) {
+          try {
+            const assets = await buildOutpaintAssets(sizeSpec);
+            refImageFile = assets.imageBlob;
+            fd.append("image1", assets.imageBlob, "outpaint_canvas.png");
+            fd.append("mask", assets.maskBlob, "outpaint_mask.png");
+            fd.append("image_w", String(naturalW));
+            fd.append("image_h", String(naturalH));
+            fd.append("pos_x", String(Math.round(outpaintPosX)));
+            fd.append("pos_y", String(Math.round(outpaintPosY)));
+            fd.append("canvas_w", String(sizeSpec.w));
+            fd.append("canvas_h", String(sizeSpec.h));
+          } catch (err) {
+            showToast(err.message || "Outpaint preparation failed.");
+            stopSpinner("#eSpin");
+            disable($("#eBtn"), false);
+            return;
+          }
         } else {
           // Find the first image input that has a file selected
           const fileInput = $("#image1"); // Directly select #image1
@@ -1222,7 +1530,7 @@
         }
 
         /* --- Mask Handling (Optional) --- */
-        if ($("#useMask").checked) {
+        if (!isOutpaint && $("#useMask").checked) {
           // Ensure canvas has valid dimensions before exporting
           if (
             !maskCan ||
@@ -1267,17 +1575,6 @@
         // --- Make the API Call ---
         console.log("Sending request to /edit");
         const res = await post("/edit", fd);
-
-        // --- Cleanup Temporary Data ---
-        if (
-          window._tempExpandedBlobURL &&
-          window._tempExpandedBlobURL.startsWith("blob:")
-        ) {
-          URL.revokeObjectURL(window._tempExpandedBlobURL);
-          delete window._tempExpandedBlobURL;
-        }
-        delete window._tempExpandedBlob; // Clean up stored blob reference
-        // --- End Cleanup ---
 
         // --- Handle Response ---
         stopSpinner("#eSpin");
@@ -1342,10 +1639,14 @@
         $("#maskSection").style.display = "none";
         // Set initial composite operation for mask
         ctxMask.globalCompositeOperation = "destination-out";
+        setOutpaintMode(false);
       }
 
       // Run init when the DOM is fully loaded
       document.addEventListener("DOMContentLoaded", init);
+      window.addEventListener("resize", () => {
+        if (outpaintEnabled) updateOutpaintPreview();
+      });
     </script>
   </body>
 </html>

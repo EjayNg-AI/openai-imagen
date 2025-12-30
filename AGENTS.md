@@ -19,3 +19,4 @@
 **Coding agent to summarize agent-driven code edits here.**
 - 2025-12-29: Removed JSON-schema/system-message endpoints and fork/prefill UI logic from experimental files to keep them conversation-only.
 - 2025-12-29: Removed prompt_runner route references from `scratchpad/experiment.py`.
+- 2025-12-30: Added outpaint-with-mask mode to `app.py` and `templates/index.html`, including fixed canvas sizes, mask validation, and drag placement UI while keeping standard edit/inpaint flows intact.

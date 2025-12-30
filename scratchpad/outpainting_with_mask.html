@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Outpainting With Mask Prototype</title>
+    <style>
+      :root {
+        --bg: #f5efe6;
+        --bg-alt: #eef3ee;
+        --panel: #fffaf3;
+        --ink: #182235;
+        --muted: #5c6472;
+        --accent: #e07a5f;
+        --accent-2: #3d405b;
+        --border: #e1d7c6;
+        --warn: #b04b39;
+        --success: #2d6a4f;
+        --shadow: rgba(24, 34, 53, 0.15);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 15% 20%, #ffffff, transparent 55%),
+          radial-gradient(circle at 85% 10%, #f7e8d7, transparent 45%),
+          linear-gradient(135deg, var(--bg), var(--bg-alt));
+        min-height: 100vh;
+        padding: 2rem 1.5rem 3rem;
+      }
+
+      main {
+        width: min(1100px, 100%);
+        margin: 0 auto;
+        display: grid;
+        gap: 1.5rem;
+      }
+
+      header {
+        display: grid;
+        gap: 0.5rem;
+        text-align: left;
+      }
+
+      header h1 {
+        margin: 0;
+        font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+        font-size: clamp(2rem, 3vw, 2.6rem);
+        letter-spacing: 0.02em;
+      }
+
+      header p {
+        margin: 0;
+        color: var(--muted);
+        max-width: 70ch;
+        line-height: 1.5;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        box-shadow: 0 16px 35px var(--shadow);
+        display: grid;
+        gap: 1rem;
+        animation: lift 450ms ease both;
+      }
+
+      .panel:nth-of-type(2) {
+        animation-delay: 60ms;
+      }
+      .panel:nth-of-type(3) {
+        animation-delay: 120ms;
+      }
+      .panel:nth-of-type(4) {
+        animation-delay: 180ms;
+      }
+
+      @keyframes lift {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .grid {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .grid.two {
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      }
+
+      label {
+        font-weight: 600;
+        display: block;
+        margin-bottom: 0.4rem;
+      }
+
+      input,
+      select,
+      textarea,
+      button {
+        font: inherit;
+      }
+
+      input[type="file"],
+      input[type="number"],
+      select,
+      textarea {
+        width: 100%;
+        padding: 0.55rem 0.7rem;
+        border-radius: 0.6rem;
+        border: 1px solid var(--border);
+        background: #fff;
+      }
+
+      textarea {
+        min-height: 120px;
+        resize: vertical;
+      }
+
+      .toggle-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem 1.5rem;
+        align-items: center;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.4rem 0.7rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: #fff;
+        cursor: pointer;
+      }
+
+      .pill input {
+        margin: 0;
+      }
+
+      .hint {
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      .warning {
+        color: var(--warn);
+        font-weight: 600;
+      }
+
+      .status {
+        min-height: 1.5rem;
+        font-weight: 600;
+      }
+
+      .status.error {
+        color: var(--warn);
+      }
+
+      .status.success {
+        color: var(--success);
+      }
+
+      .canvas-wrap {
+        display: grid;
+        gap: 0.8rem;
+        align-items: start;
+      }
+
+      .canvas-frame {
+        position: relative;
+        border-radius: 0.8rem;
+        border: 1px dashed #c8b9a0;
+        background-color: #f4ede3;
+        background-image:
+          linear-gradient(45deg, rgba(0, 0, 0, 0.05) 25%, transparent 25%),
+          linear-gradient(-45deg, rgba(0, 0, 0, 0.05) 25%, transparent 25%),
+          linear-gradient(45deg, transparent 75%, rgba(0, 0, 0, 0.05) 75%),
+          linear-gradient(-45deg, transparent 75%, rgba(0, 0, 0, 0.05) 75%);
+        background-size: 18px 18px;
+        background-position: 0 0, 0 9px, 9px -9px, -9px 0px;
+        overflow: hidden;
+      }
+
+      .canvas-frame.empty::after {
+        content: "Drop an image to start";
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      #placedImg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        user-select: none;
+        touch-action: none;
+        box-shadow: 0 10px 22px rgba(24, 34, 53, 0.2);
+        border-radius: 0.4rem;
+        cursor: grab;
+      }
+
+      #placedImg.dragging {
+        cursor: grabbing;
+      }
+
+      .canvas-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        font-size: 0.95rem;
+        color: var(--muted);
+      }
+
+      .canvas-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+      }
+
+      button {
+        border: none;
+        border-radius: 0.7rem;
+        padding: 0.6rem 1.1rem;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 8px 18px rgba(224, 122, 95, 0.3);
+        transition: transform 140ms ease, box-shadow 140ms ease;
+      }
+
+      button.secondary {
+        background: #fff;
+        color: var(--accent-2);
+        border: 1px solid var(--border);
+        box-shadow: none;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 20px rgba(224, 122, 95, 0.35);
+      }
+
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      .preview {
+        max-width: 100%;
+        border-radius: 0.8rem;
+        border: 1px solid var(--border);
+      }
+
+      .gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.8rem;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 0.6rem;
+        padding: 0.2rem 0.6rem;
+        font-size: 0.9rem;
+        color: var(--muted);
+      }
+
+      @media (max-width: 720px) {
+        body {
+          padding: 1.5rem 1rem 2.5rem;
+        }
+        .canvas-meta {
+          flex-direction: column;
+          gap: 0.4rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Outpainting with mask</h1>
+        <p>
+          Place one image inside a fixed canvas, drag to reposition, and generate a
+          strict PNG mask for outpainting. Auto size is allowed only for standard
+          edits in this prototype.
+        </p>
+      </header>
+
+      <section class="panel">
+        <div class="grid two">
+          <div>
+            <label>Mode</label>
+            <div class="toggle-row">
+              <label class="pill">
+                <input type="radio" name="mode" value="standard" checked />
+                Standard edit
+              </label>
+              <label class="pill">
+                <input type="radio" name="mode" value="outpaint" />
+                Outpaint with mask
+              </label>
+            </div>
+          </div>
+          <div>
+            <label for="canvasSize">Canvas size</label>
+            <select id="canvasSize">
+              <option value="auto">auto</option>
+              <option value="1024x1024">1024x1024</option>
+              <option value="1536x1024">1536x1024</option>
+              <option value="1024x1536">1024x1536</option>
+            </select>
+            <div id="sizeWarning" class="hint warning" style="display: none;">
+              Select a fixed canvas size for outpainting. Auto is not allowed.
+            </div>
+          </div>
+        </div>
+        <div class="hint">
+          Allowed canvas sizes: 1024x1024, 1536x1024, 1024x1536.
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="grid two">
+          <div>
+            <label for="imageInput">Image (single file)</label>
+            <input type="file" id="imageInput" accept="image/*" />
+            <div class="hint">
+              Only one image is supported. The image must fit inside the selected
+              canvas for outpaint mode.
+            </div>
+          </div>
+          <div>
+            <label>Image preview</label>
+            <img id="sourcePreview" class="preview" alt="Source preview" />
+            <div class="canvas-meta">
+              <span class="badge" id="imageMeta">Image: -</span>
+              <span class="badge" id="fileMeta">File: -</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" id="outpaintPanel" style="display: none;">
+        <div class="grid">
+          <div>
+            <label>Canvas placement</label>
+            <div class="hint">
+              Drag the image inside the canvas. The image must stay fully inside
+              the frame. Transparent area becomes the edit region.
+            </div>
+          </div>
+          <div class="canvas-wrap">
+            <div id="canvasFrame" class="canvas-frame empty">
+              <img id="placedImg" alt="Placed image" />
+            </div>
+            <div class="canvas-meta">
+              <span class="badge" id="canvasMeta">Canvas: -</span>
+              <span class="badge" id="positionMeta">Position: -</span>
+              <span class="badge" id="fitMeta">Fit: -</span>
+            </div>
+            <div class="canvas-actions">
+              <button type="button" id="centerBtn" class="secondary">Center</button>
+              <button type="button" id="resetBtn" class="secondary">Top-left</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="grid">
+          <div>
+            <label for="prompt">Prompt</label>
+            <textarea id="prompt" placeholder="Describe what to generate..."></textarea>
+          </div>
+          <div class="grid two">
+            <div>
+              <label for="editCount">Number of images</label>
+              <input type="number" id="editCount" min="1" max="8" value="1" />
+              <div class="hint">Edits can return up to 8 variations.</div>
+            </div>
+          </div>
+          <div class="grid two">
+            <div>
+              <button id="submitBtn" type="button">Create edit</button>
+            </div>
+            <div class="status" id="status"></div>
+          </div>
+          <div id="result" style="display: none;">
+            <div class="gallery" id="resultGallery"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const $ = (q) => document.querySelector(q);
+
+      const allowedSizes = {
+        "1024x1024": { w: 1024, h: 1024 },
+        "1536x1024": { w: 1536, h: 1024 },
+        "1024x1536": { w: 1024, h: 1536 },
+      };
+
+      const state = {
+        mode: "standard",
+        size: "auto",
+        imageFile: null,
+        imageUrl: "",
+        imageW: 0,
+        imageH: 0,
+        posX: 0,
+        posY: 0,
+        scale: 1,
+        dragging: false,
+        dragStartX: 0,
+        dragStartY: 0,
+        dragStartPosX: 0,
+        dragStartPosY: 0,
+      };
+
+      const sizeSelect = $("#canvasSize");
+      const sizeWarning = $("#sizeWarning");
+      const outpaintPanel = $("#outpaintPanel");
+      const imageInput = $("#imageInput");
+      const sourcePreview = $("#sourcePreview");
+      const imageMeta = $("#imageMeta");
+      const fileMeta = $("#fileMeta");
+      const canvasFrame = $("#canvasFrame");
+      const placedImg = $("#placedImg");
+      const canvasMeta = $("#canvasMeta");
+      const positionMeta = $("#positionMeta");
+      const fitMeta = $("#fitMeta");
+      const statusEl = $("#status");
+      const resultGallery = $("#resultGallery");
+      const resultWrap = $("#result");
+
+      function setStatus(message, type = "") {
+        statusEl.textContent = message || "";
+        statusEl.className = `status ${type}`.trim();
+      }
+
+      function getCanvasSize() {
+        const size = sizeSelect.value;
+        return allowedSizes[size] || null;
+      }
+
+      function updateMode() {
+        const selected = document.querySelector('input[name="mode"]:checked');
+        state.mode = selected ? selected.value : "standard";
+        const outpaint = state.mode === "outpaint";
+        outpaintPanel.style.display = outpaint ? "block" : "none";
+
+        const autoOption = sizeSelect.querySelector('option[value="auto"]');
+        if (autoOption) {
+          autoOption.disabled = outpaint;
+        }
+        sizeWarning.style.display = outpaint && sizeSelect.value === "auto" ? "block" : "none";
+        updatePreview();
+        updateValidation();
+      }
+
+      function updatePreview() {
+        const outpaint = state.mode === "outpaint";
+        const size = getCanvasSize();
+
+        if (!outpaint || !size) {
+          canvasMeta.textContent = "Canvas: -";
+          positionMeta.textContent = "Position: -";
+          fitMeta.textContent = "Fit: -";
+          canvasFrame.style.width = "100%";
+          canvasFrame.style.height = "240px";
+          canvasFrame.classList.toggle("empty", !state.imageUrl);
+          placedImg.style.display = "none";
+          return;
+        }
+
+        const containerWidth = canvasFrame.parentElement
+          ? canvasFrame.parentElement.clientWidth
+          : 560;
+        const maxPreview = Math.min(560, containerWidth || 560);
+        const scale = Math.min(maxPreview / size.w, maxPreview / size.h, 1);
+        state.scale = scale;
+
+        canvasFrame.style.width = `${size.w * scale}px`;
+        canvasFrame.style.height = `${size.h * scale}px`;
+
+        if (state.imageUrl) {
+          placedImg.style.display = "block";
+          placedImg.style.width = `${state.imageW * scale}px`;
+          placedImg.style.height = `${state.imageH * scale}px`;
+          placedImg.style.left = `${state.posX * scale}px`;
+          placedImg.style.top = `${state.posY * scale}px`;
+        }
+
+        canvasMeta.textContent = `Canvas: ${size.w} x ${size.h}`;
+        positionMeta.textContent = state.imageUrl
+          ? `Position: ${Math.round(state.posX)}, ${Math.round(state.posY)}`
+          : "Position: -";
+        canvasFrame.classList.toggle("empty", !state.imageUrl);
+      }
+
+      function clampPosition() {
+        const size = getCanvasSize();
+        if (!size) return;
+        const maxX = Math.max(0, size.w - state.imageW);
+        const maxY = Math.max(0, size.h - state.imageH);
+        state.posX = Math.min(Math.max(state.posX, 0), maxX);
+        state.posY = Math.min(Math.max(state.posY, 0), maxY);
+      }
+
+      function setPosition(x, y) {
+        state.posX = x;
+        state.posY = y;
+        clampPosition();
+        updatePreview();
+        updateValidation();
+      }
+
+      function updateImageMeta(file) {
+        if (!file || !state.imageW || !state.imageH) {
+          imageMeta.textContent = "Image: -";
+          fileMeta.textContent = "File: -";
+          return;
+        }
+        imageMeta.textContent = `Image: ${state.imageW} x ${state.imageH}`;
+        const sizeKb = Math.round(file.size / 1024);
+        fileMeta.textContent = `File: ${sizeKb} KB`;
+      }
+
+      function updateValidation() {
+        const outpaint = state.mode === "outpaint";
+        const size = getCanvasSize();
+
+        if (outpaint && sizeSelect.value === "auto") {
+          setStatus("Select a fixed canvas size to continue.", "error");
+          fitMeta.textContent = "Fit: pending";
+          return;
+        }
+
+        if (outpaint && size && state.imageUrl) {
+          const fits = state.imageW <= size.w && state.imageH <= size.h;
+          if (!fits) {
+            setStatus(
+              `Image is ${state.imageW} x ${state.imageH}. Please upload a smaller image or choose a larger canvas size.`,
+              "error"
+            );
+            fitMeta.textContent = "Fit: too large";
+            return;
+          }
+          fitMeta.textContent = "Fit: ok";
+          setStatus("");
+          return;
+        }
+
+        if (outpaint && !state.imageUrl) {
+          fitMeta.textContent = "Fit: -";
+          setStatus("Upload an image to start.", "error");
+          return;
+        }
+
+        setStatus("");
+      }
+
+      function clearResults() {
+        resultGallery.innerHTML = "";
+        resultWrap.style.display = "none";
+      }
+
+      function resetImage() {
+        if (state.imageUrl && state.imageUrl.startsWith("blob:")) {
+          URL.revokeObjectURL(state.imageUrl);
+        }
+        state.imageFile = null;
+        state.imageUrl = "";
+        state.imageW = 0;
+        state.imageH = 0;
+        state.posX = 0;
+        state.posY = 0;
+        sourcePreview.removeAttribute("src");
+        placedImg.removeAttribute("src");
+        updateImageMeta(null);
+        updatePreview();
+        updateValidation();
+      }
+
+      function loadImageFile(file) {
+        if (!file) {
+          resetImage();
+          return;
+        }
+        if (!file.type.startsWith("image/")) {
+          setStatus("Please choose a valid image file.", "error");
+          imageInput.value = "";
+          resetImage();
+          return;
+        }
+        if (state.imageUrl && state.imageUrl.startsWith("blob:")) {
+          URL.revokeObjectURL(state.imageUrl);
+        }
+        const url = URL.createObjectURL(file);
+        state.imageFile = file;
+        state.imageUrl = url;
+        sourcePreview.src = url;
+        placedImg.src = url;
+      }
+
+      placedImg.onload = () => {
+        state.imageW = placedImg.naturalWidth;
+        state.imageH = placedImg.naturalHeight;
+        updateImageMeta(state.imageFile);
+        if (state.mode === "outpaint") {
+          const size = getCanvasSize();
+          if (size) {
+            state.posX = Math.max(0, Math.round((size.w - state.imageW) / 2));
+            state.posY = Math.max(0, Math.round((size.h - state.imageH) / 2));
+          }
+        }
+        updatePreview();
+        updateValidation();
+      };
+
+      placedImg.onerror = () => {
+        setStatus("Failed to load the selected image.", "error");
+        resetImage();
+      };
+
+      document.querySelectorAll('input[name="mode"]').forEach((el) => {
+        el.addEventListener("change", updateMode);
+      });
+
+      sizeSelect.addEventListener("change", () => {
+        state.size = sizeSelect.value;
+        sizeWarning.style.display =
+          state.mode === "outpaint" && sizeSelect.value === "auto" ? "block" : "none";
+        updatePreview();
+        updateValidation();
+      });
+
+      imageInput.addEventListener("change", (e) => {
+        clearResults();
+        loadImageFile(e.target.files[0]);
+      });
+
+      $("#centerBtn").addEventListener("click", () => {
+        const size = getCanvasSize();
+        if (!size || !state.imageUrl) return;
+        setPosition(
+          Math.round((size.w - state.imageW) / 2),
+          Math.round((size.h - state.imageH) / 2)
+        );
+      });
+
+      $("#resetBtn").addEventListener("click", () => {
+        if (!state.imageUrl) return;
+        setPosition(0, 0);
+      });
+
+      placedImg.addEventListener("pointerdown", (e) => {
+        if (state.mode !== "outpaint" || !state.imageUrl) return;
+        const size = getCanvasSize();
+        if (!size) return;
+        if (state.imageW > size.w || state.imageH > size.h) return;
+
+        state.dragging = true;
+        placedImg.classList.add("dragging");
+        placedImg.setPointerCapture(e.pointerId);
+        state.dragStartX = e.clientX;
+        state.dragStartY = e.clientY;
+        state.dragStartPosX = state.posX;
+        state.dragStartPosY = state.posY;
+      });
+
+      placedImg.addEventListener("pointermove", (e) => {
+        if (!state.dragging) return;
+        const dx = (e.clientX - state.dragStartX) / state.scale;
+        const dy = (e.clientY - state.dragStartY) / state.scale;
+        setPosition(state.dragStartPosX + dx, state.dragStartPosY + dy);
+      });
+
+      function stopDrag(e) {
+        if (!state.dragging) return;
+        state.dragging = false;
+        placedImg.classList.remove("dragging");
+        try {
+          placedImg.releasePointerCapture(e.pointerId);
+        } catch (err) {
+          // Ignore release errors.
+        }
+      }
+
+      placedImg.addEventListener("pointerup", stopDrag);
+      placedImg.addEventListener("pointercancel", stopDrag);
+      placedImg.addEventListener("pointerleave", stopDrag);
+
+      async function buildOutpaintAssets() {
+        const size = getCanvasSize();
+        if (!size) {
+          throw new Error("Select a fixed canvas size for outpainting.");
+        }
+        if (!state.imageUrl || !state.imageFile) {
+          throw new Error("Upload an image before creating the mask.");
+        }
+        if (state.imageW > size.w || state.imageH > size.h) {
+          throw new Error(
+            "Image is larger than the canvas. Upload a smaller image or choose a larger canvas size."
+          );
+        }
+
+        const imageCanvas = document.createElement("canvas");
+        imageCanvas.width = size.w;
+        imageCanvas.height = size.h;
+        const ictx = imageCanvas.getContext("2d");
+        ictx.clearRect(0, 0, size.w, size.h);
+        ictx.drawImage(placedImg, state.posX, state.posY, state.imageW, state.imageH);
+
+        const maskCanvas = document.createElement("canvas");
+        maskCanvas.width = size.w;
+        maskCanvas.height = size.h;
+        const mctx = maskCanvas.getContext("2d");
+        mctx.clearRect(0, 0, size.w, size.h);
+        mctx.fillStyle = "rgba(0, 0, 0, 1)";
+        mctx.fillRect(state.posX, state.posY, state.imageW, state.imageH);
+
+        const imageBlob = await new Promise((resolve) =>
+          imageCanvas.toBlob(resolve, "image/png")
+        );
+        const maskBlob = await new Promise((resolve) =>
+          maskCanvas.toBlob(resolve, "image/png")
+        );
+
+        if (!imageBlob || !maskBlob) {
+          throw new Error("Failed to export the canvas or mask.");
+        }
+        if (maskBlob.size >= 4000000) {
+          throw new Error(
+            `Mask is ${maskBlob.size} bytes. It must be under 4,000,000 bytes.`
+          );
+        }
+
+        return {
+          imageBlob,
+          maskBlob,
+          size,
+        };
+      }
+
+      async function postForm(fd) {
+        const res = await fetch("/edit", { method: "POST", body: fd });
+        if (!res.ok) {
+          const text = await res.text();
+          try {
+            const json = JSON.parse(text);
+            return { ok: false, error: json.error || `HTTP ${res.status}` };
+          } catch (err) {
+            return { ok: false, error: text || `HTTP ${res.status}` };
+          }
+        }
+        return res.json();
+      }
+
+      $("#submitBtn").addEventListener("click", async () => {
+        clearResults();
+        const prompt = $("#prompt").value.trim();
+        if (!prompt) {
+          setStatus("Prompt is required.", "error");
+          return;
+        }
+        const nVal = parseInt($("#editCount").value, 10);
+        if (!Number.isInteger(nVal) || nVal < 1 || nVal > 8) {
+          setStatus("Number of images must be between 1 and 8.", "error");
+          return;
+        }
+
+        const outpaint = state.mode === "outpaint";
+        if (outpaint && sizeSelect.value === "auto") {
+          setStatus("Select a fixed canvas size for outpainting.", "error");
+          return;
+        }
+
+        if (!state.imageFile) {
+          setStatus("Upload an image to continue.", "error");
+          return;
+        }
+
+        $("#submitBtn").disabled = true;
+        setStatus("Preparing request...");
+
+        const fd = new FormData();
+        fd.append("prompt", prompt);
+        fd.append("mode", outpaint ? "outpaint" : "standard");
+        fd.append("size", sizeSelect.value);
+        fd.append("n", String(nVal));
+
+        try {
+          if (outpaint) {
+            const assets = await buildOutpaintAssets();
+            fd.append("image", assets.imageBlob, "outpaint_canvas.png");
+            fd.append("mask", assets.maskBlob, "outpaint_mask.png");
+            fd.append("image_w", String(state.imageW));
+            fd.append("image_h", String(state.imageH));
+            fd.append("pos_x", String(Math.round(state.posX)));
+            fd.append("pos_y", String(Math.round(state.posY)));
+            fd.append("canvas_w", String(assets.size.w));
+            fd.append("canvas_h", String(assets.size.h));
+          } else {
+            fd.append("image", state.imageFile, state.imageFile.name);
+          }
+        } catch (err) {
+          setStatus(err.message || "Failed to prepare request.", "error");
+          $("#submitBtn").disabled = false;
+          return;
+        }
+
+        setStatus("Sending to /edit...");
+        const res = await postForm(fd);
+        $("#submitBtn").disabled = false;
+
+        if (!res || !res.ok) {
+          setStatus(res?.error || "Edit failed.", "error");
+          return;
+        }
+
+        if (Array.isArray(res.data_uris) && res.data_uris.length > 0) {
+          res.data_uris.forEach((uri, idx) => {
+            const img = new Image();
+            img.src = uri;
+            img.alt = `Result ${idx + 1}`;
+            img.className = "preview";
+            const url = res.urls && res.urls[idx];
+            if (url) {
+              const link = document.createElement("a");
+              link.href = url;
+              link.target = "_blank";
+              link.appendChild(img);
+              resultGallery.appendChild(link);
+            } else {
+              resultGallery.appendChild(img);
+            }
+          });
+          resultWrap.style.display = "block";
+          setStatus("Edit completed.", "success");
+        } else if (res.data_uri) {
+          const img = new Image();
+          img.src = res.data_uri;
+          img.alt = "Result";
+          img.className = "preview";
+          resultGallery.appendChild(img);
+          resultWrap.style.display = "block";
+          setStatus("Edit completed.", "success");
+        } else {
+          setStatus("Edit succeeded but no image returned.", "error");
+        }
+      });
+
+      window.addEventListener("resize", () => {
+        updatePreview();
+      });
+
+      updateMode();
+    </script>
+  </body>
+</html>

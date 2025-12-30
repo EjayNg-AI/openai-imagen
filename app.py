@@ -58,6 +58,7 @@ COMMON_ARGS_GEN = [  # /generate only – full set
     "moderation",
 ]
 # /edit must NEVER forward output_format, output_compression, moderation
+# (outpaint mode sets output_format explicitly server-side)
 COMMON_ARGS_EDIT = [
     "size",
     "quality",
@@ -75,6 +76,13 @@ def build_kwargs(src, *, for_generate=False):
 
 # ------------------------------------------------------------- validation helpers
 MAX_IMAGE_BYTES = 25 * 1024 * 1024  # 25 MB
+MAX_OUTPAINT_MASK_BYTES = 4_000_000
+OUTPAINT_CANVAS_SIZES = {
+    "1024x1024": (1024, 1024),
+    "1536x1024": (1536, 1024),
+    "1024x1536": (1024, 1536),
+}
+OUTPAINT_CANVAS_FORMATS = {"PNG", "JPEG", "WEBP"}
 
 def validate_transparency(fmt: str, background: str):
     if background == "transparent" and fmt not in ("png", "webp"):
@@ -88,6 +96,31 @@ def _pil_open_clone(buf: io.BytesIO):
     p = Image.open(buf)
     p.load()
     return p
+
+def _buffer_size(buf: io.BytesIO) -> int:
+    buf.seek(0, os.SEEK_END)
+    size = buf.tell()
+    buf.seek(0)
+    return size
+
+def _parse_outpaint_size(value: str):
+    return OUTPAINT_CANVAS_SIZES.get(value)
+
+def _ensure_outpaint_mask_valid(mask_buf: io.BytesIO, expected_size):
+    if _buffer_size(mask_buf) >= MAX_OUTPAINT_MASK_BYTES:
+        raise ValueError("Mask must be smaller than 4,000,000 bytes")
+    mask = _pil_open_clone(mask_buf)
+    if mask.format != "PNG":
+        raise ValueError("Mask must be a PNG file")
+    if mask.size != expected_size:
+        raise ValueError("Mask dimensions must match the selected canvas size")
+    if "A" not in mask.mode:
+        raise ValueError("Mask must include an alpha channel")
+    alpha = mask.getchannel("A")
+    if not set(alpha.getdata()).issubset({0, 255}):
+        raise ValueError("Mask alpha must be fully transparent (0) or fully opaque (255)")
+    mask_buf.seek(0)
+    return mask_buf
 
 def _auto_rgba_mask(grab: Image.Image) -> io.BytesIO:
     """Return a PNG mask: transparent on border pixels (alpha==0), black opaque elsewhere."""
@@ -202,6 +235,19 @@ def edit():
     if not prompt:
         return jsonify(ok=False, error="Prompt is required"), 400
 
+    mode = (data.get("edit_mode") or data.get("mode") or "").strip().lower()
+    outpaint = mode == "outpaint"
+    outpaint_size = (data.get("size") or "").strip()
+    expected_size = _parse_outpaint_size(outpaint_size) if outpaint else None
+    if outpaint and not expected_size:
+        return (
+            jsonify(
+                ok=False,
+                error="Outpaint requires a fixed canvas size (1024x1024, 1536x1024, 1024x1536)",
+            ),
+            400,
+        )
+
     # ---- gather reference images ----
     images: List[io.BytesIO] = []
     for i in range(1, 11):
@@ -212,37 +258,94 @@ def edit():
             buf.seek(0)
             images.append(buf)
     if not images:
-        return jsonify(ok=False, error="At least one reference image required"), 400
+        msg = (
+            "Outpaint requires exactly one reference image"
+            if outpaint
+            else "At least one reference image required"
+        )
+        return jsonify(ok=False, error=msg), 400
+    if outpaint and len(images) != 1:
+        return jsonify(ok=False, error="Outpaint requires exactly one reference image"), 400
 
     # Validation of ref images
     try:
         first_size = _validate_reference_images(images)
     except ValueError as e:
         return jsonify(ok=False, error=str(e)), 400
+    if outpaint:
+        if first_size != expected_size:
+            return (
+                jsonify(
+                    ok=False,
+                    error="Canvas size must match the selected outpaint size",
+                ),
+                400,
+            )
+        try:
+            canvas_img = _pil_open_clone(images[0])
+        except Exception:
+            return jsonify(ok=False, error="Failed to read outpaint canvas"), 400
+        if canvas_img.format not in OUTPAINT_CANVAS_FORMATS:
+            return jsonify(
+                ok=False, error="Canvas image must be PNG, JPEG, or WEBP"
+            ), 400
+        images[0].seek(0)
 
     # ---- mask handling ----
     mask_file = None
     f_mask = request.files.get("mask")
-    if f_mask and f_mask.filename:
+    if outpaint:
+        if not f_mask or not f_mask.filename:
+            return jsonify(ok=False, error="Mask is required for outpainting"), 400
         buf = io.BytesIO(f_mask.read())
         buf.name = "mask.png"
         buf.seek(0)
         try:
-            mask_file = _ensure_mask_valid(buf, first_size)
+            mask_file = _ensure_outpaint_mask_valid(buf, expected_size)
         except ValueError as e:
             return jsonify(ok=False, error=str(e)), 400
+    else:
+        if f_mask and f_mask.filename:
+            buf = io.BytesIO(f_mask.read())
+            buf.name = "mask.png"
+            buf.seek(0)
+            try:
+                mask_file = _ensure_mask_valid(buf, first_size)
+            except ValueError as e:
+                return jsonify(ok=False, error=str(e)), 400
 
-    # ---- auto‑mask for out‑paint (single expanded PNG named outpaint.*) ----
-    if not mask_file and len(images) == 1 and images[0].name.startswith("outpaint"):
-        try:
-            mask_file = _auto_rgba_mask(_pil_open_clone(images[0]))
-            logger.info("Auto‑generated out‑paint mask attached")
-        except Exception:
-            logger.warning("Auto‑mask generation failed; proceeding without mask")
-            mask_file = None
+        # ---- auto‑mask for out‑paint (single expanded PNG named outpaint.*) ----
+        if not mask_file and len(images) == 1 and images[0].name.startswith("outpaint"):
+            try:
+                mask_file = _auto_rgba_mask(_pil_open_clone(images[0]))
+                logger.info("Auto‑generated out‑paint mask attached")
+            except Exception:
+                logger.warning("Auto‑mask generation failed; proceeding without mask")
+                mask_file = None
+
+    if outpaint:
+        image_w = parse_int(data.get("image_w"), default=None)
+        image_h = parse_int(data.get("image_h"), default=None)
+        pos_x = parse_int(data.get("pos_x"), default=None)
+        pos_y = parse_int(data.get("pos_y"), default=None)
+        canvas_w = parse_int(data.get("canvas_w"), default=None)
+        canvas_h = parse_int(data.get("canvas_h"), default=None)
+        if None not in (image_w, image_h, pos_x, pos_y, canvas_w, canvas_h):
+            if (canvas_w, canvas_h) != expected_size:
+                return jsonify(ok=False, error="Canvas metadata mismatch"), 400
+            if image_w > canvas_w or image_h > canvas_h:
+                return jsonify(ok=False, error="Image does not fit within the canvas"), 400
+            if pos_x < 0 or pos_y < 0:
+                return jsonify(ok=False, error="Image position must be inside the canvas"), 400
+            if pos_x + image_w > canvas_w or pos_y + image_h > canvas_h:
+                return jsonify(ok=False, error="Image position must stay inside the canvas"), 400
 
     # ---- build kwargs & call API ----
     kwargs = build_kwargs(data)
+    if outpaint:
+        kwargs["size"] = outpaint_size
+        kwargs["background"] = "auto"
+        kwargs["output_format"] = "png"
     if mask_file:
         kwargs["mask"] = mask_file
 
@@ -264,7 +367,14 @@ def edit():
             **kwargs,
         )
         # API always returns same format as first image
-        returned_fmt = images[0].name.rsplit(".", 1)[-1]
+        if outpaint:
+            returned_fmt = "png"
+        else:
+            returned_fmt = (
+                images[0].name.rsplit(".", 1)[-1]
+                if "." in images[0].name
+                else "png"
+            )
         data_uris, urls = [], []
         for item in result.data:
             b64 = item.b64_json
