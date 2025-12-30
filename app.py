@@ -5,15 +5,81 @@ from flask import Flask, render_template, request, jsonify, send_from_directory
 from openai import OpenAI
 from dotenv import load_dotenv
 from PIL import Image, ImageOps
+from werkzeug.exceptions import HTTPException
 import logging
 
 # ------------------------------------------------------------- configuration
-logging.basicConfig(
-    level=logging.DEBUG,
-    filename="app.log",
-    format="%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s",
-)
+ROOT_DIR = Path(__file__).resolve().parent
+LOG_FILE = ROOT_DIR / "app.log"
+ERROR_LOG_FILE = ROOT_DIR / "error.log"
+LOG_FORMAT = "%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s"
+
+def _has_file_handler(logger_obj: logging.Logger, path: Path) -> bool:
+    target = path.resolve()
+    for handler in logger_obj.handlers:
+        if isinstance(handler, logging.FileHandler):
+            try:
+                if Path(handler.baseFilename).resolve() == target:
+                    return True
+            except Exception:
+                continue
+    return False
+
+def configure_logging():
+    root = logging.getLogger()
+    root.setLevel(logging.DEBUG)
+    formatter = logging.Formatter(LOG_FORMAT)
+
+    if not _has_file_handler(root, LOG_FILE):
+        handler = logging.FileHandler(LOG_FILE)
+        handler.setLevel(logging.DEBUG)
+        handler.setFormatter(formatter)
+        root.addHandler(handler)
+
+    if not _has_file_handler(root, ERROR_LOG_FILE):
+        err_handler = logging.FileHandler(ERROR_LOG_FILE)
+        err_handler.setLevel(logging.ERROR)
+        err_handler.setFormatter(formatter)
+        root.addHandler(err_handler)
+
+configure_logging()
 logger = logging.getLogger(__name__)
+
+def _close_log_file_handlers():
+    root = logging.getLogger()
+    targets = {LOG_FILE.resolve(), ERROR_LOG_FILE.resolve()}
+    for handler in list(root.handlers):
+        if isinstance(handler, logging.FileHandler):
+            try:
+                handler_path = Path(handler.baseFilename).resolve()
+            except Exception:
+                continue
+            if handler_path in targets:
+                try:
+                    handler.flush()
+                finally:
+                    handler.close()
+                root.removeHandler(handler)
+
+def _trim_log_file(path: Path, max_lines=200, keep_lines=100):
+    try:
+        if not path.exists():
+            return
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines(
+            keepends=True
+        )
+        if len(lines) <= max_lines:
+            return
+        path.write_text("".join(lines[-keep_lines:]), encoding="utf-8")
+    except Exception:
+        # Avoid raising during request finalizers.
+        pass
+
+def trim_log_files():
+    _close_log_file_handlers()
+    _trim_log_file(LOG_FILE)
+    _trim_log_file(ERROR_LOG_FILE)
+    configure_logging()
 
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
@@ -47,6 +113,36 @@ def normalize_name(name: str) -> str:
 
 def b64_to_datauri(b64: str, ext: str) -> str:
     return f"data:image/{ext};base64,{b64}"
+
+def detect_image_ext(img_bytes: bytes) -> str | None:
+    try:
+        with Image.open(io.BytesIO(img_bytes)) as im:
+            fmt = (im.format or "").lower()
+    except Exception:
+        return None
+    if fmt == "jpg":
+        fmt = "jpeg"
+    return fmt if fmt in ("png", "jpeg", "webp") else None
+
+def log_request_exception(message: str):
+    try:
+        form_keys = sorted(request.form.keys())
+        file_names = {
+            key: f.filename
+            for key, f in request.files.items()
+            if f and f.filename
+        }
+        logger.exception(
+            "%s | path=%s method=%s remote=%s form_keys=%s files=%s",
+            message,
+            request.path,
+            request.method,
+            request.remote_addr,
+            form_keys,
+            file_names,
+        )
+    except Exception:
+        logger.exception("%s (failed to capture request context)", message)
 
 # ------------------------------------------------------------- Allowed kwargs builders
 COMMON_ARGS_GEN = [  # /generate only – full set
@@ -180,6 +276,25 @@ def _validate_reference_images(images: List[io.BytesIO]):
 # ------------------------------------------------------------- flask app
 app = Flask(__name__)
 
+@app.errorhandler(Exception)
+def handle_unexpected_error(err):
+    if isinstance(err, HTTPException):
+        level = logging.ERROR if err.code and err.code >= 500 else logging.WARNING
+        logger.log(
+            level,
+            "HTTP %s: %s | path=%s method=%s remote=%s",
+            err.code,
+            err.description,
+            request.path,
+            request.method,
+            request.remote_addr,
+        )
+        if request.path in ("/generate", "/edit"):
+            return jsonify(ok=False, error=err.description), err.code or 500
+        return err
+    log_request_exception("Unhandled exception")
+    return jsonify(ok=False, error="Internal server error"), 500
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -224,8 +339,10 @@ def generate():
             urls.append(save_bytes(img_bytes, fmt))
         return jsonify(ok=True, data_uris=data_uris, urls=urls)
     except Exception as e:
-        logger.exception("Generate failed")
+        log_request_exception("Generate failed")
         return jsonify(ok=False, error=str(e)), 500
+    finally:
+        trim_log_files()
 
 # ============================================================= /edit
 @app.route("/edit", methods=["POST"])
@@ -379,14 +496,17 @@ def edit():
         for item in result.data:
             b64 = item.b64_json
             img_bytes = base64.b64decode(b64)
-            data_uris.append(b64_to_datauri(b64, returned_fmt))
-            urls.append(save_bytes(img_bytes, returned_fmt))
+            actual_fmt = detect_image_ext(img_bytes) or returned_fmt
+            data_uris.append(b64_to_datauri(b64, actual_fmt))
+            urls.append(save_bytes(img_bytes, actual_fmt))
         if len(data_uris) == 1:
             return jsonify(ok=True, data_uri=data_uris[0], url=urls[0])
         return jsonify(ok=True, data_uris=data_uris, urls=urls)
     except Exception as e:
-        logger.exception("Edit failed")
+        log_request_exception("Edit failed")
         return jsonify(ok=False, error=str(e)), 500
+    finally:
+        trim_log_files()
 
 # ------------------------------------------------------------- utils
 

@@ -21,3 +21,7 @@
 
 **Coding agent to summarize agent-driven code edits here.**
 - 2025-12-30: Added outpaint-with-mask mode to `app.py` and `templates/index.html`, including fixed canvas sizes, mask validation, and drag placement UI while keeping standard edit/inpaint flows intact.
+- 2025-12-30: Detect edit output image format from bytes to ensure previews and saved files use the correct MIME/extension (fixes inpainting display issues with non-PNG inputs).
+- 2025-12-30: Added dedicated error panels in the UI so generate/edit failures and validation issues are displayed clearly in-browser.
+- 2025-12-30: Added error.log handling with request-context logging and unhandled exception capture; updated .gitignore for the new log file.
+- 2025-12-30: Trim app.log and error.log after each image API call, keeping the most recent 100 lines when logs exceed 200 lines.

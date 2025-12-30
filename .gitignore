@@ -9,6 +9,7 @@ init_venv.sh
 
 # Logs
 *.log
+error.log
 
 # Python cache and bytecode
 __pycache__/

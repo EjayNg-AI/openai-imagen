@@ -138,6 +138,24 @@
         box-shadow: none;
         transform: none;
       }
+      .error-panel {
+        margin-top: 0.85rem;
+        border: 1px solid var(--danger);
+        background: rgba(255, 107, 107, 0.1);
+        border-radius: 0.6rem;
+        padding: 0.6rem 0.75rem;
+      }
+      .error-panel strong {
+        color: var(--danger);
+      }
+      .error-panel pre {
+        margin: 0.4rem 0 0;
+        white-space: pre-wrap;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        font-size: 0.85rem;
+        color: var(--fg);
+      }
       /* spinner */
       .spinner {
         width: 18px;
@@ -395,6 +413,10 @@
 
       <br /><button id="gBtn">Generate</button> <span id="gSpin"></span>
       <div id="gallery" class="gallery"></div>
+      <div id="gError" class="error-panel" style="display: none">
+        <strong>Generate error</strong>
+        <pre id="gErrorText"></pre>
+      </div>
     </fieldset>
 
     <!-- ============  EDIT / COMBINE / OUT‑PAINT  ============ -->
@@ -543,6 +565,10 @@
         />
         <div id="eGallery" class="gallery" style="display: none"></div>
       </div>
+      <div id="eError" class="error-panel" style="display: none">
+        <strong>Edit error</strong>
+        <pre id="eErrorText"></pre>
+      </div>
     </fieldset>
 
     <script>
@@ -570,6 +596,21 @@
       };
 
       /* ---------- helpers ---------- */
+      function setError(panelSel, textSel, message) {
+        const panel = $(panelSel);
+        const text = $(textSel);
+        if (!panel || !text) return;
+        if (!message) {
+          text.textContent = "";
+          panel.style.display = "none";
+          return;
+        }
+        text.textContent =
+          typeof message === "string"
+            ? message
+            : JSON.stringify(message, null, 2);
+        panel.style.display = "block";
+      }
       function normaliseName(n) {
         const nameLower = n.toLowerCase();
         return nameLower.endsWith(".jpg")
@@ -696,11 +737,13 @@
         const prompt = $("#gPrompt").value.trim();
         if (!prompt) {
           showToast("Prompt is required for generation.");
+          setError("#gError", "#gErrorText", "Prompt is required.");
           return;
         }
         disable($("#gBtn"));
         startSpinner("#gSpin");
         $("#gallery").innerHTML = ""; // Clear previous results
+        setError("#gError", "#gErrorText", "");
 
         const fd = new FormData();
         fd.append("prompt", prompt);
@@ -738,6 +781,11 @@
           !["png", "webp"].includes(fd.get("output_format"))
         ) {
           showToast("Transparent background requires PNG or WEBP format.");
+          setError(
+            "#gError",
+            "#gErrorText",
+            "Transparent background requires PNG or WEBP format."
+          );
           stopSpinner("#gSpin");
           disable($("#gBtn"), false);
           return;
@@ -751,12 +799,23 @@
           showToast(
             res?.error || "Generate failed. Check console for details."
           );
+          setError(
+            "#gError",
+            "#gErrorText",
+            res?.error || "Generate failed."
+          );
           return;
         }
         if (!res.data_uris || res.data_uris.length === 0) {
           showToast("Received OK response but no images were returned.");
+          setError(
+            "#gError",
+            "#gErrorText",
+            "Received OK response but no images were returned."
+          );
           return;
         }
+        setError("#gError", "#gErrorText", "");
 
         res.data_uris.forEach((uri, i) => {
           const img = new Image();
@@ -1425,6 +1484,7 @@
         const prompt = $("#ePrompt").value.trim();
         if (!prompt) {
           showToast("Prompt is required for editing.");
+          setError("#eError", "#eErrorText", "Prompt is required.");
           return;
         }
 
@@ -1434,6 +1494,7 @@
         $("#eLink").style.display = "none";
         $("#eGallery").style.display = "none";
         $("#eGallery").innerHTML = "";
+        setError("#eError", "#eErrorText", "");
 
         const fd = new FormData();
         const isOutpaint = outpaintEnabled;
@@ -1444,6 +1505,11 @@
         if (isOutpaint) {
           if (!sizeSpec) {
             showToast("Outpainting requires a fixed canvas size.");
+            setError(
+              "#eError",
+              "#eErrorText",
+              "Outpainting requires a fixed canvas size."
+            );
             stopSpinner("#eSpin");
             disable($("#eBtn"), false);
             return;
@@ -1494,6 +1560,11 @@
             fd.append("canvas_h", String(sizeSpec.h));
           } catch (err) {
             showToast(err.message || "Outpaint preparation failed.");
+            setError(
+              "#eError",
+              "#eErrorText",
+              err.message || "Outpaint preparation failed."
+            );
             stopSpinner("#eSpin");
             disable($("#eBtn"), false);
             return;
@@ -1524,6 +1595,11 @@
 
         if (!refImageFile) {
           showToast("No reference image found (select 'Image 1').");
+          setError(
+            "#eError",
+            "#eErrorText",
+            "No reference image found (select 'Image 1')."
+          );
           stopSpinner("#eSpin");
           disable($("#eBtn"), false);
           return;
@@ -1540,6 +1616,11 @@
             !naturalH
           ) {
             showToast(
+              "Mask canvas is not ready. Ensure image is loaded and mask is enabled."
+            );
+            setError(
+              "#eError",
+              "#eErrorText",
               "Mask canvas is not ready. Ensure image is loaded and mask is enabled."
             );
             stopSpinner("#eSpin");
@@ -1563,6 +1644,11 @@
 
           if (!maskBlob) {
             showToast("Mask export failed. Check console for errors.");
+            setError(
+              "#eError",
+              "#eErrorText",
+              "Mask export failed. Check console for errors."
+            );
             stopSpinner("#eSpin");
             disable($("#eBtn"), false);
             if (maskSect) maskSect.scrollIntoView({ behavior: "smooth" });
@@ -1582,6 +1668,7 @@
 
         if (!res || !res.ok) {
           showToast(res?.error || "Edit failed. Check console for details.");
+          setError("#eError", "#eErrorText", res?.error || "Edit failed.");
           // Optionally scroll to mask section if error might be related
           if (res?.error?.toLowerCase().includes("mask")) {
             if (maskSect) maskSect.scrollIntoView({ behavior: "smooth" });
@@ -1591,6 +1678,7 @@
 
         // --- Display Result ---
         if (Array.isArray(res.data_uris) && res.data_uris.length > 0) {
+          setError("#eError", "#eErrorText", "");
           res.data_uris.forEach((uri, i) => {
             const img = new Image();
             img.src = uri;
@@ -1624,8 +1712,14 @@
             0,
             50
           )}...`;
+          setError("#eError", "#eErrorText", "");
         } else {
           showToast("Edit succeeded but response format is unexpected.");
+          setError(
+            "#eError",
+            "#eErrorText",
+            "Edit succeeded but response format is unexpected."
+          );
           console.warn("Unexpected success response:", res);
         }
       }; // End of eBtn.onclick
