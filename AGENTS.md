@@ -17,6 +17,14 @@
 
 ---
 
+# When the coding agent is initiated
+
+- Remind the user to execute
+  `python -m pip install -r requirements.txt --upgrade`
+  If coding agent is able to perform this command on behalf of the user, offer to do so.
+
+--- 
+
 # Change log for agent-driven edits
 
 **Coding agent to summarize agent-driven code edits here.**
