@@ -26,9 +26,9 @@ Constraints:
 
 Return the following information, in order, using clear headings:
 
-1. A level 3 heading entitled "Proposed approaches to the Problem by the problem solver". At the beginning of your response, print exactly the following lines (do not wrap these lines in a code block; they should appear as normal markdown in the output):
+1. A level 1 heading entitled "Proposed approaches to the Problem by the problem solver". At the beginning of your response, print exactly the following lines (do not wrap these lines in a code block; they should appear as normal markdown in the output):
 
-   ### Proposed approaches to the Problem by the problem solver
+   # Proposed approaches to the Problem by the problem solver
 
 2. Problem_restatement: A short, precise restatement in your own words.
 
@@ -94,9 +94,9 @@ Constraints:
 
 Return the following information, in order, using clear headings:
 
-1. A level 3 heading entitled "Expert evaluator's assessment and feedback on the proposed approaches". At the beginning of your response, print exactly the following lines (do not wrap these lines in a code block; they should appear as normal markdown in the output):
+1. A level 1 heading entitled "Expert evaluator's assessment and feedback on the proposed approaches". At the beginning of your response, print exactly the following lines (do not wrap these lines in a code block; they should appear as normal markdown in the output):
 
-   ### Expert evaluator's assessment and feedback on the proposed approaches
+   # Expert evaluator's assessment and feedback on the proposed approaches
 
 2. Global assessment:
 
@@ -228,9 +228,9 @@ In this phase, your job is to **ATTEMPT A SOLUTION** using the inputs described 
 
 Return the following information, in order, using clear headings (all mandatory unless specified otherwise):
 
-- A level 3 heading entitled "Solution Attempt [solution_number] by the problem solver", where [solution_number] the number of attempted solutions written (inclusive of the current solution). At the beginning of your response, print the following lines (do not wrap these lines in a code block; they should appear as normal markdown in the output; be very sure also to replace [solution_number] with the actual positive integer):
+- A level 1 heading entitled "Solution Attempt [solution_number] by the problem solver", where [solution_number] the number of attempted solutions written (inclusive of the current solution). At the beginning of your response, print the following lines (do not wrap these lines in a code block; they should appear as normal markdown in the output; be very sure also to replace [solution_number] with the actual positive integer):
 
-  ### Solution Attempt [solution_number] by the problem solver
+  # Solution Attempt [solution_number] by the problem solver
 
 - Status
 
@@ -384,9 +384,9 @@ You will be given:
 
 Return the following information, in order, using clear headings (all mandatory unless specified otherwise):
 
-- A level 3 heading entitled "Expert evaluator's assessment and feedback on Solution Attempt [solution_number]", where [solution_number] refers to numerical labelling of the most recent attempt by the problem solver -- that is, the solution attempt which is currently being evaluated. If the problem solver did not provide any numerical labelling of the most recent attempt, replace [solution_number] by `(Latest Solution)`. At the beginning of your response, print the following lines (do not wrap these lines in a code block; they should appear as normal markdown in the output; be very sure also to replace [solution_number] with the actual positive integer):
+- A level 1 heading entitled "Expert evaluator's assessment and feedback on Solution Attempt [solution_number]", where [solution_number] refers to numerical labelling of the most recent attempt by the problem solver -- that is, the solution attempt which is currently being evaluated. If the problem solver did not provide any numerical labelling of the most recent attempt, replace [solution_number] by `(Latest Solution)`. At the beginning of your response, print the following lines (do not wrap these lines in a code block; they should appear as normal markdown in the output; be very sure also to replace [solution_number] with the actual positive integer):
 
-  ### Expert evaluator's assessment and feedback on Solution Attempt [solution_number]
+  # Expert evaluator's assessment and feedback on Solution Attempt [solution_number]
 
 - Status
 
@@ -559,9 +559,9 @@ Important Guidelines and Constraints:
 
 Return the following information, in order, using clear headings:
 
-1. A level 3 heading entitled "External Research Input". At the beginning of your response, print exactly the following lines (do not wrap these lines in a code block; they should appear as normal markdown in the output):
+1. A level 1 heading entitled "External Research Input". At the beginning of your response, print exactly the following lines (do not wrap these lines in a code block; they should appear as normal markdown in the output):
 
-   ### External Research Input
+   # External Research Input
 
 2. Problem and current state summary:
 
