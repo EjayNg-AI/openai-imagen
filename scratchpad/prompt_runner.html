@@ -257,15 +257,22 @@
         data-background-cancel-endpoint="/api/prompt-run-background"
       >
         <div class="controls">
-          <button type="button" class="ghost small" id="loadPlanner">Load Planner</button>
+          <button type="button" class="ghost small" id="loadApproachProposer">
+            Load Approach Proposer
+          </button>
           <button type="button" class="ghost small" id="loadApproachEvaluator">
             Load Approach Evaluator
           </button>
-          <button type="button" class="ghost small" id="loadSolver">Load Solver</button>
-          <button type="button" class="ghost small" id="loadSolutionEvaluator">
-            Load Solution Evaluator
+          <button type="button" class="ghost small" id="loadProblemSolver">
+            Load Problem Solver
+          </button>
+          <button type="button" class="ghost small" id="loadExpertEvaluator">
+            Load Expert Evaluator
           </button>
           <button type="button" class="ghost small" id="loadResearcher">Load Researcher</button>
+          <button type="button" class="ghost small" id="loadOrchestrator">
+            Load Orchestrator
+          </button>
         </div>
 
         <div class="controls">
@@ -398,11 +405,12 @@
       const responseIdDisplay = document.getElementById("responseIdDisplay");
       const cancelBackgroundBtn = document.getElementById("cancelBackgroundTask");
       const forkConversationBtn = document.getElementById("forkConversation");
-      const loadPlannerBtn = document.getElementById("loadPlanner");
+      const loadApproachProposerBtn = document.getElementById("loadApproachProposer");
       const loadApproachEvaluatorBtn = document.getElementById("loadApproachEvaluator");
-      const loadSolverBtn = document.getElementById("loadSolver");
-      const loadSolutionEvaluatorBtn = document.getElementById("loadSolutionEvaluator");
+      const loadProblemSolverBtn = document.getElementById("loadProblemSolver");
+      const loadExpertEvaluatorBtn = document.getElementById("loadExpertEvaluator");
       const loadResearcherBtn = document.getElementById("loadResearcher");
+      const loadOrchestratorBtn = document.getElementById("loadOrchestrator");
       const POLL_INTERVAL_MS = 60000;
       const DEFAULT_CANCEL_BUTTON_TEXT = "Cancel background task";
       let currentBackgroundRun = null;
@@ -1130,19 +1138,12 @@
         addMessageRow("user");
       };
 
-      wireLoaderButton(loadPlannerBtn, "synthesizer-planner", "Planner");
-      wireLoaderButton(
-        loadApproachEvaluatorBtn,
-        "discriminator-approach-evaluator",
-        "Approach Evaluator"
-      );
-      wireLoaderButton(loadSolverBtn, "synthesizer-solver", "Solver");
-      wireLoaderButton(
-        loadSolutionEvaluatorBtn,
-        "discriminator-solution-evaluator",
-        "Solution Evaluator"
-      );
+      wireLoaderButton(loadApproachProposerBtn, "approach-proposer", "Approach Proposer");
+      wireLoaderButton(loadApproachEvaluatorBtn, "approach-evaluator", "Approach Evaluator");
+      wireLoaderButton(loadProblemSolverBtn, "problem-solver", "Problem Solver");
+      wireLoaderButton(loadExpertEvaluatorBtn, "expert-evaluator", "Expert Evaluator");
       wireLoaderButton(loadResearcherBtn, "researcher", "Researcher");
+      wireLoaderButton(loadOrchestratorBtn, "orchestrator", "Orchestrator");
       initializeMessages();
     </script>
   </body>

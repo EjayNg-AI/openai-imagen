@@ -16,24 +16,76 @@ if not api_key:
 client = OpenAI(api_key=api_key)
 
 SCRATCHPAD_DIR = Path(__file__).resolve().parent
-SYSTEM_MESSAGE_FILES = {
-    "synthesizer-planner": SCRATCHPAD_DIR / "synthesizer_planner_system_message.md",
-    "discriminator-approach-evaluator": SCRATCHPAD_DIR
-    / "discriminator_approach_evaluator_system_message.md",
-    "synthesizer-solver": SCRATCHPAD_DIR / "synthesizer_solver_system_message.md",
-    "discriminator-solution-evaluator": SCRATCHPAD_DIR
-    / "discriminator_solution_evaluator_system_message.md",
-    "researcher": SCRATCHPAD_DIR / "researcher_system_message.md",
+CONSOLIDATED_SYSTEM_MESSAGES_PATH = SCRATCHPAD_DIR / "system_messages_consolidated.md"
+SYSTEM_MESSAGE_HEADINGS = {
+    "approach-proposer": "APPROACH PROPOSER SYSTEM MESSAGE (TO PROPOSE POSSIBLE SOLUTION "
+    "APPROACHES FOR A GIVEN PROBLEM)",
+    "approach-evaluator": "APPROACH EVALUATOR SYSTEM MESSAGE (TO EVALUATE POSSIBLE SOLUTION "
+    "APPROACHES SUGGESTED BY A PROBLEM SOLVER)",
+    "problem-solver": "PROBLEM SOLVER SYSTEM MESSAGE (TO ATTEMPT A SOLUTION TO A GIVEN PROBLEM)",
+    "expert-evaluator": "EXPERT EVALUATOR SYSTEM MESSAGE (TO EVALUATE THE MOST RECENT SOLUTION "
+    "ATTEMPT BY A PROBLEM SOLVER)",
+    "researcher": "RESEARCHER SYSTEM MESSAGE (TO PROVIDE EXTERNAL RESEARCH INPUT)",
+    "orchestrator": "ORCHESTRATOR SYSTEM MESSAGE (AUTOMATION-FRIENDLY + FINAL POLISHER)",
+    "synthesizer-planner": "APPROACH PROPOSER SYSTEM MESSAGE (TO PROPOSE POSSIBLE SOLUTION "
+    "APPROACHES FOR A GIVEN PROBLEM)",
+    "discriminator-approach-evaluator": "APPROACH EVALUATOR SYSTEM MESSAGE (TO EVALUATE POSSIBLE "
+    "SOLUTION APPROACHES SUGGESTED BY A PROBLEM SOLVER)",
+    "synthesizer-solver": "PROBLEM SOLVER SYSTEM MESSAGE (TO ATTEMPT A SOLUTION TO A GIVEN PROBLEM)",
+    "discriminator-solution-evaluator": "EXPERT EVALUATOR SYSTEM MESSAGE (TO EVALUATE THE MOST "
+    "RECENT SOLUTION ATTEMPT BY A PROBLEM SOLVER)",
 }
 
 
+def _clean_system_message(lines: List[str]) -> str:
+    content = list(lines)
+    while content and not content[0].strip():
+        content.pop(0)
+    while content and not content[-1].strip():
+        content.pop()
+    if content and content[-1].strip() == "---":
+        content.pop()
+        while content and not content[-1].strip():
+            content.pop()
+    return "\n".join(content)
+
+
+def _parse_consolidated_system_messages() -> Dict[str, str]:
+    if not CONSOLIDATED_SYSTEM_MESSAGES_PATH.exists():
+        raise FileNotFoundError(f"{CONSOLIDATED_SYSTEM_MESSAGES_PATH.name} is missing")
+
+    text = CONSOLIDATED_SYSTEM_MESSAGES_PATH.read_text(encoding="utf-8")
+    sections: Dict[str, str] = {}
+    current_heading = None
+    buffer: List[str] = []
+
+    for line in text.splitlines():
+        if line.startswith("# "):
+            if current_heading is not None:
+                sections[current_heading] = _clean_system_message(buffer)
+            current_heading = line[2:].strip()
+            buffer = []
+            continue
+        if current_heading is None:
+            continue
+        buffer.append(line)
+
+    if current_heading is not None:
+        sections[current_heading] = _clean_system_message(buffer)
+
+    return sections
+
+
 def _read_system_message(key: str) -> str:
-    path = SYSTEM_MESSAGE_FILES.get(key)
-    if not path:
+    heading = SYSTEM_MESSAGE_HEADINGS.get(key)
+    if not heading:
         raise KeyError(f"Unknown system message key: {key}")
-    if not path.exists():
-        raise FileNotFoundError(f"{path.name} is missing")
-    return path.read_text(encoding="utf-8")
+
+    sections = _parse_consolidated_system_messages()
+    content = sections.get(heading)
+    if content is None:
+        raise KeyError(f"System message heading not found: {heading}")
+    return content
 
 
 def _validate_choice(value: object, allowed: set, field: str, default: str) -> str:

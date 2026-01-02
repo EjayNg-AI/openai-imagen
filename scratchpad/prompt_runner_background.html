@@ -231,6 +231,23 @@
 
       <form id="promptForm" data-endpoint="/api/prompt-run-background">
         <div class="controls">
+          <button type="button" class="ghost small" id="loadApproachProposer">
+            Load Approach Proposer
+          </button>
+          <button type="button" class="ghost small" id="loadApproachEvaluator">
+            Load Approach Evaluator
+          </button>
+          <button type="button" class="ghost small" id="loadProblemSolver">
+            Load Problem Solver
+          </button>
+          <button type="button" class="ghost small" id="loadExpertEvaluator">
+            Load Expert Evaluator
+          </button>
+          <button type="button" class="ghost small" id="loadResearcher">Load Researcher</button>
+          <button type="button" class="ghost small" id="loadOrchestrator">Load Orchestrator</button>
+        </div>
+
+        <div class="controls">
           <button type="button" class="ghost small" id="addMessage">+ Add message</button>
           <button type="button" class="ghost small" id="addAssistant">+ Add assistant reply</button>
           <button type="button" class="ghost small" id="addFromOutput">
@@ -312,6 +329,12 @@
       const fullResponseBox = document.getElementById("fullResponseBox");
       const copyFullResponseBtn = document.getElementById("copyFullResponse");
       const responseIdDisplay = document.getElementById("responseIdDisplay");
+      const loadApproachProposerBtn = document.getElementById("loadApproachProposer");
+      const loadApproachEvaluatorBtn = document.getElementById("loadApproachEvaluator");
+      const loadProblemSolverBtn = document.getElementById("loadProblemSolver");
+      const loadExpertEvaluatorBtn = document.getElementById("loadExpertEvaluator");
+      const loadResearcherBtn = document.getElementById("loadResearcher");
+      const loadOrchestratorBtn = document.getElementById("loadOrchestrator");
       const POLL_INTERVAL_MS = 60000;
 
       const ROLE_PLACEHOLDERS = {
@@ -356,6 +379,21 @@
           console.error("Clipboard error", error);
           showStatus("Copy failed. Check clipboard permissions.", "error");
         }
+      };
+
+      const fetchSystemMessage = async (key) => {
+        const response = await fetch(`/api/system-message/${encodeURIComponent(key)}`);
+        let data;
+        try {
+          data = await response.json();
+        } catch (error) {
+          throw new Error("Invalid response while loading system message.");
+        }
+        if (!response.ok || !data?.ok || typeof data.content !== "string") {
+          const err = (data && data.error) || `Failed to load system message: ${key}`;
+          throw new Error(err);
+        }
+        return data.content;
       };
 
       const extractOutputText = (payload) => {
@@ -439,9 +477,10 @@
         return row;
       };
 
-      const addMessageRow = (role = "user") => {
-        const row = buildMessageRow(role);
+      const addMessageRow = (role = "user", text = "") => {
+        const row = buildMessageRow(role, text);
         messagesContainer.appendChild(row);
+        return row;
       };
 
       addMessageBtn.addEventListener("click", () => addMessageRow("user"));
@@ -456,6 +495,44 @@
       copyFullResponseBtn.addEventListener("click", () =>
         copyText(fullResponseBox.value, copyFullResponseBtn)
       );
+
+      const ensureFirstMessageRow = () => {
+        let row = messagesContainer.querySelector(".message-row");
+        if (!row) {
+          row = addMessageRow("developer");
+        }
+        return row;
+      };
+
+      const replaceFirstMessageWithContent = (content) => {
+        const row = ensureFirstMessageRow();
+        const select = row.querySelector("select");
+        const textarea = row.querySelector("textarea");
+        if (select) {
+          select.value = "developer";
+          select.dispatchEvent(new Event("change"));
+        }
+        if (textarea) {
+          textarea.value = content;
+        }
+      };
+
+      const wireLoaderButton = (button, key, label) => {
+        if (!button) return;
+        button.addEventListener("click", async () => {
+          try {
+            showStatus(`Loading ${label} message…`);
+            const content = await fetchSystemMessage(key);
+            replaceFirstMessageWithContent(content);
+            showStatus(`${label} message loaded into first input.`, "success");
+          } catch (error) {
+            console.error("System message load failed", error);
+            const message =
+              (error && error.message) || `Failed to load ${label.toLowerCase()} message.`;
+            showStatus(message, "error");
+          }
+        });
+      };
 
       const disableForm = (disabled) => {
         form.querySelectorAll("textarea, button, select").forEach((el) => {
@@ -610,6 +687,13 @@
           disableForm(false);
         }
       });
+
+      wireLoaderButton(loadApproachProposerBtn, "approach-proposer", "Approach Proposer");
+      wireLoaderButton(loadApproachEvaluatorBtn, "approach-evaluator", "Approach Evaluator");
+      wireLoaderButton(loadProblemSolverBtn, "problem-solver", "Problem Solver");
+      wireLoaderButton(loadExpertEvaluatorBtn, "expert-evaluator", "Expert Evaluator");
+      wireLoaderButton(loadResearcherBtn, "researcher", "Researcher");
+      wireLoaderButton(loadOrchestratorBtn, "orchestrator", "Orchestrator");
 
       // Seed with two starter rows
       addMessageRow("developer");

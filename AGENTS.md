@@ -33,3 +33,4 @@
 - 2025-12-30: Added dedicated error panels in the UI so generate/edit failures and validation issues are displayed clearly in-browser.
 - 2025-12-30: Added error.log handling with request-context logging and unhandled exception capture; updated .gitignore for the new log file.
 - 2025-12-30: Trim app.log and error.log after each image API call, keeping the most recent 100 lines when logs exceed 200 lines.
+- 2026-01-03: Added system-message loader buttons to `scratchpad/prompt_runner_background.html` and documented consolidated system-message keys in `README.md`.
