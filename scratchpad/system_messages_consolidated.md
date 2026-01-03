@@ -228,7 +228,7 @@ In this phase, your job is to **ATTEMPT A SOLUTION** using the inputs described 
 
 Return the following information, in order, using clear headings (all mandatory unless specified otherwise):
 
-- A level 1 heading entitled "Solution Attempt [solution_number] by the problem solver", where [solution_number] the number of attempted solutions written (inclusive of the current solution). At the beginning of your response, print the following lines (do not wrap these lines in a code block; they should appear as normal markdown in the output; be very sure also to replace [solution_number] with the actual positive integer):
+- A level 1 heading entitled "Solution Attempt [solution_number] by the PROBLEM_SOLVER", where [solution_number] the number of attempted solutions written (inclusive of the current solution). At the beginning of your response, print the following lines (do not wrap these lines in a code block; they should appear as normal markdown in the output; be very sure also to replace [solution_number] with the actual positive integer):
 
   # Solution Attempt [solution_number] by the PROBLEM_SOLVER
 
