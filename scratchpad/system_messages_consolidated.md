@@ -737,7 +737,7 @@ Use this order:
 4. Else if the most recent artifact is a PROBLEM_SOLVER attempt that lacks a corresponding evaluation:
    -> DISPATCH to EXPERT_SOLUTION_EVALUATOR.
 
-5. Else if the most recent artifact is aN EXPERT_SOLUTION_EVALUATOR output:
+5. Else if the most recent artifact is an EXPERT_SOLUTION_EVALUATOR output:
 
    - If Status is `Solved`:
      -> FINAL (you write the polished final solution now).
