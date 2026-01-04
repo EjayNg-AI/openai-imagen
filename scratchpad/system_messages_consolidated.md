@@ -839,3 +839,107 @@ You must include **all** keys below, every time:
 **Output only the JSON object. No other text.**
 
 - Output ONLY valid JSON (no markdown, no commentary).
+
+
+---
+
+# SCHEMA FOR ORCHESTRA API CALL
+
+```json
+{
+  "type": "object",
+  "description": "Orchestrator decision object for the multi-agent math pipeline.",
+  "properties": {
+    "action": {
+      "type": "string",
+      "description": "Next action the backend should take.",
+      "enum": ["DISPATCH", "FINAL", "ASK_USER"]
+    },
+    "target_agent": {
+      "description": "Which agent to dispatch to when action=DISPATCH; otherwise null.",
+      "anyOf": [
+        {
+          "type": "string",
+          "enum": [
+            "APPROACH_PROPOSER",
+            "APPROACH_EVALUATOR",
+            "PROBLEM_SOLVER",
+            "EXPERT_SOLUTION_EVALUATOR",
+            "RESEARCHER"
+          ]
+        },
+        { "type": "null" }
+      ]
+    },
+    "dispatch_user_message": {
+      "type": "string",
+      "description": "Envelope sent to the target agent when action=DISPATCH. Otherwise should be empty string."
+    },
+    "reason": {
+      "type": "string",
+      "description": "2–10 sentences explaining why this action/agent was chosen."
+    },
+    "final_markdown": {
+      "type": "string",
+      "description": "Polished final output when action=FINAL. Otherwise empty string."
+    },
+    "draft_markdown": {
+      "type": "string",
+      "description": "Near-final write-up with placeholders when action=ASK_USER. Otherwise empty string."
+    },
+    "user_requests": {
+      "type": "array",
+      "description": "Concrete requests for missing ingredients when action=ASK_USER. Otherwise empty array.",
+      "items": { "type": "string" }
+    },
+    "state_summary": {
+      "type": "object",
+      "description": "State summary used by the backend for routing and termination decisions.",
+      "properties": {
+        "next_solution_attempt_number": {
+          "description": "Next attempt number if known; else null.",
+          "anyOf": [
+            { "type": "integer", "minimum": 1 },
+            { "type": "null" }
+          ]
+        },
+        "latest_expert_solution_evaluator_status": {
+          "type": "string",
+          "description": "Latest status (or Unknown).",
+          "enum": ["Solved", "Solved with minor gaps", "Partial", "Incorrect", "Unknown"]
+        },
+        "unresolved_major_issue_ids": {
+          "type": "array",
+          "description": "Major issue IDs still unresolved (if any).",
+          "items": {
+            "type": "string",
+            "pattern": "^(MAJOR-ISSUE-ID|EBB-ID|DEAD-DIRECTION-ID)-[A-Za-z0-9]+$"
+          }
+        },
+        "plateau_detected": {
+          "type": "boolean",
+          "description": "True if the orchestrator believes only tedious remainder work is left (or the loop is stalling)."
+        }
+      },
+      "required": [
+        "next_solution_attempt_number",
+        "latest_expert_solution_evaluator_status",
+        "unresolved_major_issue_ids",
+        "plateau_detected"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "action",
+    "target_agent",
+    "dispatch_user_message",
+    "reason",
+    "final_markdown",
+    "draft_markdown",
+    "user_requests",
+    "state_summary"
+  ],
+  "additionalProperties": false
+}
+```
