@@ -1,6 +1,8 @@
+import json
 import os
+import re
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request, send_file
@@ -35,6 +37,9 @@ SYSTEM_MESSAGE_HEADINGS = {
     "discriminator-solution-evaluator": "EXPERT_SOLUTION_EVALUATOR SYSTEM MESSAGE (TO EVALUATE THE "
     "MOST RECENT SOLUTION ATTEMPT BY A PROBLEM_SOLVER)",
 }
+ORCHESTRATOR_SCHEMA_HEADING = "SCHEMA FOR ORCHESTRA API CALL"
+STATE_PATH = SCRATCHPAD_DIR / "agentic_workflow_state.json"
+_ORCHESTRATOR_SCHEMA_CACHE: Optional[Dict[str, object]] = None
 
 
 def _clean_system_message(lines: List[str]) -> str:
@@ -86,6 +91,34 @@ def _read_system_message(key: str) -> str:
     if content is None:
         raise KeyError(f"System message heading not found: {heading}")
     return content
+
+
+def _load_orchestrator_schema() -> Dict[str, object]:
+    global _ORCHESTRATOR_SCHEMA_CACHE
+    if _ORCHESTRATOR_SCHEMA_CACHE is not None:
+        return _ORCHESTRATOR_SCHEMA_CACHE
+
+    if not CONSOLIDATED_SYSTEM_MESSAGES_PATH.exists():
+        raise FileNotFoundError(f"{CONSOLIDATED_SYSTEM_MESSAGES_PATH.name} is missing")
+
+    text = CONSOLIDATED_SYSTEM_MESSAGES_PATH.read_text(encoding="utf-8")
+    marker = f"# {ORCHESTRATOR_SCHEMA_HEADING}"
+    index = text.find(marker)
+    if index == -1:
+        raise KeyError(f"Heading not found: {ORCHESTRATOR_SCHEMA_HEADING}")
+
+    snippet = text[index:]
+    match = re.search(r"```json\s*(.*?)\s*```", snippet, re.S)
+    if not match:
+        raise ValueError("Orchestrator schema JSON block not found.")
+
+    schema_text = match.group(1)
+    try:
+        _ORCHESTRATOR_SCHEMA_CACHE = json.loads(schema_text)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Invalid orchestrator schema JSON: {exc.msg}") from exc
+
+    return _ORCHESTRATOR_SCHEMA_CACHE
 
 
 def _validate_choice(value: object, allowed: set, field: str, default: str) -> str:
@@ -164,6 +197,54 @@ def create_background_prompt_response(
     )
 
 
+def create_orchestrator_response(
+    messages: List[Dict[str, object]],
+    *,
+    model: str,
+    text_verbosity: str,
+    reasoning_effort: str,
+    background: bool,
+) -> object:
+    """Invoke Responses API with JSON schema output for the orchestrator stage."""
+
+    schema = _load_orchestrator_schema()
+    text_config: Dict[str, object] = {
+        "format": {
+            "type": "json_schema",
+            "name": "orchestrator_decision",
+            "strict": True,
+            "schema": schema,
+        }
+    }
+    if text_verbosity:
+        text_config["verbosity"] = text_verbosity
+
+    reasoning_config: Dict[str, object] = {"summary": None}
+    if reasoning_effort:
+        reasoning_config["effort"] = reasoning_effort
+
+    request_payload: Dict[str, object] = {
+        "model": model or "gpt-5.1",
+        "input": messages,
+        "text": text_config,
+        "reasoning": reasoning_config,
+        "tools": [
+            {
+                "type": "web_search",
+                "user_location": {"type": "approximate"},
+                "search_context_size": "high",
+            }
+        ],
+    }
+
+    if background:
+        request_payload["background"] = True
+    else:
+        request_payload["store"] = True
+
+    return client.responses.create(**request_payload)
+
+
 def _extract_output_text(response) -> str:
     """Pull the assistant's output_text blocks and join them for display."""
 
@@ -182,6 +263,33 @@ def _extract_output_text(response) -> str:
                     chunks.append(normalized)
 
     return "\n\n".join(chunks).strip()
+
+
+def _extract_output_texts(response) -> List[str]:
+    """Extract raw output_text blocks for JSON parsing."""
+
+    texts: List[str] = []
+    for item in getattr(response, "output", []) or []:
+        if getattr(item, "type", None) != "message":
+            continue
+        for block in getattr(item, "content", []) or []:
+            if getattr(block, "type", None) != "output_text":
+                continue
+            text_blob = getattr(block, "text", "")
+            if isinstance(text_blob, str) and text_blob.strip():
+                texts.append(text_blob)
+    return texts
+
+
+def _parse_output_json(texts: List[str]) -> tuple[List[object], List[str]]:
+    parsed: List[object] = []
+    errors: List[str] = []
+    for index, text in enumerate(texts, start=1):
+        try:
+            parsed.append(json.loads(text))
+        except json.JSONDecodeError as exc:
+            errors.append(f"output_text[{index}] JSON error: {exc.msg}")
+    return parsed, errors
 
 
 def _normalize_messages(messages: object) -> List[Dict[str, object]]:
@@ -239,7 +347,7 @@ def _normalize_messages(messages: object) -> List[Dict[str, object]]:
 
 app = Flask(__name__)
 
-PROMPT_HTML_PATH = Path(__file__).resolve().parent / "prompt_runner.html"
+PROMPT_HTML_PATH = Path(__file__).resolve().parent / "prompt_agent.html"
 PROMPT_BACKGROUND_HTML_PATH = Path(__file__).resolve().parent / "prompt_runner_background.html"
 
 
@@ -283,6 +391,31 @@ def handle_system_message(key: str):
         app.logger.exception("Failed to read system message %s", key)
         return jsonify(ok=False, error="Failed to read system message file."), 500
     return jsonify(ok=True, key=key, content=content)
+
+
+@app.get("/api/agentic-state")
+def get_agentic_state():
+    if not STATE_PATH.exists():
+        return jsonify(ok=False, error="No saved state found."), 404
+    try:
+        state = json.loads(STATE_PATH.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return jsonify(ok=False, error=f"Saved state is invalid JSON: {exc.msg}"), 500
+    return jsonify(ok=True, state=state)
+
+
+@app.post("/api/agentic-state")
+def save_agentic_state():
+    payload = request.get_json(silent=True) or {}
+    state = payload.get("state")
+    if not isinstance(state, dict):
+        return jsonify(ok=False, error="state must be an object."), 400
+    try:
+        STATE_PATH.write_text(json.dumps(state, indent=2, ensure_ascii=False), encoding="utf-8")
+    except OSError as exc:
+        app.logger.exception("Failed to write agentic state")
+        return jsonify(ok=False, error=str(exc)), 500
+    return jsonify(ok=True)
 
 
 @app.post("/api/prompt-run")
@@ -419,6 +552,145 @@ def cancel_background_prompt_run(response_id: str):
         response = client.responses.cancel(response_id)
     except Exception as exc:  # noqa: BLE001
         app.logger.exception("Background prompt cancellation failed")
+        return jsonify(ok=False, error=str(exc)), 500
+
+    payload = {
+        "ok": True,
+        "status": response.status,
+        "response": response.model_dump(),
+    }
+    payload["done"] = response.status in {"completed", "failed", "cancelled"}
+    return jsonify(payload)
+
+
+@app.post("/api/orchestrator-run")
+def handle_orchestrator_run():
+    payload = request.get_json(silent=True) or {}
+
+    try:
+        messages = _normalize_messages(payload.get("messages"))
+        model = (
+            payload.get("model").strip()
+            if isinstance(payload.get("model"), str) and payload.get("model").strip()
+            else "gpt-5.1"
+        )
+        reasoning_effort = _validate_choice(
+            payload.get("reasoning_effort") or payload.get("effort"),
+            {"none", "low", "medium", "high", "xhigh"},
+            "reasoning_effort",
+            "high",
+        )
+        text_verbosity = _validate_choice(
+            payload.get("text_verbosity") or payload.get("verbosity"),
+            {"low", "medium", "high"},
+            "text_verbosity",
+            "high",
+        )
+    except ValueError as exc:
+        return jsonify(ok=False, error=str(exc)), 400
+
+    try:
+        response = create_orchestrator_response(
+            messages,
+            model=model,
+            text_verbosity=text_verbosity or "high",
+            reasoning_effort=reasoning_effort or "high",
+            background=False,
+        )
+    except Exception as exc:  # noqa: BLE001
+        app.logger.exception("Orchestrator response creation failed")
+        return jsonify(ok=False, error=str(exc)), 500
+
+    output_texts = _extract_output_texts(response)
+    parsed_outputs, parse_errors = _parse_output_json(output_texts)
+
+    return jsonify(
+        ok=True,
+        response=response.model_dump(),
+        output_texts=output_texts,
+        parsed_outputs=parsed_outputs,
+        parse_errors=parse_errors,
+    )
+
+
+@app.post("/api/orchestrator-run-background")
+def handle_orchestrator_run_background():
+    payload = request.get_json(silent=True) or {}
+
+    try:
+        messages = _normalize_messages(payload.get("messages"))
+        model = (
+            payload.get("model").strip()
+            if isinstance(payload.get("model"), str) and payload.get("model").strip()
+            else "gpt-5.1"
+        )
+        reasoning_effort = _validate_choice(
+            payload.get("reasoning_effort") or payload.get("effort"),
+            {"none", "low", "medium", "high", "xhigh"},
+            "reasoning_effort",
+            "high",
+        )
+        text_verbosity = _validate_choice(
+            payload.get("text_verbosity") or payload.get("verbosity"),
+            {"low", "medium", "high"},
+            "text_verbosity",
+            "high",
+        )
+    except ValueError as exc:
+        return jsonify(ok=False, error=str(exc)), 400
+
+    try:
+        response = create_orchestrator_response(
+            messages,
+            model=model,
+            text_verbosity=text_verbosity or "high",
+            reasoning_effort=reasoning_effort or "high",
+            background=True,
+        )
+    except Exception as exc:  # noqa: BLE001
+        app.logger.exception("Background orchestrator creation failed")
+        return jsonify(ok=False, error=str(exc)), 500
+
+    return jsonify(
+        ok=True,
+        response_id=response.id,
+        status=response.status,
+        response=response.model_dump(),
+    )
+
+
+@app.get("/api/orchestrator-run-background/<response_id>")
+def poll_orchestrator_run(response_id: str):
+    try:
+        response = client.responses.retrieve(response_id)
+    except Exception as exc:  # noqa: BLE001
+        app.logger.exception("Background orchestrator polling failed")
+        return jsonify(ok=False, error=str(exc)), 500
+
+    output_texts = _extract_output_texts(response)
+    parsed_outputs, parse_errors = _parse_output_json(output_texts)
+
+    payload = {
+        "ok": True,
+        "status": response.status,
+        "response": response.model_dump(),
+        "output_texts": output_texts,
+        "parsed_outputs": parsed_outputs,
+        "parse_errors": parse_errors,
+    }
+    payload["done"] = response.status in {"completed", "failed", "cancelled"}
+    return jsonify(payload)
+
+
+@app.post("/api/orchestrator-run-background/<response_id>/cancel")
+def cancel_orchestrator_run(response_id: str):
+    if not response_id:
+        return jsonify(ok=False, error="response_id is required."), 400
+
+    try:
+        response = client.responses.cancel(response_id)
+    except Exception as exc:  # noqa: BLE001
+        app.logger.exception("Background orchestrator cancellation failed")
         return jsonify(ok=False, error=str(exc)), 500
 
     payload = {

@@ -229,6 +229,98 @@
         margin-bottom: 0.5rem;
       }
 
+      .workflow-prompt {
+        padding: 1rem 1.25rem;
+      }
+
+      .prompt-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        justify-content: space-between;
+        flex-wrap: wrap;
+      }
+
+      .prompt-text {
+        display: grid;
+        gap: 0.35rem;
+      }
+
+      .rendered-body {
+        margin-top: 1rem;
+        display: grid;
+        gap: 1rem;
+      }
+
+      .rendered-item {
+        background: #0c1526;
+        border: 1px solid var(--border);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        overflow-x: auto;
+      }
+
+      .rendered-item h3 {
+        margin: 0 0 0.75rem;
+        font-size: 1rem;
+        color: var(--muted);
+      }
+
+      .json-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .json-table td {
+        padding: 0.45rem 0.75rem;
+        border-top: 1px solid var(--border);
+        vertical-align: top;
+      }
+
+      .json-table tr:first-child td {
+        border-top: 0;
+      }
+
+      .json-key {
+        width: 30%;
+        font-weight: 600;
+        color: var(--accent);
+        word-break: break-word;
+      }
+
+      .json-value {
+        font-family: "SFMono-Regular", "Menlo", "Consolas", "Liberation Mono", monospace;
+        word-break: break-word;
+      }
+
+      .json-array {
+        margin: 0.2rem 0 0.2rem 1.2rem;
+        padding: 0;
+      }
+
+      .json-array li {
+        margin: 0.35rem 0;
+      }
+
+      .json-primitive {
+        font-family: "SFMono-Regular", "Menlo", "Consolas", "Liberation Mono", monospace;
+      }
+
+      .json-string {
+        color: var(--success);
+      }
+
+      .json-number,
+      .json-boolean {
+        color: var(--accent);
+      }
+
+      .json-null,
+      .json-empty {
+        color: var(--muted);
+        font-style: italic;
+      }
+
       @media (max-width: 720px) {
         main {
           padding: 1.75rem 1.25rem;
@@ -273,6 +365,19 @@
           <button type="button" class="ghost small" id="loadOrchestrator">
             Load Orchestrator
           </button>
+        </div>
+
+        <div class="controls">
+          <button type="button" class="ghost small" id="startWorkflowWith">
+            Initiate agentic workflow with approaches
+          </button>
+          <button type="button" class="ghost small" id="startWorkflowWithout">
+            Initiate agentic workflow without approaches
+          </button>
+          <button type="button" class="ghost small" id="resumeWorkflow">
+            Resume agentic workflow
+          </button>
+          <button type="button" class="ghost small" id="saveWorkflow">Save current state</button>
         </div>
 
         <div class="controls">
@@ -335,6 +440,19 @@
           <div class="status" id="status" aria-live="polite"></div>
         </div>
         <div class="hint" id="responseIdDisplay"></div>
+
+        <section class="panel workflow-prompt" id="workflowPrompt" hidden>
+          <div class="prompt-row">
+            <div class="prompt-text">
+              <strong id="workflowPromptTitle">Continue workflow?</strong>
+              <span class="hint" id="workflowPromptMessage"></span>
+            </div>
+            <div class="row-actions">
+              <button type="button" class="primary small" id="workflowPromptYes">Yes</button>
+              <button type="button" class="ghost small" id="workflowPromptNo">No</button>
+            </div>
+          </div>
+        </section>
       </form>
 
       <section class="panel">
@@ -381,6 +499,24 @@
           style="min-height: 12rem"
         ></textarea>
       </section>
+
+      <section class="panel" id="orchestratorPanel">
+        <div style="display: flex; align-items: center; gap: 0.75rem; justify-content: space-between">
+          <h2 style="margin: 0">Orchestrator decision (parsed JSON)</h2>
+          <div class="panel-actions">
+            <button type="button" class="ghost small" id="copyOrchestratorJson">Copy JSON</button>
+          </div>
+        </div>
+        <textarea
+          id="orchestratorJson"
+          readonly
+          placeholder="Parsed orchestrator JSON will appear here."
+          style="min-height: 10rem"
+        ></textarea>
+        <div id="orchestratorRendered" class="rendered-body">
+          <p class="hint">Rendered orchestrator output will appear here.</p>
+        </div>
+      </section>
     </main>
 
     <script>
@@ -411,6 +547,18 @@
       const loadExpertEvaluatorBtn = document.getElementById("loadExpertEvaluator");
       const loadResearcherBtn = document.getElementById("loadResearcher");
       const loadOrchestratorBtn = document.getElementById("loadOrchestrator");
+      const startWorkflowWithBtn = document.getElementById("startWorkflowWith");
+      const startWorkflowWithoutBtn = document.getElementById("startWorkflowWithout");
+      const resumeWorkflowBtn = document.getElementById("resumeWorkflow");
+      const saveWorkflowBtn = document.getElementById("saveWorkflow");
+      const workflowPrompt = document.getElementById("workflowPrompt");
+      const workflowPromptTitle = document.getElementById("workflowPromptTitle");
+      const workflowPromptMessage = document.getElementById("workflowPromptMessage");
+      const workflowPromptYes = document.getElementById("workflowPromptYes");
+      const workflowPromptNo = document.getElementById("workflowPromptNo");
+      const orchestratorJson = document.getElementById("orchestratorJson");
+      const orchestratorRendered = document.getElementById("orchestratorRendered");
+      const copyOrchestratorJsonBtn = document.getElementById("copyOrchestratorJson");
       const POLL_INTERVAL_MS = 60000;
       const DEFAULT_CANCEL_BUTTON_TEXT = "Cancel background task";
       let currentBackgroundRun = null;
@@ -421,6 +569,37 @@
         user: "User request or follow-up. Example: Explain prime numbers.",
         assistant: "Assistant reply to seed the conversation. Example: A concise answer to the user.",
       };
+      const KEYWORD_REGEX = /\b(problem|question|research)\b/i;
+      const AGENTIC_STAGES = {
+        approach_proposer: { key: "approach-proposer", label: "Approach Proposer" },
+        approach_evaluator: { key: "approach-evaluator", label: "Approach Evaluator" },
+        problem_solver: { key: "problem-solver", label: "Problem Solver" },
+        expert_evaluator: { key: "expert-evaluator", label: "Expert Evaluator" },
+        orchestrator: { key: "orchestrator", label: "Orchestrator" },
+      };
+      const INITIAL_QUEUES = {
+        with_approaches: [
+          "approach_proposer",
+          "approach_evaluator",
+          "problem_solver",
+          "expert_evaluator",
+          "orchestrator",
+        ],
+        without_approaches: ["problem_solver", "expert_evaluator", "orchestrator"],
+      };
+      const LOOP_QUEUE = ["problem_solver", "expert_evaluator", "orchestrator"];
+      const agenticState = {
+        active: false,
+        workflowType: null,
+        queue: [],
+        loopCount: 0,
+        error: null,
+        completed: false,
+        lastStage: null,
+        lastOrchestrator: null,
+        running: false,
+      };
+      let workflowPromptConfig = null;
 
       const normalizeRole = (value) => {
         const lower = typeof value === "string" ? value.trim().toLowerCase() : "";
@@ -544,6 +723,266 @@
         }
 
         return chunks.join("\n\n").trim();
+      };
+
+      const renderOrchestratorPlaceholder = (message) => {
+        if (!orchestratorRendered) return;
+        orchestratorRendered.replaceChildren();
+        const helper = document.createElement("p");
+        helper.className = "hint";
+        helper.textContent = message;
+        orchestratorRendered.appendChild(helper);
+      };
+
+      const buildPrimitiveNode = (value) => {
+        const span = document.createElement("span");
+        span.className = "json-primitive";
+        if (value === null) {
+          span.classList.add("json-null");
+          span.textContent = "null";
+          return span;
+        }
+        switch (typeof value) {
+          case "string":
+            span.classList.add("json-string");
+            span.textContent = value;
+            break;
+          case "number":
+            span.classList.add("json-number");
+            span.textContent = String(value);
+            break;
+          case "boolean":
+            span.classList.add("json-boolean");
+            span.textContent = value ? "true" : "false";
+            break;
+          default:
+            span.textContent = String(value);
+        }
+        return span;
+      };
+
+      const buildArrayNode = (value) => {
+        if (!value.length) {
+          const empty = document.createElement("span");
+          empty.className = "json-empty";
+          empty.textContent = "[]";
+          return empty;
+        }
+        const list = document.createElement("ol");
+        list.className = "json-array";
+        value.forEach((item) => {
+          const li = document.createElement("li");
+          li.appendChild(buildValueNode(item));
+          list.appendChild(li);
+        });
+        return list;
+      };
+
+      const buildObjectNode = (value) => {
+        const entries = Object.entries(value);
+        if (!entries.length) {
+          const empty = document.createElement("span");
+          empty.className = "json-empty";
+          empty.textContent = "{}";
+          return empty;
+        }
+        const table = document.createElement("table");
+        table.className = "json-table";
+        const body = document.createElement("tbody");
+        entries.forEach(([key, val]) => {
+          const row = document.createElement("tr");
+          const keyCell = document.createElement("td");
+          keyCell.className = "json-key";
+          keyCell.textContent = key;
+          const valueCell = document.createElement("td");
+          valueCell.className = "json-value";
+          valueCell.appendChild(buildValueNode(val));
+          row.appendChild(keyCell);
+          row.appendChild(valueCell);
+          body.appendChild(row);
+        });
+        table.appendChild(body);
+        return table;
+      };
+
+      const buildValueNode = (value) => {
+        if (Array.isArray(value)) {
+          return buildArrayNode(value);
+        }
+        if (value && typeof value === "object") {
+          return buildObjectNode(value);
+        }
+        return buildPrimitiveNode(value);
+      };
+
+      const renderOrchestratorOutput = (output) => {
+        if (!orchestratorRendered) return;
+        orchestratorRendered.replaceChildren();
+        if (!output) {
+          renderOrchestratorPlaceholder("No parsed orchestrator output available.");
+          return;
+        }
+        const item = document.createElement("div");
+        item.className = "rendered-item";
+        const heading = document.createElement("h3");
+        heading.textContent = "Parsed output";
+        item.appendChild(heading);
+        item.appendChild(buildValueNode(output));
+        orchestratorRendered.appendChild(item);
+      };
+
+      const setOrchestratorOutput = (parsed, rawText) => {
+        if (orchestratorJson) {
+          orchestratorJson.value = rawText || (parsed ? JSON.stringify(parsed, null, 2) : "");
+        }
+        renderOrchestratorOutput(parsed);
+        agenticState.lastOrchestrator = parsed
+          ? { parsed, rawText: rawText || JSON.stringify(parsed, null, 2) }
+          : null;
+      };
+
+      const getSettingsSnapshot = () => ({
+        model: modelSelect?.value || "gpt-5.1",
+        reasoning_effort: effortSelect?.value || "high",
+        text_verbosity: verbositySelect?.value || "high",
+        background: (backgroundSelect?.value || "false") === "true",
+      });
+
+      const buildStateSnapshot = (note = "") => ({
+        version: 1,
+        saved_at: new Date().toISOString(),
+        note,
+        messages: collectConversationMessages(),
+        settings: getSettingsSnapshot(),
+        workflow: {
+          active: agenticState.active,
+          workflowType: agenticState.workflowType,
+          queue: Array.isArray(agenticState.queue) ? [...agenticState.queue] : [],
+          loopCount: agenticState.loopCount,
+          error: agenticState.error,
+          completed: agenticState.completed,
+          lastStage: agenticState.lastStage,
+        },
+        last_orchestrator: agenticState.lastOrchestrator,
+      });
+
+      const saveAgenticState = async (note, options = {}) => {
+        const { silent = false } = options;
+        const snapshot = buildStateSnapshot(note);
+        try {
+          const response = await fetch("/api/agentic-state", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ state: snapshot }),
+          });
+          const { parsed, ok, status } = await parseResponseBody(response);
+          if (!ok) {
+            const err =
+              (parsed && parsed.error) ||
+              (typeof parsed === "string" ? parsed : null) ||
+              `Save failed with status ${status}`;
+            if (!silent) showStatus(err, "error");
+            return false;
+          }
+          if (!silent) showStatus("Workflow state saved.", "success");
+          return true;
+        } catch (error) {
+          console.error("Save state error", error);
+          if (!silent) {
+            showStatus(
+              `Save failed: ${error && error.message ? error.message : "Unknown error"}`,
+              "error"
+            );
+          }
+          return false;
+        }
+      };
+
+      const loadAgenticState = async () => {
+        const response = await fetch("/api/agentic-state");
+        const { parsed, ok, status } = await parseResponseBody(response);
+        if (!ok) {
+          const err =
+            (parsed && parsed.error) ||
+            (typeof parsed === "string" ? parsed : null) ||
+            `Load failed with status ${status}`;
+          throw new Error(err);
+        }
+        if (!parsed || typeof parsed.state !== "object") {
+          throw new Error("Saved state response is invalid.");
+        }
+        return parsed.state;
+      };
+
+      const applyStateSnapshot = (state) => {
+        if (!state || typeof state !== "object") return;
+        const messages = Array.isArray(state.messages) ? state.messages : [];
+        messagesContainer.innerHTML = "";
+        messages.forEach((entry) => {
+          const role = normalizeRole(entry?.role || "user");
+          const text = typeof entry?.text === "string" ? entry.text : "";
+          addMessageRow(role, text);
+        });
+        if (!messages.length) {
+          addMessageRow("developer");
+          addMessageRow("user");
+        }
+
+        if (state.settings) {
+          const settings = state.settings;
+          if (settings.model && modelSelect) modelSelect.value = settings.model;
+          if (settings.text_verbosity && verbositySelect)
+            verbositySelect.value = settings.text_verbosity;
+          if (settings.reasoning_effort && effortSelect)
+            effortSelect.value = settings.reasoning_effort;
+          if (typeof settings.background === "boolean" && backgroundSelect) {
+            backgroundSelect.value = settings.background ? "true" : "false";
+          }
+        }
+
+        const workflow = state.workflow || {};
+        agenticState.active = Boolean(workflow.active);
+        agenticState.workflowType = workflow.workflowType || null;
+        agenticState.queue = Array.isArray(workflow.queue) ? [...workflow.queue] : [];
+        agenticState.loopCount = Number.isInteger(workflow.loopCount) ? workflow.loopCount : 0;
+        agenticState.error = workflow.error || null;
+        agenticState.completed = Boolean(workflow.completed);
+        agenticState.lastStage = workflow.lastStage || null;
+        agenticState.running = false;
+        agenticState.lastOrchestrator = state.last_orchestrator || null;
+
+        if (agenticState.lastOrchestrator?.parsed) {
+          setOrchestratorOutput(
+            agenticState.lastOrchestrator.parsed,
+            agenticState.lastOrchestrator.rawText
+          );
+        } else {
+          if (orchestratorJson) orchestratorJson.value = "";
+          renderOrchestratorPlaceholder("Rendered orchestrator output will appear here.");
+        }
+      };
+
+      const showWorkflowPrompt = ({
+        title,
+        message,
+        yesLabel = "Yes",
+        noLabel = "No",
+        onYes,
+        onNo,
+      }) => {
+        if (!workflowPrompt) return;
+        workflowPromptTitle.textContent = title || "Continue workflow?";
+        workflowPromptMessage.textContent = message || "";
+        workflowPromptYes.textContent = yesLabel;
+        workflowPromptNo.textContent = noLabel;
+        workflowPromptConfig = { onYes, onNo };
+        workflowPrompt.hidden = false;
+      };
+
+      const hideWorkflowPrompt = () => {
+        if (!workflowPrompt) return;
+        workflowPrompt.hidden = true;
+        workflowPromptConfig = null;
       };
 
       const sleep = (ms, signal) =>
@@ -723,6 +1162,19 @@
       copyFullResponseBtn.addEventListener("click", () =>
         copyText(fullResponseBox.value, copyFullResponseBtn)
       );
+      copyOrchestratorJsonBtn?.addEventListener("click", () =>
+        copyText(orchestratorJson?.value || "", copyOrchestratorJsonBtn)
+      );
+      workflowPromptYes?.addEventListener("click", () => {
+        const handler = workflowPromptConfig?.onYes;
+        hideWorkflowPrompt();
+        if (typeof handler === "function") handler();
+      });
+      workflowPromptNo?.addEventListener("click", () => {
+        const handler = workflowPromptConfig?.onNo;
+        hideWorkflowPrompt();
+        if (typeof handler === "function") handler();
+      });
       cancelBackgroundBtn?.addEventListener("click", async () => {
         if (!currentBackgroundRun?.responseId) {
           showStatus("No background task is currently running.", "error");
@@ -740,6 +1192,7 @@
         showStatus("Cancelling background task…");
 
         const baseCancelEndpoint =
+          currentBackgroundRun?.cancelEndpointBase ||
           form.dataset.backgroundCancelEndpoint ||
           form.dataset.backgroundPollEndpoint ||
           form.dataset.backgroundEndpoint ||
@@ -802,7 +1255,9 @@
             el === copyOutputBtn ||
             el === copyPayloadBtn ||
             el === copyFullResponseBtn ||
-            el === cancelBackgroundBtn
+            el === cancelBackgroundBtn ||
+            el === saveWorkflowBtn ||
+            el === copyOrchestratorJsonBtn
           )
             return; // keep copy/cancel available
           el.disabled = disabled;
@@ -827,7 +1282,7 @@
           showStatus(err, "error");
           outputBox.value = "";
           if (fullResponseBox) fullResponseBox.value = "";
-          return;
+          return null;
         }
 
         showStatus("Received response from OpenAI.", "success");
@@ -838,11 +1293,15 @@
             : String(parsed);
         outputBox.value = extractedText || "";
         if (fullResponseBox) fullResponseBox.value = pretty || "";
+        return { payload: parsed, outputText: extractedText };
       };
 
-      const handleBackgroundRequest = async (payload) => {
-        const endpoint = form.dataset.backgroundEndpoint || "/api/prompt-run-background";
-        const pollBase = form.dataset.backgroundPollEndpoint || endpoint;
+      const handleBackgroundRequest = async (payload, endpoints = {}) => {
+        const endpoint =
+          endpoints.start || form.dataset.backgroundEndpoint || "/api/prompt-run-background";
+        const pollBase = endpoints.poll || form.dataset.backgroundPollEndpoint || endpoint;
+        const cancelBase =
+          endpoints.cancel || form.dataset.backgroundCancelEndpoint || pollBase || endpoint;
         const response = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -857,7 +1316,7 @@
             (typeof parsed === "string" ? parsed : null) ||
             `Request failed with status ${status}`;
           showStatus(err, "error");
-          return;
+          return null;
         }
 
         const responseId = parsed.response_id || (parsed.response && parsed.response.id);
@@ -879,6 +1338,8 @@
           controller: new AbortController(),
           cancelInFlight: false,
           lastStatus: normalizedStart,
+          cancelEndpointBase: cancelBase,
+          pollEndpointBase: pollBase,
         };
         updateCancelButton(normalizedStart);
 
@@ -914,6 +1375,453 @@
           finalStatus === "completed" ? "success" : finalStatus === "failed" ? "error" : "";
         showStatus(`Background run finished with status: ${finalStatus}`, statusType);
         clearBackgroundRunState();
+        return { payload: finalPayload, outputText: extractedText };
+      };
+
+      const buildRequestPayload = () => {
+        const rows = Array.from(messagesContainer.querySelectorAll(".message-row"));
+        if (!rows.length) {
+          throw new Error("Add at least one message before sending.");
+        }
+
+        const messages = [];
+        for (const row of rows) {
+          const select = row.querySelector("select");
+          const textarea = row.querySelector("textarea");
+          const role = select?.value;
+          const text = textarea?.value?.trim();
+          if (!role || !text) {
+            throw new Error("Every message needs a role and text.");
+          }
+          const type = role === "assistant" ? "output_text" : "input_text";
+          messages.push({ role, content: [{ type, text }] });
+        }
+
+        const model = modelSelect?.value || "gpt-5.1";
+        const backgroundMode = (backgroundSelect?.value || "false") === "true";
+        const reasoningEffort = effortSelect?.value || "high";
+        const textVerbosity = verbositySelect?.value || "high";
+
+        return {
+          payload: {
+            messages,
+            model,
+            background: backgroundMode,
+            reasoning_effort: reasoningEffort,
+            text_verbosity: textVerbosity,
+          },
+          settings: {
+            model,
+            backgroundMode,
+            reasoningEffort,
+            textVerbosity,
+          },
+          messages,
+        };
+      };
+
+      const buildPayloadForDisplay = (messages, settings, formatType = "text") => {
+        const textConfig = { format: { type: formatType } };
+        if (formatType === "json_schema") {
+          textConfig.format.name = "orchestrator_decision";
+          textConfig.format.strict = true;
+        }
+        textConfig.verbosity = settings.textVerbosity;
+
+        const reasoningConfig = { summary: null };
+        reasoningConfig.effort = settings.reasoningEffort;
+
+        const payloadForDisplay = {
+          model: settings.model,
+          input: messages,
+          text: textConfig,
+          reasoning: reasoningConfig,
+          tools: [
+            {
+              type: "web_search",
+              user_location: { type: "approximate" },
+              search_context_size: "high",
+            },
+          ],
+        };
+        if (settings.backgroundMode) {
+          payloadForDisplay.background = true;
+        } else {
+          payloadForDisplay.store = true;
+        }
+        return payloadForDisplay;
+      };
+
+      const updatePayloadBox = (messages, settings, formatType = "text") => {
+        payloadBox.value = JSON.stringify(
+          buildPayloadForDisplay(messages, settings, formatType),
+          null,
+          2
+        );
+      };
+
+      const handleOrchestratorForegroundRequest = async (payload) => {
+        const endpoint = "/api/orchestrator-run";
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        const { parsed, ok, status } = await parseResponseBody(response);
+        if (!ok) {
+          const err =
+            (parsed && parsed.error) ||
+            (typeof parsed === "string" ? parsed : null) ||
+            `Request failed with status ${status}`;
+          showStatus(err, "error");
+          outputBox.value = "";
+          if (fullResponseBox) fullResponseBox.value = "";
+          return null;
+        }
+
+        const outputTexts = Array.isArray(parsed.output_texts) ? parsed.output_texts : [];
+        outputBox.value = outputTexts.join("\n\n").trim();
+        if (fullResponseBox) {
+          fullResponseBox.value = parsed.response ? JSON.stringify(parsed.response, null, 2) : "";
+        }
+        showStatus("Received orchestrator response.", "success");
+        return parsed;
+      };
+
+      const handleOrchestratorBackgroundRequest = async (payload) => {
+        const endpoint = "/api/orchestrator-run-background";
+        const pollBase = "/api/orchestrator-run-background";
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        const { parsed, ok, status } = await parseResponseBody(response);
+
+        if (!ok) {
+          const err =
+            (parsed && parsed.error) ||
+            (typeof parsed === "string" ? parsed : null) ||
+            `Request failed with status ${status}`;
+          showStatus(err, "error");
+          return null;
+        }
+
+        const responseId = parsed.response_id || (parsed.response && parsed.response.id);
+        if (!responseId) {
+          showStatus("No response ID returned for background job.", "error");
+          return null;
+        }
+
+        const startingStatus =
+          parsed.status || (parsed.response && parsed.response.status) || "queued";
+        const normalizedStart = normalizeStatus(startingStatus) || startingStatus;
+        setResponseId(responseId);
+        showStatus(
+          `Background orchestrator started (${normalizedStart}). response_id: ${responseId}. Polling for completion…`
+        );
+
+        currentBackgroundRun = {
+          responseId,
+          controller: new AbortController(),
+          cancelInFlight: false,
+          lastStatus: normalizedStart,
+          cancelEndpointBase: pollBase,
+          pollEndpointBase: pollBase,
+        };
+        updateCancelButton(normalizedStart);
+
+        let finalPayload;
+        try {
+          finalPayload = await pollForCompletion(responseId, pollBase, {
+            signal: currentBackgroundRun.controller.signal,
+            onStatus: (statusText) => markBackgroundStatus(statusText),
+          });
+        } catch (error) {
+          if (error.name === "AbortError" && currentBackgroundRun?.cancelInFlight) {
+            clearBackgroundRunState();
+            return null;
+          }
+          clearBackgroundRunState();
+          throw error;
+        }
+
+        const finalStatusRaw = finalPayload?.status || "unknown";
+        const finalStatus = normalizeStatus(finalStatusRaw) || finalStatusRaw || "unknown";
+        const outputTexts = Array.isArray(finalPayload.output_texts) ? finalPayload.output_texts : [];
+        outputBox.value = outputTexts.join("\n\n").trim();
+        if (fullResponseBox) {
+          fullResponseBox.value = finalPayload.response
+            ? JSON.stringify(finalPayload.response, null, 2)
+            : "";
+        }
+
+        const statusType =
+          finalStatus === "completed" ? "success" : finalStatus === "failed" ? "error" : "";
+        showStatus(`Background orchestrator finished with status: ${finalStatus}`, statusType);
+        clearBackgroundRunState();
+        return finalPayload;
+      };
+
+      const getMessageRows = () =>
+        Array.from(messagesContainer.querySelectorAll(".message-row"));
+
+      const setRowRole = (row, role) => {
+        const normalized = normalizeRole(role);
+        const select = row.querySelector("select");
+        const textarea = row.querySelector("textarea");
+        if (select) {
+          select.value = normalized;
+          select.dispatchEvent(new Event("change"));
+        }
+        if (textarea) {
+          textarea.placeholder = ROLE_PLACEHOLDERS[normalized] || "";
+        }
+      };
+
+      const pruneToFirstTwoRows = () => {
+        const rows = getMessageRows();
+        rows.slice(2).forEach((row) => row.remove());
+      };
+
+      const validateProblemInput = () => {
+        const rows = getMessageRows();
+        if (rows.length < 2) {
+          showStatus("A developer message and user problem statement are required.", "error");
+          return null;
+        }
+        const devRow = rows[0];
+        const userRow = rows[1];
+        setRowRole(devRow, "developer");
+        setRowRole(userRow, "user");
+        const userText = userRow.querySelector("textarea")?.value?.trim() || "";
+        if (!userText) {
+          showStatus("User problem statement is required.", "error");
+          return null;
+        }
+        if (!KEYWORD_REGEX.test(userText)) {
+          showStatus(
+            "User input must include the keyword problem, question, or research.",
+            "error"
+          );
+          return null;
+        }
+        return { devRow, userRow, userText };
+      };
+
+      const appendUserMessage = (text) => {
+        if (!text) return;
+        addMessageRow("user", text);
+      };
+
+      const runAgentStage = async (stage) => {
+        const stageInfo = AGENTIC_STAGES[stage];
+        if (!stageInfo) throw new Error(`Unknown stage: ${stage}`);
+        showStatus(`Running ${stageInfo.label}…`);
+        const content = await fetchSystemMessage(stageInfo.key);
+        replaceFirstMessageWithContent(content);
+
+        const { payload, settings, messages } = buildRequestPayload();
+        updatePayloadBox(messages, settings, "text");
+
+        const result = payload.background
+          ? await handleBackgroundRequest(payload)
+          : await handleForegroundRequest(payload);
+        if (!result || !result.outputText) {
+          throw new Error("No assistant output returned.");
+        }
+        appendUserMessage(result.outputText);
+      };
+
+      const runOrchestratorStage = async () => {
+        const stageInfo = AGENTIC_STAGES.orchestrator;
+        showStatus(`Running ${stageInfo.label}…`);
+        const content = await fetchSystemMessage(stageInfo.key);
+        replaceFirstMessageWithContent(content);
+
+        const { payload, settings, messages } = buildRequestPayload();
+        updatePayloadBox(messages, settings, "json_schema");
+
+        const result = payload.background
+          ? await handleOrchestratorBackgroundRequest(payload)
+          : await handleOrchestratorForegroundRequest(payload);
+        if (!result) {
+          throw new Error("No orchestrator response returned.");
+        }
+
+        const parsedOutputs = Array.isArray(result.parsed_outputs) ? result.parsed_outputs : [];
+        const parseErrors = Array.isArray(result.parse_errors) ? result.parse_errors : [];
+        if (parseErrors.length) {
+          throw new Error(`Orchestrator JSON parse error: ${parseErrors.join(" | ")}`);
+        }
+        if (!parsedOutputs.length) {
+          throw new Error("Orchestrator returned no parsed JSON output.");
+        }
+        const rawText = Array.isArray(result.output_texts) ? result.output_texts.join("\n\n") : "";
+        setOrchestratorOutput(parsedOutputs[0], rawText);
+        return parsedOutputs[0];
+      };
+
+      const promptToContinue = (nextStage) => {
+        const nextLabel = AGENTIC_STAGES[nextStage]?.label || "next stage";
+        showWorkflowPrompt({
+          title: "Continue workflow?",
+          message: `Agent output captured. Save if needed. Proceed to ${nextLabel}?`,
+          yesLabel: "Yes",
+          noLabel: "No",
+          onYes: () => runNextStage(),
+          onNo: async () => {
+            const saved = await saveAgenticState("paused", { silent: true });
+            showStatus(
+              saved
+                ? "Workflow paused and saved. Use Resume to continue."
+                : "Workflow paused. Save failed.",
+              saved ? "success" : "error"
+            );
+          },
+        });
+      };
+
+      const promptForLoop = (action) => {
+        showWorkflowPrompt({
+          title: "Run another solver loop?",
+          message: `Orchestrator action: ${action || "DISPATCH"}. Run another Solver/Evaluator loop or end?`,
+          yesLabel: "Run loop",
+          noLabel: "End process",
+          onYes: () => {
+            agenticState.queue = [...LOOP_QUEUE];
+            agenticState.loopCount += 1;
+            runNextStage();
+          },
+          onNo: async () => {
+            agenticState.completed = true;
+            agenticState.active = false;
+            const saved = await saveAgenticState("ended", { silent: true });
+            showStatus(
+              saved ? "Workflow ended by user. State saved." : "Workflow ended by user.",
+              "success"
+            );
+          },
+        });
+      };
+
+      const runNextStage = async () => {
+        if (agenticState.running) {
+          showStatus("Workflow already running.", "error");
+          return;
+        }
+        const stage = agenticState.queue[0];
+        if (!stage) {
+          agenticState.completed = true;
+          agenticState.active = false;
+          showStatus("Workflow complete.", "success");
+          return;
+        }
+
+        agenticState.running = true;
+        agenticState.error = null;
+        hideWorkflowPrompt();
+        disableForm(true);
+
+        try {
+          if (stage === "orchestrator") {
+            const parsed = await runOrchestratorStage();
+            agenticState.queue.shift();
+            agenticState.lastStage = stage;
+            agenticState.error = null;
+            await saveAgenticState("orchestrator-complete");
+
+            const action = parsed?.action;
+            if (action === "FINAL" || action === "ASK_USER") {
+              agenticState.completed = true;
+              agenticState.active = false;
+              showStatus(`Workflow completed (action: ${action}).`, "success");
+              return;
+            }
+            promptForLoop(action);
+            return;
+          }
+
+          await runAgentStage(stage);
+          agenticState.queue.shift();
+          agenticState.lastStage = stage;
+          agenticState.error = null;
+
+          const nextStage = agenticState.queue[0];
+          if (!nextStage) {
+            agenticState.completed = true;
+            agenticState.active = false;
+            showStatus("Workflow complete.", "success");
+            return;
+          }
+          promptToContinue(nextStage);
+        } catch (error) {
+          const message = error && error.message ? error.message : "Unknown error";
+          agenticState.error = { stage, message };
+          showStatus(`${AGENTIC_STAGES[stage]?.label || stage} failed: ${message}`, "error");
+          await saveAgenticState("error", { silent: true });
+        } finally {
+          agenticState.running = false;
+          disableForm(false);
+        }
+      };
+
+      const startAgenticWorkflow = async (type) => {
+        if (agenticState.running) {
+          showStatus("Workflow already running.", "error");
+          return;
+        }
+        hideWorkflowPrompt();
+        const validation = validateProblemInput();
+        if (!validation) return;
+        pruneToFirstTwoRows();
+
+        agenticState.active = true;
+        agenticState.workflowType = type;
+        agenticState.queue = [...(INITIAL_QUEUES[type] || [])];
+        agenticState.loopCount = 0;
+        agenticState.error = null;
+        agenticState.completed = false;
+        agenticState.lastStage = null;
+        agenticState.lastOrchestrator = null;
+        if (orchestratorJson) orchestratorJson.value = "";
+        renderOrchestratorPlaceholder("Rendered orchestrator output will appear here.");
+
+        await runNextStage();
+      };
+
+      const resumeAgenticWorkflow = async () => {
+        if (agenticState.running) {
+          showStatus("Workflow already running.", "error");
+          return;
+        }
+        hideWorkflowPrompt();
+        try {
+          showStatus("Loading saved workflow state…");
+          const state = await loadAgenticState();
+          applyStateSnapshot(state);
+          showStatus("Saved workflow state restored.", "success");
+        } catch (error) {
+          console.error("Resume error", error);
+          showStatus(
+            `Resume failed: ${error && error.message ? error.message : "Unknown error"}`,
+            "error"
+          );
+          return;
+        }
+
+        if (agenticState.completed) {
+          showStatus("Workflow already completed.", "success");
+          return;
+        }
+        if (!agenticState.queue.length) {
+          showStatus("No pending workflow stage to resume.", "error");
+          return;
+        }
+
+        await runNextStage();
       };
 
       form.addEventListener("submit", async (event) => {
@@ -1144,6 +2052,14 @@
       wireLoaderButton(loadExpertEvaluatorBtn, "expert-evaluator", "Expert Evaluator");
       wireLoaderButton(loadResearcherBtn, "researcher", "Researcher");
       wireLoaderButton(loadOrchestratorBtn, "orchestrator", "Orchestrator");
+      startWorkflowWithBtn?.addEventListener("click", () =>
+        startAgenticWorkflow("with_approaches")
+      );
+      startWorkflowWithoutBtn?.addEventListener("click", () =>
+        startAgenticWorkflow("without_approaches")
+      );
+      resumeWorkflowBtn?.addEventListener("click", () => resumeAgenticWorkflow());
+      saveWorkflowBtn?.addEventListener("click", () => saveAgenticState("manual"));
       initializeMessages();
     </script>
   </body>
