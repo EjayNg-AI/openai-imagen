@@ -36,3 +36,4 @@
 **Coding agent to summarize agent-driven code edits here.**
 - Added configurable agentic workflow state filenames in the UI and backend, including validation and per-file persistence.
 - Documented the new filename-based save/resume behavior in `scratchpad/agentic_problem_solver.md`.
+- Added a Clear all fields button that resets inputs/outputs to a clean developer+user state in `scratchpad/prompt_agent.html`.

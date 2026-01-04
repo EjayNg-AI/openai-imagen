@@ -418,6 +418,7 @@
           <button type="button" class="ghost small" id="copyInputsSkipFirst">
             Copy inputs except first msg
           </button>
+          <button type="button" class="ghost small" id="clearAllFields">Clear all fields</button>
         </div>
 
         <div class="controls">
@@ -556,6 +557,7 @@
       const addAssistantFromOutputBtn = document.getElementById("addFromOutput");
       const copyInputsBtn = document.getElementById("copyInputs");
       const copyInputsSkipFirstBtn = document.getElementById("copyInputsSkipFirst");
+      const clearAllFieldsBtn = document.getElementById("clearAllFields");
       const copyOutputBtn = document.getElementById("copyOutput");
       const payloadBox = document.getElementById("payloadBox");
       const copyPayloadBtn = document.getElementById("copyPayload");
@@ -1156,6 +1158,37 @@
         return row;
       };
 
+      const resetAgenticState = () => {
+        agenticState.active = false;
+        agenticState.workflowType = null;
+        agenticState.queue = [];
+        agenticState.loopCount = 0;
+        agenticState.error = null;
+        agenticState.completed = false;
+        agenticState.lastStage = null;
+        agenticState.lastOrchestrator = null;
+        agenticState.running = false;
+      };
+
+      const clearAllFields = () => {
+        hideWorkflowPrompt();
+        clearBackgroundRunState();
+        resetAgenticState();
+
+        messagesContainer.innerHTML = "";
+        addMessageRow("developer");
+        addMessageRow("user");
+
+        if (stateFilenameInput) stateFilenameInput.value = DEFAULT_STATE_FILENAME;
+        if (outputBox) outputBox.value = "";
+        if (payloadBox) payloadBox.value = "";
+        if (fullResponseBox) fullResponseBox.value = "";
+        if (orchestratorJson) orchestratorJson.value = "";
+        renderOrchestratorPlaceholder("Rendered orchestrator output will appear here.");
+        setResponseId("");
+        showStatus("Cleared all fields.", "success");
+      };
+
       addMessageBtn.addEventListener("click", () => addMessageRow("user"));
       addAssistantBtn.addEventListener("click", () => addMessageRow("assistant"));
       addAssistantFromOutputBtn.addEventListener("click", () => {
@@ -1163,6 +1196,7 @@
         const row = buildMessageRow("assistant", text);
         messagesContainer.appendChild(row);
       });
+      clearAllFieldsBtn?.addEventListener("click", () => clearAllFields());
       forkConversationBtn?.addEventListener("click", () => {
         const rows = Array.from(messagesContainer.querySelectorAll(".message-row"));
         if (!rows.length) {
