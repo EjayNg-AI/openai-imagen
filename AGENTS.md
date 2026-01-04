@@ -26,7 +26,25 @@
   `python -m pip install -r requirements.txt --upgrade`
   If coding agent is able to perform this command on behalf of the user, offer to do so.
 
---- 
+---
+
+# Instructions for the coding agent for this session
+
+These instructions apply to the current session only. They will not persist to future sessions.
+
+- The following files have been cloned before the start of this session:
+  - scratchpad/prompt.py --> scratchpad/prompt_agent.py
+  - scratchpad/prompt_runner.html --> scratchpad/prompt_agent.html
+  No modifications have been made to these files yet. These are exact copies of the original files.
+
+- In this session, you are to make modifications to the cloned files only.
+  The original files must remain unmodified.
+
+- In this session, you have to refer to the instructions on how to use JSON schema input and elicit JSON output with the OpenAI API. You can also refer to the playground files for testing out JSON input and output for practical implementation of JSON input and output.
+
+- Further instructions will be provided by the user.
+
+---
 
 # Change log for agent-driven edits
 
