@@ -18,6 +18,9 @@
 - scratchpad/prompt.py and scratchpad/prompt_runner.html and scratchpad/system_messages_consolidated.md
   Playground for executing multi-turn conversations with the OpenAI API in text format. The system messages that can be loaded into the developer input box is stored in the markdown file.
 
+- scratchpad/prompt_agent.py and scratchpad/prompt_agent.html and scratchpad/system_messages_consolidated.md and scratchpad/agentic_problem_solver.md
+  Playground for executing multi-turn conversations with the OpenAI API in agent mode. The system messages that can be loaded into the developer input box is stored in the markdown file scratchpad/system_messages_consolidated.md. The file scratchpad/agentic_problem_solver.md contains an outline of how the agent mode operates.
+
 ---
 
 # When the coding agent is initiated
@@ -28,27 +31,8 @@
 
 ---
 
-# Instructions for the coding agent for this session
-
-These instructions apply to the current session only. They will not persist to future sessions.
-
-- The following files have been cloned before the start of this session:
-  - scratchpad/prompt.py --> scratchpad/prompt_agent.py
-  - scratchpad/prompt_runner.html --> scratchpad/prompt_agent.html
-  No modifications have been made to these files yet. These are exact copies of the original files.
-
-- In this session, you are to make modifications to the cloned files only.
-  The original files must remain unmodified.
-
-- In this session, you have to refer to the instructions on how to use JSON schema input and elicit JSON output with the OpenAI API. You can also refer to the playground files for testing out JSON input and output for practical implementation of JSON input and output.
-
-- Further instructions will be provided by the user.
-
----
-
 # Change log for agent-driven edits
 
 **Coding agent to summarize agent-driven code edits here.**
-
-- Updated system message heading mappings in `scratchpad/prompt.py` to match new underscore-based headings in `scratchpad/system_messages_consolidated.md`.
-
+- Added configurable agentic workflow state filenames in the UI and backend, including validation and per-file persistence.
+- Documented the new filename-based save/resume behavior in `scratchpad/agentic_problem_solver.md`.

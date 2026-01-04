@@ -88,6 +88,16 @@
         font: inherit;
       }
 
+      input.text-input {
+        background: var(--textarea-bg);
+        border: 1px solid var(--textarea-border);
+        color: var(--fg);
+        border-radius: 0.55rem;
+        padding: 0.55rem 0.75rem;
+        font: inherit;
+        min-width: 240px;
+      }
+
       textarea {
         width: 100%;
         min-height: 6rem;
@@ -101,6 +111,7 @@
         line-height: 1.45;
       }
 
+      input.text-input:focus,
       textarea:focus,
       select:focus {
         outline: 3px solid rgba(90, 169, 255, 0.25);
@@ -381,6 +392,22 @@
         </div>
 
         <div class="controls">
+          <label class="setting" for="stateFilename">
+            <span>Workflow filename</span>
+            <input
+              class="text-input"
+              type="text"
+              id="stateFilename"
+              name="stateFilename"
+              value="agentic_workflow_state.json"
+              placeholder="agentic_workflow_state.json"
+              spellcheck="false"
+            />
+          </label>
+          <span class="hint">Used for Save/Resume. ".json" is optional.</span>
+        </div>
+
+        <div class="controls">
           <button type="button" class="ghost small" id="addMessage">+ Add message</button>
           <button type="button" class="ghost small" id="addAssistant">+ Add assistant reply</button>
           <button type="button" class="ghost small" id="addFromOutput">
@@ -551,6 +578,7 @@
       const startWorkflowWithoutBtn = document.getElementById("startWorkflowWithout");
       const resumeWorkflowBtn = document.getElementById("resumeWorkflow");
       const saveWorkflowBtn = document.getElementById("saveWorkflow");
+      const stateFilenameInput = document.getElementById("stateFilename");
       const workflowPrompt = document.getElementById("workflowPrompt");
       const workflowPromptTitle = document.getElementById("workflowPromptTitle");
       const workflowPromptMessage = document.getElementById("workflowPromptMessage");
@@ -561,6 +589,7 @@
       const copyOrchestratorJsonBtn = document.getElementById("copyOrchestratorJson");
       const POLL_INTERVAL_MS = 60000;
       const DEFAULT_CANCEL_BUTTON_TEXT = "Cancel background task";
+      const DEFAULT_STATE_FILENAME = "agentic_workflow_state.json";
       let currentBackgroundRun = null;
 
       const ROLE_PLACEHOLDERS = {
@@ -848,10 +877,24 @@
         background: (backgroundSelect?.value || "false") === "true",
       });
 
+      const getStateFilename = () => {
+        if (!stateFilenameInput) return DEFAULT_STATE_FILENAME;
+        const value =
+          typeof stateFilenameInput.value === "string" ? stateFilenameInput.value.trim() : "";
+        return value || DEFAULT_STATE_FILENAME;
+      };
+
+      const buildAgenticStateUrl = (filename) => {
+        const clean = typeof filename === "string" ? filename.trim() : "";
+        if (!clean) return "/api/agentic-state";
+        return `/api/agentic-state?filename=${encodeURIComponent(clean)}`;
+      };
+
       const buildStateSnapshot = (note = "") => ({
         version: 1,
         saved_at: new Date().toISOString(),
         note,
+        state_filename: getStateFilename(),
         messages: collectConversationMessages(),
         settings: getSettingsSnapshot(),
         workflow: {
@@ -869,11 +912,13 @@
       const saveAgenticState = async (note, options = {}) => {
         const { silent = false } = options;
         const snapshot = buildStateSnapshot(note);
+        const filename = getStateFilename();
+        const endpoint = buildAgenticStateUrl(filename);
         try {
-          const response = await fetch("/api/agentic-state", {
+          const response = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ state: snapshot }),
+            body: JSON.stringify({ state: snapshot, filename }),
           });
           const { parsed, ok, status } = await parseResponseBody(response);
           if (!ok) {
@@ -884,7 +929,7 @@
             if (!silent) showStatus(err, "error");
             return false;
           }
-          if (!silent) showStatus("Workflow state saved.", "success");
+          if (!silent) showStatus(`Workflow state saved (${filename}).`, "success");
           return true;
         } catch (error) {
           console.error("Save state error", error);
@@ -899,7 +944,9 @@
       };
 
       const loadAgenticState = async () => {
-        const response = await fetch("/api/agentic-state");
+        const filename = getStateFilename();
+        const endpoint = buildAgenticStateUrl(filename);
+        const response = await fetch(endpoint);
         const { parsed, ok, status } = await parseResponseBody(response);
         if (!ok) {
           const err =
@@ -926,6 +973,16 @@
         if (!messages.length) {
           addMessageRow("developer");
           addMessageRow("user");
+        }
+
+        if (stateFilenameInput) {
+          const savedFilename =
+            typeof state.state_filename === "string" ? state.state_filename.trim() : "";
+          if (savedFilename) {
+            stateFilenameInput.value = savedFilename;
+          } else if (!stateFilenameInput.value.trim()) {
+            stateFilenameInput.value = DEFAULT_STATE_FILENAME;
+          }
         }
 
         if (state.settings) {

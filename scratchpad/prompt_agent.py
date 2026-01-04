@@ -38,8 +38,25 @@ SYSTEM_MESSAGE_HEADINGS = {
     "MOST RECENT SOLUTION ATTEMPT BY A PROBLEM_SOLVER)",
 }
 ORCHESTRATOR_SCHEMA_HEADING = "SCHEMA FOR ORCHESTRA API CALL"
-STATE_PATH = SCRATCHPAD_DIR / "agentic_workflow_state.json"
+DEFAULT_STATE_FILENAME = "agentic_workflow_state.json"
+STATE_PATH = SCRATCHPAD_DIR / DEFAULT_STATE_FILENAME
+STATE_FILENAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,120}$")
 _ORCHESTRATOR_SCHEMA_CACHE: Optional[Dict[str, object]] = None
+
+
+def _resolve_state_path(filename: Optional[str]) -> Path:
+    if not filename:
+        return STATE_PATH
+    cleaned = filename.strip()
+    if not cleaned:
+        return STATE_PATH
+    if not STATE_FILENAME_RE.match(cleaned):
+        raise ValueError(
+            "Invalid state filename. Use letters, numbers, dots, dashes, or underscores only."
+        )
+    if not cleaned.endswith(".json"):
+        cleaned = f"{cleaned}.json"
+    return SCRATCHPAD_DIR / cleaned
 
 
 def _clean_system_message(lines: List[str]) -> str:
@@ -395,10 +412,15 @@ def handle_system_message(key: str):
 
 @app.get("/api/agentic-state")
 def get_agentic_state():
-    if not STATE_PATH.exists():
+    filename = request.args.get("filename")
+    try:
+        state_path = _resolve_state_path(filename)
+    except ValueError as exc:
+        return jsonify(ok=False, error=str(exc)), 400
+    if not state_path.exists():
         return jsonify(ok=False, error="No saved state found."), 404
     try:
-        state = json.loads(STATE_PATH.read_text(encoding="utf-8"))
+        state = json.loads(state_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         return jsonify(ok=False, error=f"Saved state is invalid JSON: {exc.msg}"), 500
     return jsonify(ok=True, state=state)
@@ -407,11 +429,18 @@ def get_agentic_state():
 @app.post("/api/agentic-state")
 def save_agentic_state():
     payload = request.get_json(silent=True) or {}
+    filename = payload.get("filename") or request.args.get("filename")
+    if filename is not None and not isinstance(filename, str):
+        return jsonify(ok=False, error="filename must be a string."), 400
+    try:
+        state_path = _resolve_state_path(filename)
+    except ValueError as exc:
+        return jsonify(ok=False, error=str(exc)), 400
     state = payload.get("state")
     if not isinstance(state, dict):
         return jsonify(ok=False, error="state must be an object."), 400
     try:
-        STATE_PATH.write_text(json.dumps(state, indent=2, ensure_ascii=False), encoding="utf-8")
+        state_path.write_text(json.dumps(state, indent=2, ensure_ascii=False), encoding="utf-8")
     except OSError as exc:
         app.logger.exception("Failed to write agentic state")
         return jsonify(ok=False, error=str(exc)), 500

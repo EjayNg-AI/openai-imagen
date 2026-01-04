@@ -18,7 +18,7 @@ After each Solver/Evaluator loop, the Orchestrator runs with JSON schema structu
 - UI: `scratchpad/prompt_agent.html`
 - Backend: `scratchpad/prompt_agent.py`
 - Orchestrator schema and system messages: `scratchpad/system_messages_consolidated.md`
-- Saved state: `scratchpad/agentic_workflow_state.json`
+- Saved state: `scratchpad/agentic_workflow_state.json` (default; filename configurable in UI)
 
 Routes added/used:
 
@@ -27,7 +27,7 @@ Routes added/used:
 - Standard prompt run: `/api/prompt-run` and `/api/prompt-run-background`
 - Orchestrator run (structured output): `/api/orchestrator-run` and `/api/orchestrator-run-background`
 - Orchestrator polling/cancel: `/api/orchestrator-run-background/<response_id>` and `/api/orchestrator-run-background/<response_id>/cancel`
-- State persistence: `/api/agentic-state` (GET/POST)
+- State persistence: `/api/agentic-state` (GET/POST, optional `filename` query param)
 
 ## UI Controls and Panels
 
@@ -99,7 +99,7 @@ Background mode errors and cancellations are also surfaced, and the workflow sta
 
 ## Persistence and Resume Behavior
 
-State is saved to `scratchpad/agentic_workflow_state.json` (single file, overwritten on each save).
+State is saved to a JSON file in `scratchpad/`. The filename is taken from the Workflow filename field and defaults to `agentic_workflow_state.json` (single file per name, overwritten on each save).
 
 The saved state includes:
 
@@ -107,10 +107,11 @@ The saved state includes:
 - Current model/verbosity/reasoning/background settings
 - Workflow queue, last stage, loop count, and error info
 - Latest parsed orchestrator JSON output
+- Selected workflow filename (for future saves)
 
 Resume behavior:
 
-- "Resume agentic workflow" loads the saved state from the server file.
+- "Resume agentic workflow" loads the saved state from the server file named in the Workflow filename field.
 - If a stage was pending or failed, it continues or re-runs that stage automatically.
 - If the workflow is complete, Resume reports completion and does not continue.
 
