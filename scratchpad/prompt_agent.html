@@ -408,6 +408,29 @@
         </div>
 
         <div class="controls">
+          <label class="setting" for="autoRunAgentic">
+            <span>Auto-advance workflow</span>
+            <input type="checkbox" id="autoRunAgentic" name="autoRunAgentic" />
+          </label>
+          <label class="setting" for="autoLoopLimit">
+            <span>Max solver/evaluator loops (auto)</span>
+            <input
+              class="text-input"
+              type="number"
+              id="autoLoopLimit"
+              name="autoLoopLimit"
+              value="3"
+              min="1"
+              step="1"
+              inputmode="numeric"
+            />
+          </label>
+          <span class="hint">
+            Auto-advance answers "Yes" at each workflow prompt; max loops applies only in auto mode.
+          </span>
+        </div>
+
+        <div class="controls">
           <button type="button" class="ghost small" id="addMessage">+ Add message</button>
           <button type="button" class="ghost small" id="addAssistant">+ Add assistant reply</button>
           <button type="button" class="ghost small" id="addFromOutput">
@@ -581,6 +604,8 @@
       const resumeWorkflowBtn = document.getElementById("resumeWorkflow");
       const saveWorkflowBtn = document.getElementById("saveWorkflow");
       const stateFilenameInput = document.getElementById("stateFilename");
+      const autoRunAgenticCheckbox = document.getElementById("autoRunAgentic");
+      const autoLoopLimitInput = document.getElementById("autoLoopLimit");
       const workflowPrompt = document.getElementById("workflowPrompt");
       const workflowPromptTitle = document.getElementById("workflowPromptTitle");
       const workflowPromptMessage = document.getElementById("workflowPromptMessage");
@@ -592,6 +617,8 @@
       const POLL_INTERVAL_MS = 60000;
       const DEFAULT_CANCEL_BUTTON_TEXT = "Cancel background task";
       const DEFAULT_STATE_FILENAME = "agentic_workflow_state.json";
+      const DEFAULT_AUTO_LOOP_LIMIT = 3;
+      const AUTO_ADVANCE_DELAY_MS = 150;
       let currentBackgroundRun = null;
 
       const ROLE_PLACEHOLDERS = {
@@ -886,6 +913,31 @@
         return value || DEFAULT_STATE_FILENAME;
       };
 
+      const parsePositiveInt = (value) => {
+        const parsed = Number.parseInt(value, 10);
+        return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+      };
+
+      const getAutoRunEnabled = () => Boolean(autoRunAgenticCheckbox?.checked);
+
+      const getAutoLoopLimit = () => {
+        const parsed = parsePositiveInt(autoLoopLimitInput?.value);
+        return parsed ?? DEFAULT_AUTO_LOOP_LIMIT;
+      };
+
+      const normalizeAutoLoopLimitInput = () => {
+        if (!autoLoopLimitInput) return;
+        const parsed = parsePositiveInt(autoLoopLimitInput.value);
+        if (!parsed) {
+          autoLoopLimitInput.value = String(DEFAULT_AUTO_LOOP_LIMIT);
+        }
+      };
+
+      const syncAutoRunControls = () => {
+        if (!autoLoopLimitInput) return;
+        autoLoopLimitInput.disabled = !getAutoRunEnabled();
+      };
+
       const buildAgenticStateUrl = (filename) => {
         const clean = typeof filename === "string" ? filename.trim() : "";
         if (!clean) return "/api/agentic-state";
@@ -907,6 +959,8 @@
           error: agenticState.error,
           completed: agenticState.completed,
           lastStage: agenticState.lastStage,
+          autoRun: getAutoRunEnabled(),
+          autoLoopLimit: getAutoLoopLimit(),
         },
         last_orchestrator: agenticState.lastOrchestrator,
       });
@@ -999,6 +1053,15 @@
           }
         }
 
+        if (autoRunAgenticCheckbox) {
+          autoRunAgenticCheckbox.checked = Boolean(state.workflow?.autoRun);
+        }
+        if (autoLoopLimitInput) {
+          const savedLimit = parsePositiveInt(state.workflow?.autoLoopLimit);
+          autoLoopLimitInput.value = String(savedLimit ?? DEFAULT_AUTO_LOOP_LIMIT);
+        }
+        syncAutoRunControls();
+
         const workflow = state.workflow || {};
         agenticState.active = Boolean(workflow.active);
         agenticState.workflowType = workflow.workflowType || null;
@@ -1042,6 +1105,13 @@
         if (!workflowPrompt) return;
         workflowPrompt.hidden = true;
         workflowPromptConfig = null;
+      };
+
+      const scheduleAutoAdvance = (message, onYes) => {
+        hideWorkflowPrompt();
+        if (message) showStatus(message);
+        if (typeof onYes !== "function") return;
+        setTimeout(() => onYes(), AUTO_ADVANCE_DELAY_MS);
       };
 
       const sleep = (ms, signal) =>
@@ -1180,6 +1250,9 @@
         addMessageRow("user");
 
         if (stateFilenameInput) stateFilenameInput.value = DEFAULT_STATE_FILENAME;
+        if (autoRunAgenticCheckbox) autoRunAgenticCheckbox.checked = false;
+        if (autoLoopLimitInput) autoLoopLimitInput.value = String(DEFAULT_AUTO_LOOP_LIMIT);
+        syncAutoRunControls();
         if (outputBox) outputBox.value = "";
         if (payloadBox) payloadBox.value = "";
         if (fullResponseBox) fullResponseBox.value = "";
@@ -1757,6 +1830,13 @@
 
       const promptToContinue = (nextStage) => {
         const nextLabel = AGENTIC_STAGES[nextStage]?.label || "next stage";
+        if (getAutoRunEnabled()) {
+          scheduleAutoAdvance(
+            `Autonomous mode: continuing to ${nextLabel}…`,
+            () => runNextStage()
+          );
+          return;
+        }
         showWorkflowPrompt({
           title: "Continue workflow?",
           message: `Agent output captured. Save if needed. Proceed to ${nextLabel}?`,
@@ -1776,25 +1856,48 @@
       };
 
       const promptForLoop = (action) => {
+        const maxLoops = getAutoLoopLimit();
+        const autoRunEnabled = getAutoRunEnabled();
+        const nextLoopNumber = agenticState.loopCount + 1;
+        const onYes = () => {
+          agenticState.queue = [...LOOP_QUEUE];
+          runNextStage();
+        };
+        const onNo = async () => {
+          agenticState.completed = true;
+          agenticState.active = false;
+          const saved = await saveAgenticState("ended", { silent: true });
+          showStatus(
+            saved ? "Workflow ended by user. State saved." : "Workflow ended by user.",
+            "success"
+          );
+        };
+
+        if (autoRunEnabled && agenticState.loopCount < maxLoops) {
+          scheduleAutoAdvance(
+            `Autonomous mode: starting solver loop ${nextLoopNumber} of ${maxLoops}…`,
+            onYes
+          );
+          return;
+        }
+
+        if (autoRunEnabled && agenticState.loopCount >= maxLoops) {
+          showStatus(
+            `Auto-run loop limit reached (${maxLoops}). Awaiting manual choice.`
+          );
+        }
+
+        const limitNote =
+          autoRunEnabled && agenticState.loopCount >= maxLoops
+            ? ` Auto-run limit reached (${maxLoops}).`
+            : "";
         showWorkflowPrompt({
           title: "Run another solver loop?",
-          message: `Orchestrator action: ${action || "DISPATCH"}. Run another Solver/Evaluator loop or end?`,
+          message: `Orchestrator action: ${action || "DISPATCH"}. Run another Solver/Evaluator loop or end?${limitNote}`,
           yesLabel: "Run loop",
           noLabel: "End process",
-          onYes: () => {
-            agenticState.queue = [...LOOP_QUEUE];
-            agenticState.loopCount += 1;
-            runNextStage();
-          },
-          onNo: async () => {
-            agenticState.completed = true;
-            agenticState.active = false;
-            const saved = await saveAgenticState("ended", { silent: true });
-            showStatus(
-              saved ? "Workflow ended by user. State saved." : "Workflow ended by user.",
-              "success"
-            );
-          },
+          onYes,
+          onNo,
         });
       };
 
@@ -1821,6 +1924,7 @@
             const parsed = await runOrchestratorStage();
             agenticState.queue.shift();
             agenticState.lastStage = stage;
+            agenticState.loopCount += 1;
             agenticState.error = null;
             await saveAgenticState("orchestrator-complete");
 
@@ -2151,7 +2255,11 @@
       );
       resumeWorkflowBtn?.addEventListener("click", () => resumeAgenticWorkflow());
       saveWorkflowBtn?.addEventListener("click", () => saveAgenticState("manual"));
+      autoRunAgenticCheckbox?.addEventListener("change", () => syncAutoRunControls());
+      autoLoopLimitInput?.addEventListener("change", () => normalizeAutoLoopLimitInput());
       initializeMessages();
+      normalizeAutoLoopLimitInput();
+      syncAutoRunControls();
     </script>
   </body>
 </html>

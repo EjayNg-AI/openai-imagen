@@ -33,7 +33,6 @@
 
 # Change log for agent-driven edits
 
-**Coding agent to summarize agent-driven code edits here.**
-- Added configurable agentic workflow state filenames in the UI and backend, including validation and per-file persistence.
-- Documented the new filename-based save/resume behavior in `scratchpad/agentic_problem_solver.md`.
-- Added a Clear all fields button that resets inputs/outputs to a clean developer+user state in `scratchpad/prompt_agent.html`.
+- Added auto-advance and max loop controls to the agentic prompt runner UI, plus autonomous flow/loop-limit handling and updated loop counting in `scratchpad/prompt_agent.html`.
+- Documented the new autonomous controls in `scratchpad/agentic_problem_solver.md`.
+

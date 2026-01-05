@@ -37,11 +37,14 @@ New UI controls in `scratchpad/prompt_agent.html`:
 - Initiate agentic workflow without approaches
 - Resume agentic workflow
 - Save current state
+- Auto-advance workflow (auto-accepts Yes prompts)
+- Max solver/evaluator loops (auto) limit for autonomous runs
 
 Workflow prompt panel:
 
 - After each agent stage, the UI asks whether to proceed (Yes/No).
 - "No" pauses the workflow and saves state.
+- When auto-advance is enabled, prompts are auto-accepted until the loop limit is reached.
 
 Orchestrator output panel:
 
