@@ -41,22 +41,63 @@ ORCHESTRATOR_SCHEMA_HEADING = "SCHEMA FOR ORCHESTRA API CALL"
 DEFAULT_STATE_FILENAME = "agentic_workflow_state.json"
 STATE_PATH = SCRATCHPAD_DIR / DEFAULT_STATE_FILENAME
 STATE_FILENAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,120}$")
+SNAPSHOT_DIR = SCRATCHPAD_DIR / "saved_snapshots"
+SNAPSHOT_LABEL_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,160}$")
+SNAPSHOT_FILENAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,320}$")
 _ORCHESTRATOR_SCHEMA_CACHE: Optional[Dict[str, object]] = None
 
 
-def _resolve_state_path(filename: Optional[str]) -> Path:
+def _normalize_state_filename(filename: Optional[str]) -> str:
     if not filename:
-        return STATE_PATH
+        return DEFAULT_STATE_FILENAME
     cleaned = filename.strip()
     if not cleaned:
-        return STATE_PATH
+        return DEFAULT_STATE_FILENAME
     if not STATE_FILENAME_RE.match(cleaned):
         raise ValueError(
             "Invalid state filename. Use letters, numbers, dots, dashes, or underscores only."
         )
     if not cleaned.endswith(".json"):
         cleaned = f"{cleaned}.json"
-    return SCRATCHPAD_DIR / cleaned
+    return cleaned
+
+
+def _resolve_state_path(filename: Optional[str]) -> Path:
+    return SCRATCHPAD_DIR / _normalize_state_filename(filename)
+
+
+def _ensure_snapshot_dir() -> None:
+    SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _resolve_snapshot_path(filename: Optional[str], label: str) -> Path:
+    if not isinstance(label, str):
+        raise ValueError("snapshot label must be a string.")
+    cleaned_label = label.strip()
+    if not cleaned_label:
+        raise ValueError("snapshot label is required.")
+    if not SNAPSHOT_LABEL_RE.match(cleaned_label):
+        raise ValueError(
+            "Invalid snapshot label. Use letters, numbers, dots, dashes, or underscores only."
+        )
+
+    base_name = _normalize_state_filename(filename)
+    base_stem = Path(base_name).stem
+    snapshot_filename = f"{base_stem}_{cleaned_label}.json"
+    if not SNAPSHOT_FILENAME_RE.match(snapshot_filename):
+        raise ValueError("Invalid snapshot filename.")
+    return SNAPSHOT_DIR / snapshot_filename
+
+
+def _resolve_snapshot_name(name: str) -> Path:
+    cleaned = name.strip()
+    if not cleaned:
+        raise ValueError("snapshot filename is required.")
+    if not SNAPSHOT_FILENAME_RE.match(cleaned):
+        raise ValueError("Invalid snapshot filename.")
+    if not cleaned.endswith(".json"):
+        raise ValueError("snapshot filename must end with .json.")
+    return SNAPSHOT_DIR / cleaned
 
 
 def _clean_system_message(lines: List[str]) -> str:
@@ -445,6 +486,96 @@ def save_agentic_state():
         app.logger.exception("Failed to write agentic state")
         return jsonify(ok=False, error=str(exc)), 500
     return jsonify(ok=True)
+
+
+@app.get("/api/agentic-snapshots")
+def list_agentic_snapshots():
+    filename = request.args.get("filename")
+    try:
+        base_name = _normalize_state_filename(filename)
+    except ValueError as exc:
+        return jsonify(ok=False, error=str(exc)), 400
+
+    base_stem = Path(base_name).stem
+    prefix = f"{base_stem}_"
+
+    _ensure_snapshot_dir()
+    snapshots = []
+    for path in SNAPSHOT_DIR.glob(f"{prefix}*.json"):
+        if not SNAPSHOT_FILENAME_RE.match(path.name):
+            continue
+        meta: Dict[str, object] = {"filename": path.name}
+        try:
+            state = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:  # noqa: BLE001
+            state = None
+        if isinstance(state, dict):
+            meta["saved_at"] = state.get("saved_at")
+            meta["note"] = state.get("note")
+            workflow = state.get("workflow")
+            if isinstance(workflow, dict):
+                meta["loop_count"] = workflow.get("loopCount")
+                meta["last_stage"] = workflow.get("lastStage")
+        try:
+            meta["mtime"] = path.stat().st_mtime
+        except OSError:
+            meta["mtime"] = 0
+        snapshots.append(meta)
+
+    snapshots.sort(key=lambda item: item.get("mtime", 0), reverse=True)
+    for item in snapshots:
+        item.pop("mtime", None)
+
+    return jsonify(ok=True, snapshots=snapshots)
+
+
+@app.get("/api/agentic-snapshot")
+def get_agentic_snapshot():
+    name = request.args.get("name") or request.args.get("filename")
+    if not isinstance(name, str):
+        return jsonify(ok=False, error="snapshot filename is required."), 400
+
+    try:
+        snapshot_path = _resolve_snapshot_name(name)
+    except ValueError as exc:
+        return jsonify(ok=False, error=str(exc)), 400
+
+    if not snapshot_path.exists():
+        return jsonify(ok=False, error="Snapshot not found."), 404
+
+    try:
+        state = json.loads(snapshot_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return jsonify(ok=False, error=f"Snapshot is invalid JSON: {exc.msg}"), 500
+
+    return jsonify(ok=True, state=state, filename=snapshot_path.name)
+
+
+@app.post("/api/agentic-snapshot")
+def save_agentic_snapshot():
+    payload = request.get_json(silent=True) or {}
+    filename = payload.get("filename") or request.args.get("filename")
+    label = payload.get("label")
+    state = payload.get("state")
+
+    if filename is not None and not isinstance(filename, str):
+        return jsonify(ok=False, error="filename must be a string."), 400
+    if not isinstance(state, dict):
+        return jsonify(ok=False, error="state must be an object."), 400
+
+    try:
+        snapshot_path = _resolve_snapshot_path(filename, label)
+    except ValueError as exc:
+        return jsonify(ok=False, error=str(exc)), 400
+
+    _ensure_snapshot_dir()
+    try:
+        snapshot_path.write_text(json.dumps(state, indent=2, ensure_ascii=False), encoding="utf-8")
+    except OSError as exc:
+        app.logger.exception("Failed to write snapshot state")
+        return jsonify(ok=False, error=str(exc)), 500
+
+    return jsonify(ok=True, filename=snapshot_path.name)
 
 
 @app.post("/api/prompt-run")

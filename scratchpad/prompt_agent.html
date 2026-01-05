@@ -389,6 +389,9 @@
             Resume agentic workflow
           </button>
           <button type="button" class="ghost small" id="saveWorkflow">Save current state</button>
+          <button type="button" class="ghost small" id="stopWorkflow" disabled>
+            Stop workflow
+          </button>
         </div>
 
         <div class="controls">
@@ -405,6 +408,17 @@
             />
           </label>
           <span class="hint">Used for Save/Resume. ".json" is optional.</span>
+        </div>
+
+        <div class="controls">
+          <label class="setting" for="snapshotSelect">
+            <span>Saved snapshots</span>
+            <select id="snapshotSelect" name="snapshotSelect"></select>
+          </label>
+          <button type="button" class="ghost small" id="refreshSnapshots">Refresh snapshots</button>
+          <button type="button" class="ghost small" id="rollbackSnapshot">Rollback to snapshot</button>
+          <button type="button" class="ghost small" id="resumeSnapshot">Resume from snapshot</button>
+          <span class="hint">Snapshots stored in scratchpad/saved_snapshots.</span>
         </div>
 
         <div class="controls">
@@ -603,7 +617,12 @@
       const startWorkflowWithoutBtn = document.getElementById("startWorkflowWithout");
       const resumeWorkflowBtn = document.getElementById("resumeWorkflow");
       const saveWorkflowBtn = document.getElementById("saveWorkflow");
+      const stopWorkflowBtn = document.getElementById("stopWorkflow");
       const stateFilenameInput = document.getElementById("stateFilename");
+      const snapshotSelect = document.getElementById("snapshotSelect");
+      const refreshSnapshotsBtn = document.getElementById("refreshSnapshots");
+      const rollbackSnapshotBtn = document.getElementById("rollbackSnapshot");
+      const resumeSnapshotBtn = document.getElementById("resumeSnapshot");
       const autoRunAgenticCheckbox = document.getElementById("autoRunAgentic");
       const autoLoopLimitInput = document.getElementById("autoLoopLimit");
       const workflowPrompt = document.getElementById("workflowPrompt");
@@ -619,7 +638,11 @@
       const DEFAULT_STATE_FILENAME = "agentic_workflow_state.json";
       const DEFAULT_AUTO_LOOP_LIMIT = 3;
       const AUTO_ADVANCE_DELAY_MS = 150;
+      const AUTO_RETRY_LIMIT = 1;
+      const SNAPSHOT_LABEL_MAX = 160;
       let currentBackgroundRun = null;
+      let autoAdvanceTimer = null;
+      let currentStageController = null;
 
       const ROLE_PLACEHOLDERS = {
         developer:
@@ -656,6 +679,7 @@
         lastStage: null,
         lastOrchestrator: null,
         running: false,
+        stopRequested: false,
       };
       let workflowPromptConfig = null;
 
@@ -698,6 +722,8 @@
           .replace(/_/g, " ")
           .trim();
 
+      const isAbortError = (error) => error && error.name === "AbortError";
+
       const updateCancelButton = (statusText = "") => {
         if (!cancelBackgroundBtn) return;
         const normalized = normalizeStatus(statusText || currentBackgroundRun?.lastStatus || "");
@@ -714,9 +740,16 @@
         cancelBackgroundBtn.textContent = DEFAULT_CANCEL_BUTTON_TEXT;
       };
 
+      const updateStopButtonState = () => {
+        if (!stopWorkflowBtn) return;
+        const isRunning = Boolean(agenticState.running || autoAdvanceTimer);
+        stopWorkflowBtn.disabled = !isRunning;
+      };
+
       const clearBackgroundRunState = () => {
         currentBackgroundRun = null;
         resetCancelButton();
+        updateStopButtonState();
       };
 
       const markBackgroundStatus = (statusText) => {
@@ -781,6 +814,90 @@
         }
 
         return chunks.join("\n\n").trim();
+      };
+
+      const cancelBackgroundTask = async (options = {}) => {
+        const { silent = false, force = false } = options;
+        if (!currentBackgroundRun?.responseId) {
+          if (!silent) showStatus("No background task is currently running.", "error");
+          return false;
+        }
+
+        const statusForCancel = currentBackgroundRun.lastStatus || "";
+        const normalizedStatus = normalizeStatus(statusForCancel);
+        if (!force && normalizedStatus !== "in progress") {
+          if (!silent) {
+            showStatus("Cancellation is available only while a task is in progress.", "error");
+          }
+          return false;
+        }
+
+        currentBackgroundRun.cancelInFlight = true;
+        updateCancelButton(statusForCancel);
+        if (!silent) showStatus("Cancelling background task…");
+
+        const baseCancelEndpoint =
+          currentBackgroundRun?.cancelEndpointBase ||
+          form.dataset.backgroundCancelEndpoint ||
+          form.dataset.backgroundPollEndpoint ||
+          form.dataset.backgroundEndpoint ||
+          "/api/prompt-run-background";
+        const cancelUrl = `${baseCancelEndpoint.replace(/\/$/, "")}/${encodeURIComponent(
+          currentBackgroundRun.responseId
+        )}/cancel`;
+
+        try {
+          const cancelResp = await fetch(cancelUrl, { method: "POST" });
+          const { parsed, ok, status } = await parseResponseBody(cancelResp);
+          if (!ok) {
+            const err =
+              (parsed && parsed.error) ||
+              (typeof parsed === "string" ? parsed : null) ||
+              `Cancel failed with status ${status}`;
+            throw new Error(err);
+          }
+
+          const responsePayload = (parsed && (parsed.response || parsed)) || parsed;
+          const finalStatusRaw =
+            (parsed && parsed.status) ||
+            (parsed && parsed.response && parsed.response.status) ||
+            "cancelled";
+          const finalStatus = normalizeStatus(finalStatusRaw) || finalStatusRaw || "cancelled";
+          const extractedText = extractOutputText(responsePayload);
+          const pretty =
+            typeof responsePayload === "object"
+              ? JSON.stringify(responsePayload, null, 2)
+              : String(responsePayload);
+
+          if (extractedText) outputBox.value = extractedText;
+          if (fullResponseBox) fullResponseBox.value = pretty || "";
+
+          const statusType =
+            finalStatus === "cancelled" ? "success" : finalStatus === "failed" ? "error" : "";
+          if (!silent) {
+            showStatus(`Background task cancelled (${finalStatus}).`, statusType);
+          }
+          setResponseId(
+            (parsed && parsed.response_id) ||
+            (parsed && parsed.response && parsed.response.id) ||
+            currentBackgroundRun.responseId
+          );
+          currentBackgroundRun.cancelledPayload = responsePayload;
+          currentBackgroundRun.lastStatus = finalStatus;
+          if (currentBackgroundRun.controller) currentBackgroundRun.controller.abort();
+          return true;
+        } catch (error) {
+          console.error("Cancellation error", error);
+          if (!silent) {
+            showStatus(
+              `Cancel failed: ${error && error.message ? error.message : "Unknown error"}`,
+              "error"
+            );
+          }
+          currentBackgroundRun.cancelInFlight = false;
+          updateCancelButton(currentBackgroundRun.lastStatus);
+          return false;
+        }
       };
 
       const renderOrchestratorPlaceholder = (message) => {
@@ -965,8 +1082,160 @@
         last_orchestrator: agenticState.lastOrchestrator,
       });
 
-      const saveAgenticState = async (note, options = {}) => {
+      const slugifyLabel = (value) => {
+        if (!value) return "";
+        return String(value)
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "")
+          .replace(/-{2,}/g, "-");
+      };
+
+      const buildSnapshotLabel = (state) => {
+        const savedAt =
+          state && typeof state.saved_at === "string" ? state.saved_at : new Date().toISOString();
+        const timestamp = savedAt.replace(/[:.]/g, "-");
+        const parts = [timestamp];
+        const noteSlug = slugifyLabel(state?.note);
+        if (noteSlug) parts.push(noteSlug);
+        const loopCount = state?.workflow?.loopCount;
+        if (Number.isInteger(loopCount)) parts.push(`loop-${loopCount}`);
+        const stageSlug = slugifyLabel(state?.workflow?.lastStage);
+        if (stageSlug) parts.push(`stage-${stageSlug}`);
+        let label = parts.filter(Boolean).join("_") || "snapshot";
+        if (label.length > SNAPSHOT_LABEL_MAX) {
+          label = label.slice(0, SNAPSHOT_LABEL_MAX);
+        }
+        return label;
+      };
+
+      const buildSnapshotOptionLabel = (snapshot) => {
+        if (!snapshot || typeof snapshot !== "object") return "Snapshot";
+        const parts = [];
+        if (snapshot.saved_at) parts.push(snapshot.saved_at);
+        if (snapshot.note) parts.push(snapshot.note);
+        if (Number.isInteger(snapshot.loop_count)) parts.push(`loop ${snapshot.loop_count}`);
+        if (snapshot.last_stage) parts.push(`stage ${snapshot.last_stage}`);
+        if (!parts.length && snapshot.filename) return snapshot.filename;
+        return parts.join(" - ");
+      };
+
+      const renderSnapshotOptions = (snapshots, selected = "") => {
+        if (!snapshotSelect) return;
+        snapshotSelect.innerHTML = "";
+        const placeholder = document.createElement("option");
+        placeholder.value = "";
+        placeholder.textContent = snapshots.length ? "Select a snapshot" : "No snapshots found";
+        snapshotSelect.appendChild(placeholder);
+
+        snapshots.forEach((snapshot) => {
+          if (!snapshot || !snapshot.filename) return;
+          const option = document.createElement("option");
+          option.value = snapshot.filename;
+          option.textContent = buildSnapshotOptionLabel(snapshot);
+          if (snapshot.filename === selected) option.selected = true;
+          snapshotSelect.appendChild(option);
+        });
+      };
+
+      const refreshSnapshotList = async (options = {}) => {
         const { silent = false } = options;
+        if (!snapshotSelect) return [];
+        const filename = getStateFilename();
+        const endpoint = `/api/agentic-snapshots?filename=${encodeURIComponent(filename)}`;
+        try {
+          const response = await fetch(endpoint);
+          const { parsed, ok, status } = await parseResponseBody(response);
+          if (!ok) {
+            const err =
+              (parsed && parsed.error) ||
+              (typeof parsed === "string" ? parsed : null) ||
+              `Snapshot load failed with status ${status}`;
+            if (!silent) showStatus(err, "error");
+            renderSnapshotOptions([]);
+            return [];
+          }
+          const snapshots = Array.isArray(parsed?.snapshots) ? parsed.snapshots : [];
+          const selected = snapshotSelect?.value || "";
+          renderSnapshotOptions(snapshots, selected);
+          if (!silent) {
+            showStatus(
+              snapshots.length
+                ? `Loaded ${snapshots.length} snapshots.`
+                : "No snapshots found.",
+              "success"
+            );
+          }
+          return snapshots;
+        } catch (error) {
+          console.error("Snapshot list error", error);
+          if (!silent) {
+            showStatus(
+              `Snapshot list failed: ${error && error.message ? error.message : "Unknown error"}`,
+              "error"
+            );
+          }
+          renderSnapshotOptions([]);
+          return [];
+        }
+      };
+
+      const saveSnapshot = async (state, options = {}) => {
+        const { silent = false } = options;
+        if (!state || typeof state !== "object") return false;
+        const label = buildSnapshotLabel(state);
+        const filename = getStateFilename();
+        try {
+          const response = await fetch("/api/agentic-snapshot", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ state, filename, label }),
+          });
+          const { parsed, ok, status } = await parseResponseBody(response);
+          if (!ok) {
+            const err =
+              (parsed && parsed.error) ||
+              (typeof parsed === "string" ? parsed : null) ||
+              `Snapshot save failed with status ${status}`;
+            if (!silent) showStatus(err, "error");
+            return false;
+          }
+          await refreshSnapshotList({ silent: true });
+          return true;
+        } catch (error) {
+          console.error("Snapshot save error", error);
+          if (!silent) {
+            showStatus(
+              `Snapshot save failed: ${error && error.message ? error.message : "Unknown error"}`,
+              "error"
+            );
+          }
+          return false;
+        }
+      };
+
+      const loadSnapshotState = async (snapshotFilename) => {
+        if (!snapshotFilename) {
+          throw new Error("Snapshot filename is required.");
+        }
+        const endpoint = `/api/agentic-snapshot?name=${encodeURIComponent(snapshotFilename)}`;
+        const response = await fetch(endpoint);
+        const { parsed, ok, status } = await parseResponseBody(response);
+        if (!ok) {
+          const err =
+            (parsed && parsed.error) ||
+            (typeof parsed === "string" ? parsed : null) ||
+            `Snapshot load failed with status ${status}`;
+          throw new Error(err);
+        }
+        if (!parsed || typeof parsed.state !== "object") {
+          throw new Error("Snapshot payload is invalid.");
+        }
+        return parsed.state;
+      };
+
+      const saveAgenticState = async (note, options = {}) => {
+        const { silent = false, createSnapshot = false } = options;
         const snapshot = buildStateSnapshot(note);
         const filename = getStateFilename();
         const endpoint = buildAgenticStateUrl(filename);
@@ -985,7 +1254,22 @@
             if (!silent) showStatus(err, "error");
             return false;
           }
-          if (!silent) showStatus(`Workflow state saved (${filename}).`, "success");
+          let snapshotSaved = true;
+          if (createSnapshot) {
+            snapshotSaved = await saveSnapshot(snapshot, { silent: true });
+          }
+          if (!silent) {
+            if (createSnapshot) {
+              showStatus(
+                snapshotSaved
+                  ? `Workflow state and snapshot saved (${filename}).`
+                  : `Workflow state saved (${filename}), but snapshot failed.`,
+                snapshotSaved ? "success" : "error"
+              );
+            } else {
+              showStatus(`Workflow state saved (${filename}).`, "success");
+            }
+          }
           return true;
         } catch (error) {
           console.error("Save state error", error);
@@ -1071,7 +1355,9 @@
         agenticState.completed = Boolean(workflow.completed);
         agenticState.lastStage = workflow.lastStage || null;
         agenticState.running = false;
+        agenticState.stopRequested = false;
         agenticState.lastOrchestrator = state.last_orchestrator || null;
+        updateStopButtonState();
 
         if (agenticState.lastOrchestrator?.parsed) {
           setOrchestratorOutput(
@@ -1107,11 +1393,26 @@
         workflowPromptConfig = null;
       };
 
+      const clearAutoAdvanceTimer = () => {
+        if (autoAdvanceTimer) {
+          clearTimeout(autoAdvanceTimer);
+          autoAdvanceTimer = null;
+        }
+        updateStopButtonState();
+      };
+
       const scheduleAutoAdvance = (message, onYes) => {
         hideWorkflowPrompt();
         if (message) showStatus(message);
         if (typeof onYes !== "function") return;
-        setTimeout(() => onYes(), AUTO_ADVANCE_DELAY_MS);
+        clearAutoAdvanceTimer();
+        autoAdvanceTimer = setTimeout(() => {
+          autoAdvanceTimer = null;
+          updateStopButtonState();
+          if (agenticState.stopRequested) return;
+          onYes();
+        }, AUTO_ADVANCE_DELAY_MS);
+        updateStopButtonState();
       };
 
       const sleep = (ms, signal) =>
@@ -1238,10 +1539,12 @@
         agenticState.lastStage = null;
         agenticState.lastOrchestrator = null;
         agenticState.running = false;
+        agenticState.stopRequested = false;
       };
 
       const clearAllFields = () => {
         hideWorkflowPrompt();
+        clearAutoAdvanceTimer();
         clearBackgroundRunState();
         resetAgenticState();
 
@@ -1260,6 +1563,54 @@
         renderOrchestratorPlaceholder("Rendered orchestrator output will appear here.");
         setResponseId("");
         showStatus("Cleared all fields.", "success");
+        refreshSnapshotList({ silent: true });
+        updateStopButtonState();
+      };
+
+      const stopWorkflow = async (options = {}) => {
+        const { silent = false } = options;
+        const hasPendingAutoAdvance = Boolean(autoAdvanceTimer);
+        const isRunning = Boolean(agenticState.running || currentBackgroundRun?.responseId);
+        if (!isRunning && !hasPendingAutoAdvance) {
+          if (!silent) showStatus("Workflow is not running.", "error");
+          return false;
+        }
+
+        agenticState.stopRequested = true;
+        clearAutoAdvanceTimer();
+        hideWorkflowPrompt();
+        if (!silent) showStatus("Stopping workflow…");
+
+        if (currentBackgroundRun?.responseId) {
+          const cancelled = await cancelBackgroundTask({ silent: true, force: true });
+          if (!cancelled && !silent) {
+            showStatus(
+              "Failed to cancel background task. Workflow paused locally.",
+              "error"
+            );
+          }
+          if (currentBackgroundRun) {
+            currentBackgroundRun.cancelInFlight = true;
+            if (currentBackgroundRun.controller) {
+              currentBackgroundRun.controller.abort();
+            }
+          }
+        }
+        if (currentStageController) {
+          try {
+            currentStageController.abort();
+          } catch (error) {
+            console.warn("Failed to abort stage request", error);
+          }
+        }
+
+        if (!agenticState.running) {
+          agenticState.stopRequested = false;
+          if (!silent) showStatus("Workflow stopped. Resume to continue.", "success");
+          await saveAgenticState("stopped", { silent: true });
+          updateStopButtonState();
+        }
+        return true;
       };
 
       addMessageBtn.addEventListener("click", () => addMessageRow("user"));
@@ -1329,6 +1680,10 @@
       copyOrchestratorJsonBtn?.addEventListener("click", () =>
         copyText(orchestratorJson?.value || "", copyOrchestratorJsonBtn)
       );
+      refreshSnapshotsBtn?.addEventListener("click", () => refreshSnapshotList());
+      rollbackSnapshotBtn?.addEventListener("click", () => rollbackToSnapshot());
+      resumeSnapshotBtn?.addEventListener("click", () => resumeFromSnapshot());
+      stateFilenameInput?.addEventListener("change", () => refreshSnapshotList({ silent: true }));
       workflowPromptYes?.addEventListener("click", () => {
         const handler = workflowPromptConfig?.onYes;
         hideWorkflowPrompt();
@@ -1339,79 +1694,7 @@
         hideWorkflowPrompt();
         if (typeof handler === "function") handler();
       });
-      cancelBackgroundBtn?.addEventListener("click", async () => {
-        if (!currentBackgroundRun?.responseId) {
-          showStatus("No background task is currently running.", "error");
-          return;
-        }
-
-        const statusForCancel = currentBackgroundRun.lastStatus || "";
-        if (normalizeStatus(statusForCancel) !== "in progress") {
-          showStatus("Cancellation is available only while a task is in progress.", "error");
-          return;
-        }
-
-        currentBackgroundRun.cancelInFlight = true;
-        updateCancelButton(statusForCancel);
-        showStatus("Cancelling background task…");
-
-        const baseCancelEndpoint =
-          currentBackgroundRun?.cancelEndpointBase ||
-          form.dataset.backgroundCancelEndpoint ||
-          form.dataset.backgroundPollEndpoint ||
-          form.dataset.backgroundEndpoint ||
-          "/api/prompt-run-background";
-        const cancelUrl = `${baseCancelEndpoint.replace(/\/$/, "")}/${encodeURIComponent(
-          currentBackgroundRun.responseId
-        )}/cancel`;
-
-        try {
-          const cancelResp = await fetch(cancelUrl, { method: "POST" });
-          const { parsed, ok, status } = await parseResponseBody(cancelResp);
-          if (!ok) {
-            const err =
-              (parsed && parsed.error) ||
-              (typeof parsed === "string" ? parsed : null) ||
-              `Cancel failed with status ${status}`;
-            throw new Error(err);
-          }
-
-          const responsePayload = (parsed && (parsed.response || parsed)) || parsed;
-          const finalStatusRaw =
-            (parsed && parsed.status) ||
-            (parsed && parsed.response && parsed.response.status) ||
-            "cancelled";
-          const finalStatus = normalizeStatus(finalStatusRaw) || finalStatusRaw || "cancelled";
-          const extractedText = extractOutputText(responsePayload);
-          const pretty =
-            typeof responsePayload === "object"
-              ? JSON.stringify(responsePayload, null, 2)
-              : String(responsePayload);
-
-          if (extractedText) outputBox.value = extractedText;
-          if (fullResponseBox) fullResponseBox.value = pretty || "";
-
-          const statusType =
-            finalStatus === "cancelled" ? "success" : finalStatus === "failed" ? "error" : "";
-          showStatus(`Background task cancelled (${finalStatus}).`, statusType);
-          setResponseId(
-            (parsed && parsed.response_id) ||
-            (parsed && parsed.response && parsed.response.id) ||
-            currentBackgroundRun.responseId
-          );
-          currentBackgroundRun.cancelledPayload = responsePayload;
-          currentBackgroundRun.lastStatus = finalStatus;
-          if (currentBackgroundRun.controller) currentBackgroundRun.controller.abort();
-        } catch (error) {
-          console.error("Cancellation error", error);
-          showStatus(
-            `Cancel failed: ${error && error.message ? error.message : "Unknown error"}`,
-            "error"
-          );
-          currentBackgroundRun.cancelInFlight = false;
-          updateCancelButton(currentBackgroundRun.lastStatus);
-        }
-      });
+      cancelBackgroundBtn?.addEventListener("click", () => cancelBackgroundTask());
 
       const disableForm = (disabled) => {
         form.querySelectorAll("textarea, button, select").forEach((el) => {
@@ -1421,20 +1704,31 @@
             el === copyFullResponseBtn ||
             el === cancelBackgroundBtn ||
             el === saveWorkflowBtn ||
-            el === copyOrchestratorJsonBtn
+            el === copyOrchestratorJsonBtn ||
+            el === stopWorkflowBtn
           )
             return; // keep copy/cancel available
           el.disabled = disabled;
         });
       };
 
-      const handleForegroundRequest = async (payload) => {
+      const handleForegroundRequest = async (payload, options = {}) => {
+        const { signal } = options;
         const endpoint = form.dataset.endpoint || "/api/prompt-run";
-        const response = await fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
+        let response;
+        try {
+          response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+            signal,
+          });
+        } catch (error) {
+          if (isAbortError(error)) {
+            return { aborted: true };
+          }
+          throw error;
+        }
 
         const { parsed, ok, status } = await parseResponseBody(response);
 
@@ -1446,7 +1740,7 @@
           showStatus(err, "error");
           outputBox.value = "";
           if (fullResponseBox) fullResponseBox.value = "";
-          return null;
+          return { error: err };
         }
 
         showStatus("Received response from OpenAI.", "success");
@@ -1460,17 +1754,27 @@
         return { payload: parsed, outputText: extractedText };
       };
 
-      const handleBackgroundRequest = async (payload, endpoints = {}) => {
+      const handleBackgroundRequest = async (payload, options = {}) => {
+        const { signal, endpoints = {} } = options;
         const endpoint =
           endpoints.start || form.dataset.backgroundEndpoint || "/api/prompt-run-background";
         const pollBase = endpoints.poll || form.dataset.backgroundPollEndpoint || endpoint;
         const cancelBase =
           endpoints.cancel || form.dataset.backgroundCancelEndpoint || pollBase || endpoint;
-        const response = await fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
+        let response;
+        try {
+          response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+            signal,
+          });
+        } catch (error) {
+          if (isAbortError(error)) {
+            return { aborted: true };
+          }
+          throw error;
+        }
 
         const { parsed, ok, status } = await parseResponseBody(response);
 
@@ -1480,7 +1784,7 @@
             (typeof parsed === "string" ? parsed : null) ||
             `Request failed with status ${status}`;
           showStatus(err, "error");
-          return null;
+          return { error: err };
         }
 
         const responseId = parsed.response_id || (parsed.response && parsed.response.id);
@@ -1506,6 +1810,7 @@
           pollEndpointBase: pollBase,
         };
         updateCancelButton(normalizedStart);
+        updateStopButtonState();
 
         let finalPayload;
         try {
@@ -1514,9 +1819,9 @@
             onStatus: (status) => markBackgroundStatus(status),
           });
         } catch (error) {
-          if (error.name === "AbortError" && currentBackgroundRun?.cancelInFlight) {
+          if (isAbortError(error) && currentBackgroundRun?.cancelInFlight) {
             clearBackgroundRunState();
-            return;
+            return { aborted: true };
           }
           clearBackgroundRunState();
           throw error;
@@ -1624,13 +1929,23 @@
         );
       };
 
-      const handleOrchestratorForegroundRequest = async (payload) => {
+      const handleOrchestratorForegroundRequest = async (payload, options = {}) => {
+        const { signal } = options;
         const endpoint = "/api/orchestrator-run";
-        const response = await fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
+        let response;
+        try {
+          response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+            signal,
+          });
+        } catch (error) {
+          if (isAbortError(error)) {
+            return { aborted: true };
+          }
+          throw error;
+        }
 
         const { parsed, ok, status } = await parseResponseBody(response);
         if (!ok) {
@@ -1641,7 +1956,7 @@
           showStatus(err, "error");
           outputBox.value = "";
           if (fullResponseBox) fullResponseBox.value = "";
-          return null;
+          return { error: err };
         }
 
         const outputTexts = Array.isArray(parsed.output_texts) ? parsed.output_texts : [];
@@ -1653,14 +1968,24 @@
         return parsed;
       };
 
-      const handleOrchestratorBackgroundRequest = async (payload) => {
+      const handleOrchestratorBackgroundRequest = async (payload, options = {}) => {
+        const { signal } = options;
         const endpoint = "/api/orchestrator-run-background";
         const pollBase = "/api/orchestrator-run-background";
-        const response = await fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
+        let response;
+        try {
+          response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+            signal,
+          });
+        } catch (error) {
+          if (isAbortError(error)) {
+            return { aborted: true };
+          }
+          throw error;
+        }
 
         const { parsed, ok, status } = await parseResponseBody(response);
 
@@ -1670,7 +1995,7 @@
             (typeof parsed === "string" ? parsed : null) ||
             `Request failed with status ${status}`;
           showStatus(err, "error");
-          return null;
+          return { error: err };
         }
 
         const responseId = parsed.response_id || (parsed.response && parsed.response.id);
@@ -1696,6 +2021,7 @@
           pollEndpointBase: pollBase,
         };
         updateCancelButton(normalizedStart);
+        updateStopButtonState();
 
         let finalPayload;
         try {
@@ -1704,9 +2030,9 @@
             onStatus: (statusText) => markBackgroundStatus(statusText),
           });
         } catch (error) {
-          if (error.name === "AbortError" && currentBackgroundRun?.cancelInFlight) {
+          if (isAbortError(error) && currentBackgroundRun?.cancelInFlight) {
             clearBackgroundRunState();
-            return null;
+            return { aborted: true };
           }
           clearBackgroundRunState();
           throw error;
@@ -1780,6 +2106,57 @@
         addMessageRow("user", text);
       };
 
+      const beginStageRequest = () => {
+        if (currentStageController) {
+          try {
+            currentStageController.abort();
+          } catch (error) {
+            console.warn("Failed to abort previous stage request", error);
+          }
+        }
+        currentStageController = new AbortController();
+        return currentStageController;
+      };
+
+      const clearStageRequest = (controller) => {
+        if (currentStageController === controller) {
+          currentStageController = null;
+        }
+      };
+
+      const shouldRetryError = (error) => {
+        if (isAbortError(error)) return false;
+        if (error && error.retryable === false) return false;
+        return true;
+      };
+
+      const runStageWithAutoRetry = async (stage, runner) => {
+        const stageLabel = AGENTIC_STAGES[stage]?.label || stage;
+        const allowRetry = getAutoRunEnabled();
+        let attempts = 0;
+
+        while (true) {
+          if (agenticState.stopRequested) {
+            throw new DOMException("Aborted", "AbortError");
+          }
+          try {
+            return await runner();
+          } catch (error) {
+            if (!allowRetry || !shouldRetryError(error)) {
+              throw error;
+            }
+            if (attempts >= AUTO_RETRY_LIMIT) {
+              if (error && typeof error === "object") {
+                error.retry_exhausted = true;
+              }
+              throw error;
+            }
+            attempts += 1;
+            showStatus(`Autonomous mode: ${stageLabel} failed. Retrying once…`, "error");
+          }
+        }
+      };
+
       const runAgentStage = async (stage) => {
         const stageInfo = AGENTIC_STAGES[stage];
         if (!stageInfo) throw new Error(`Unknown stage: ${stage}`);
@@ -1790,13 +2167,25 @@
         const { payload, settings, messages } = buildRequestPayload();
         updatePayloadBox(messages, settings, "text");
 
-        const result = payload.background
-          ? await handleBackgroundRequest(payload)
-          : await handleForegroundRequest(payload);
-        if (!result || !result.outputText) {
-          throw new Error("No assistant output returned.");
+        const controller = beginStageRequest();
+        try {
+          const result = payload.background
+            ? await handleBackgroundRequest(payload, { signal: controller.signal })
+            : await handleForegroundRequest(payload, { signal: controller.signal });
+          if (result?.aborted) {
+            throw new DOMException("Aborted", "AbortError");
+          }
+          if (result?.error) {
+            throw new Error(result.error);
+          }
+          if (!result || !result.outputText) {
+            throw new Error("No assistant output returned.");
+          }
+          appendUserMessage(result.outputText);
+          return result.outputText;
+        } finally {
+          clearStageRequest(controller);
         }
-        appendUserMessage(result.outputText);
       };
 
       const runOrchestratorStage = async () => {
@@ -1808,24 +2197,41 @@
         const { payload, settings, messages } = buildRequestPayload();
         updatePayloadBox(messages, settings, "json_schema");
 
-        const result = payload.background
-          ? await handleOrchestratorBackgroundRequest(payload)
-          : await handleOrchestratorForegroundRequest(payload);
-        if (!result) {
-          throw new Error("No orchestrator response returned.");
-        }
+        const controller = beginStageRequest();
+        try {
+          const result = payload.background
+            ? await handleOrchestratorBackgroundRequest(payload, { signal: controller.signal })
+            : await handleOrchestratorForegroundRequest(payload, { signal: controller.signal });
+          if (result?.aborted) {
+            throw new DOMException("Aborted", "AbortError");
+          }
+          if (result?.error) {
+            throw new Error(result.error);
+          }
+          if (!result) {
+            throw new Error("No orchestrator response returned.");
+          }
 
-        const parsedOutputs = Array.isArray(result.parsed_outputs) ? result.parsed_outputs : [];
-        const parseErrors = Array.isArray(result.parse_errors) ? result.parse_errors : [];
-        if (parseErrors.length) {
-          throw new Error(`Orchestrator JSON parse error: ${parseErrors.join(" | ")}`);
+          const parsedOutputs = Array.isArray(result.parsed_outputs) ? result.parsed_outputs : [];
+          const parseErrors = Array.isArray(result.parse_errors) ? result.parse_errors : [];
+          if (parseErrors.length) {
+            const parseError = new Error(
+              `Orchestrator JSON parse error: ${parseErrors.join(" | ")}`
+            );
+            parseError.retryable = false;
+            throw parseError;
+          }
+          if (!parsedOutputs.length) {
+            throw new Error("Orchestrator returned no parsed JSON output.");
+          }
+          const rawText = Array.isArray(result.output_texts)
+            ? result.output_texts.join("\n\n")
+            : "";
+          setOrchestratorOutput(parsedOutputs[0], rawText);
+          return parsedOutputs[0];
+        } finally {
+          clearStageRequest(controller);
         }
-        if (!parsedOutputs.length) {
-          throw new Error("Orchestrator returned no parsed JSON output.");
-        }
-        const rawText = Array.isArray(result.output_texts) ? result.output_texts.join("\n\n") : "";
-        setOrchestratorOutput(parsedOutputs[0], rawText);
-        return parsedOutputs[0];
       };
 
       const promptToContinue = (nextStage) => {
@@ -1906,6 +2312,13 @@
           showStatus("Workflow already running.", "error");
           return;
         }
+        if (agenticState.stopRequested) {
+          agenticState.stopRequested = false;
+          showStatus("Workflow stopped. Resume to continue.", "success");
+          await saveAgenticState("stopped", { silent: true });
+          updateStopButtonState();
+          return;
+        }
         const stage = agenticState.queue[0];
         if (!stage) {
           agenticState.completed = true;
@@ -1918,10 +2331,11 @@
         agenticState.error = null;
         hideWorkflowPrompt();
         disableForm(true);
+        updateStopButtonState();
 
         try {
           if (stage === "orchestrator") {
-            const parsed = await runOrchestratorStage();
+            const parsed = await runStageWithAutoRetry(stage, () => runOrchestratorStage());
             agenticState.queue.shift();
             agenticState.lastStage = stage;
             agenticState.loopCount += 1;
@@ -1939,7 +2353,7 @@
             return;
           }
 
-          await runAgentStage(stage);
+          await runStageWithAutoRetry(stage, () => runAgentStage(stage));
           agenticState.queue.shift();
           agenticState.lastStage = stage;
           agenticState.error = null;
@@ -1953,14 +2367,56 @@
           }
           promptToContinue(nextStage);
         } catch (error) {
+          if (isAbortError(error) || agenticState.stopRequested) {
+            agenticState.stopRequested = false;
+            agenticState.error = null;
+            showStatus("Workflow stopped. Resume to continue.", "success");
+            await saveAgenticState("stopped", { silent: true });
+            return;
+          }
           const message = error && error.message ? error.message : "Unknown error";
           agenticState.error = { stage, message };
+          if (error && error.retry_exhausted && getAutoRunEnabled()) {
+            showStatus(
+              `Autonomous mode: ${AGENTIC_STAGES[stage]?.label || stage} failed twice. Workflow stopped.`,
+              "error"
+            );
+            await saveAgenticState("auto-retry-stopped", { silent: true });
+            return;
+          }
           showStatus(`${AGENTIC_STAGES[stage]?.label || stage} failed: ${message}`, "error");
           await saveAgenticState("error", { silent: true });
         } finally {
           agenticState.running = false;
           disableForm(false);
+          updateStopButtonState();
         }
+      };
+
+      const getNextStageLabel = () => {
+        const stage = agenticState.queue[0];
+        return AGENTIC_STAGES[stage]?.label || stage || "next stage";
+      };
+
+      const promptForResume = (sourceLabel, onConfirm) => {
+        const nextStage = agenticState.queue[0];
+        if (!nextStage) {
+          showStatus("No pending workflow stage to resume.", "error");
+          return;
+        }
+        showWorkflowPrompt({
+          title: "Resume workflow?",
+          message: `${sourceLabel} Next agent: ${getNextStageLabel()}. Proceed?`,
+          yesLabel: "Resume",
+          noLabel: "Cancel",
+          onYes: () => {
+            hideWorkflowPrompt();
+            if (typeof onConfirm === "function") onConfirm();
+          },
+          onNo: () => {
+            showStatus("Resume cancelled.", "success");
+          },
+        });
       };
 
       const startAgenticWorkflow = async (type) => {
@@ -1969,6 +2425,7 @@
           return;
         }
         hideWorkflowPrompt();
+        clearAutoAdvanceTimer();
         const validation = validateProblemInput();
         if (!validation) return;
         pruneToFirstTwoRows();
@@ -1981,6 +2438,7 @@
         agenticState.completed = false;
         agenticState.lastStage = null;
         agenticState.lastOrchestrator = null;
+        agenticState.stopRequested = false;
         if (orchestratorJson) orchestratorJson.value = "";
         renderOrchestratorPlaceholder("Rendered orchestrator output will appear here.");
 
@@ -1993,10 +2451,12 @@
           return;
         }
         hideWorkflowPrompt();
+        clearAutoAdvanceTimer();
         try {
           showStatus("Loading saved workflow state…");
           const state = await loadAgenticState();
           applyStateSnapshot(state);
+          await refreshSnapshotList({ silent: true });
           showStatus("Saved workflow state restored.", "success");
         } catch (error) {
           console.error("Resume error", error);
@@ -2016,7 +2476,73 @@
           return;
         }
 
-        await runNextStage();
+        agenticState.stopRequested = false;
+        promptForResume("Saved workflow state restored.", () => runNextStage());
+      };
+
+      const rollbackToSnapshot = async () => {
+        if (!snapshotSelect) return;
+        const snapshotName = snapshotSelect.value;
+        if (!snapshotName) {
+          showStatus("Select a snapshot to roll back.", "error");
+          return;
+        }
+        if (agenticState.running) {
+          showStatus("Stop the workflow before rolling back.", "error");
+          return;
+        }
+        hideWorkflowPrompt();
+        clearAutoAdvanceTimer();
+        try {
+          showStatus("Loading snapshot…");
+          const snapshotState = await loadSnapshotState(snapshotName);
+          applyStateSnapshot(snapshotState);
+          const saved = await saveAgenticState("rollback", { createSnapshot: true, silent: true });
+          showStatus(
+            saved
+              ? "Rollback complete. Workflow state saved."
+              : "Rollback loaded, but saving the state failed.",
+            saved ? "success" : "error"
+          );
+        } catch (error) {
+          console.error("Rollback error", error);
+          showStatus(
+            `Rollback failed: ${error && error.message ? error.message : "Unknown error"}`,
+            "error"
+          );
+        }
+      };
+
+      const resumeFromSnapshot = async () => {
+        if (!snapshotSelect) return;
+        const snapshotName = snapshotSelect.value;
+        if (!snapshotName) {
+          showStatus("Select a snapshot to resume.", "error");
+          return;
+        }
+        if (agenticState.running) {
+          showStatus("Stop the workflow before resuming from a snapshot.", "error");
+          return;
+        }
+        hideWorkflowPrompt();
+        clearAutoAdvanceTimer();
+        try {
+          showStatus("Loading snapshot…");
+          const snapshotState = await loadSnapshotState(snapshotName);
+          applyStateSnapshot(snapshotState);
+          await refreshSnapshotList({ silent: true });
+          agenticState.stopRequested = false;
+          promptForResume(`Snapshot loaded (${snapshotName}).`, async () => {
+            await saveAgenticState("resume-from-snapshot", { silent: true });
+            runNextStage();
+          });
+        } catch (error) {
+          console.error("Resume from snapshot error", error);
+          showStatus(
+            `Resume from snapshot failed: ${error && error.message ? error.message : "Unknown error"}`,
+            "error"
+          );
+        }
       };
 
       form.addEventListener("submit", async (event) => {
@@ -2254,12 +2780,17 @@
         startAgenticWorkflow("without_approaches")
       );
       resumeWorkflowBtn?.addEventListener("click", () => resumeAgenticWorkflow());
-      saveWorkflowBtn?.addEventListener("click", () => saveAgenticState("manual"));
+      saveWorkflowBtn?.addEventListener("click", () =>
+        saveAgenticState("manual", { createSnapshot: true })
+      );
+      stopWorkflowBtn?.addEventListener("click", () => stopWorkflow());
       autoRunAgenticCheckbox?.addEventListener("change", () => syncAutoRunControls());
       autoLoopLimitInput?.addEventListener("change", () => normalizeAutoLoopLimitInput());
       initializeMessages();
       normalizeAutoLoopLimitInput();
       syncAutoRunControls();
+      refreshSnapshotList({ silent: true });
+      updateStopButtonState();
     </script>
   </body>
 </html>

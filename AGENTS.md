@@ -33,6 +33,8 @@
 
 # Change log for agent-driven edits
 
-- Added auto-advance and max loop controls to the agentic prompt runner UI, plus autonomous flow/loop-limit handling and updated loop counting in `scratchpad/prompt_agent.html`.
-- Documented the new autonomous controls in `scratchpad/agentic_problem_solver.md`.
+** Coding Agent to add in a description of the tasks completed **
 
+- Added stop workflow control, auto-retry handling, and rollback UI for agentic workflow in the playground.
+- Added snapshot persistence endpoints and saved snapshot support under `scratchpad/saved_snapshots/`.
+- Added resume-from-snapshot control with confirmation of the next agent before resuming.

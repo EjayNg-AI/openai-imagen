@@ -19,6 +19,7 @@ After each Solver/Evaluator loop, the Orchestrator runs with JSON schema structu
 - Backend: `scratchpad/prompt_agent.py`
 - Orchestrator schema and system messages: `scratchpad/system_messages_consolidated.md`
 - Saved state: `scratchpad/agentic_workflow_state.json` (default; filename configurable in UI)
+- Snapshot store: `scratchpad/saved_snapshots/` (versioned snapshot files)
 
 Routes added/used:
 
@@ -28,6 +29,8 @@ Routes added/used:
 - Orchestrator run (structured output): `/api/orchestrator-run` and `/api/orchestrator-run-background`
 - Orchestrator polling/cancel: `/api/orchestrator-run-background/<response_id>` and `/api/orchestrator-run-background/<response_id>/cancel`
 - State persistence: `/api/agentic-state` (GET/POST, optional `filename` query param)
+- Snapshot listing: `/api/agentic-snapshots` (GET, requires `filename` query param)
+- Snapshot load/save: `/api/agentic-snapshot` (GET/POST)
 
 ## UI Controls and Panels
 
@@ -37,14 +40,20 @@ New UI controls in `scratchpad/prompt_agent.html`:
 - Initiate agentic workflow without approaches
 - Resume agentic workflow
 - Save current state
+- Stop workflow (cancels the in-flight request and pauses the workflow)
 - Auto-advance workflow (auto-accepts Yes prompts)
 - Max solver/evaluator loops (auto) limit for autonomous runs
+- Saved snapshots selector
+- Refresh snapshots
+- Rollback to snapshot
+- Resume from snapshot
 
 Workflow prompt panel:
 
 - After each agent stage, the UI asks whether to proceed (Yes/No).
 - "No" pauses the workflow and saves state.
 - When auto-advance is enabled, prompts are auto-accepted until the loop limit is reached.
+- Resume actions always prompt for confirmation and specify the next agent before continuing.
 
 Orchestrator output panel:
 
@@ -96,6 +105,9 @@ At any stage:
 
 - Errors are displayed in the status area.
 - The workflow state is saved automatically with the error metadata.
+- In autonomous mode, the system retries once for any error except orchestrator JSON parse errors.
+- On a second error in the same stage, autonomous mode stops the workflow and reports the failure.
+- Orchestrator JSON parse errors do not retry.
 - Resume re-runs the failed stage using the same developer and user inputs.
 
 Background mode errors and cancellations are also surfaced, and the workflow state is preserved for resumption.
@@ -112,16 +124,47 @@ The saved state includes:
 - Latest parsed orchestrator JSON output
 - Selected workflow filename (for future saves)
 
+Snapshot behavior:
+
+- Snapshots are stored as versioned JSON files in `scratchpad/saved_snapshots/`.
+- Snapshot filenames are `[workflow_filename_stem]_[label].json`, where label includes timestamp plus note/loop/stage hints.
+- Filename examples:
+  - `agentic_workflow_state_2025-01-17T18-42-05-123Z_manual_loop-0_stage-orchestrator.json`
+  - `my_workflow_2025-01-17T18-42-05Z_rollback_loop-2_stage-expert-evaluator.json`
+- Snapshots are created only on manual save and rollback actions (auto-saves do not create snapshots).
+- The snapshot list is filtered by the current Workflow filename.
+- The state file in `scratchpad/` is the mutable “current working copy” overwritten on each save/auto-save.
+- Snapshots are immutable history entries; they are never overwritten and are only created manually or via rollback.
+
 Resume behavior:
 
 - "Resume agentic workflow" loads the saved state from the server file named in the Workflow filename field.
-- If a stage was pending or failed, it continues or re-runs that stage automatically.
+- Resume prompts for confirmation and explicitly names the next agent before continuing.
+- If a stage was pending or failed, it continues or re-runs that stage after confirmation.
 - If the workflow is complete, Resume reports completion and does not continue.
 
 Manual saves:
 
 - The Save button is always enabled and writes the current state.
-- Automatic saves occur on errors, when pausing, and after orchestrator completion.
+- Manual saves also create a snapshot version.
+- Automatic saves occur on errors, when pausing, and after orchestrator completion (no snapshot version).
+
+## Resume vs Rollback (Detailed)
+
+Use these controls when multiple checkpoints exist:
+
+- Resume agentic workflow
+  - Loads the latest state file for the current Workflow filename.
+  - Shows a confirmation prompt that names the next agent.
+  - On confirmation, runs the next stage.
+- Rollback to snapshot
+  - Loads the selected snapshot into the UI and overwrites the main state file.
+  - Creates a new snapshot version labeled as a rollback.
+  - Does not run any stage automatically.
+- Resume from snapshot
+  - Loads the selected snapshot into the UI without creating a new snapshot version.
+  - Shows a confirmation prompt that names the next agent.
+  - On confirmation, writes the main state file and runs the next stage.
 
 ## Notes and Limitations
 
