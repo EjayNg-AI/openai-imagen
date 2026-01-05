@@ -240,6 +240,41 @@
         margin-bottom: 0.5rem;
       }
 
+      .agent-configs {
+        display: grid;
+        gap: 1rem;
+        margin-top: 0.75rem;
+      }
+
+      .agent-card {
+        background: #0c1526;
+        border: 1px solid var(--border);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        display: grid;
+        gap: 0.85rem;
+      }
+
+      .agent-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+      }
+
+      .agent-card h3 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+      }
+
+      .agent-card-fields {
+        display: grid;
+        gap: 0.75rem;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      }
+
       .workflow-prompt {
         padding: 1rem 1.25rem;
       }
@@ -444,6 +479,15 @@
           </span>
         </div>
 
+        <section class="panel" id="agentConfigPanel">
+          <h2>Autonomous agent settings</h2>
+          <p class="hint">
+            Used only when Auto-advance workflow is enabled. Manual workflow runs use the main
+            settings above.
+          </p>
+          <div class="agent-configs" id="agentConfigList"></div>
+        </section>
+
         <div class="controls">
           <button type="button" class="ghost small" id="addMessage">+ Add message</button>
           <button type="button" class="ghost small" id="addAssistant">+ Add assistant reply</button>
@@ -602,6 +646,7 @@
       const verbositySelect = document.getElementById("verbositySelect");
       const modelSelect = document.getElementById("modelSelect");
       const backgroundSelect = document.getElementById("backgroundSelect");
+      const agentConfigList = document.getElementById("agentConfigList");
       const fullResponseBox = document.getElementById("fullResponseBox");
       const copyFullResponseBtn = document.getElementById("copyFullResponse");
       const responseIdDisplay = document.getElementById("responseIdDisplay");
@@ -640,6 +685,7 @@
       const AUTO_ADVANCE_DELAY_MS = 150;
       const AUTO_RETRY_LIMIT = 1;
       const SNAPSHOT_LABEL_MAX = 160;
+      const agentConfigControls = new Map();
       let currentBackgroundRun = null;
       let autoAdvanceTimer = null;
       let currentStageController = null;
@@ -657,6 +703,41 @@
         problem_solver: { key: "problem-solver", label: "Problem Solver" },
         expert_evaluator: { key: "expert-evaluator", label: "Expert Evaluator" },
         orchestrator: { key: "orchestrator", label: "Orchestrator" },
+      };
+      const AGENT_CONFIG_ORDER = [
+        "approach_proposer",
+        "approach_evaluator",
+        "problem_solver",
+        "expert_evaluator",
+        "orchestrator",
+      ];
+      const MODEL_OPTIONS = [
+        { value: "gpt-5.1", label: "gpt-5.1" },
+        { value: "gpt-5.2", label: "gpt-5.2" },
+        { value: "gpt-5-pro", label: "gpt-5-pro" },
+        { value: "gpt-5.2-pro", label: "gpt-5.2-pro" },
+      ];
+      const VERBOSITY_OPTIONS = [
+        { value: "low", label: "Low" },
+        { value: "medium", label: "Medium" },
+        { value: "high", label: "High" },
+      ];
+      const REASONING_OPTIONS = [
+        { value: "none", label: "None" },
+        { value: "low", label: "Low" },
+        { value: "medium", label: "Medium" },
+        { value: "high", label: "High" },
+        { value: "xhigh", label: "xHigh" },
+      ];
+      const BACKGROUND_OPTIONS = [
+        { value: "false", label: "False" },
+        { value: "true", label: "True" },
+      ];
+      const AGENT_SETTING_DEFAULTS = {
+        model: "gpt-5.1",
+        reasoning_effort: "high",
+        text_verbosity: "high",
+        background: false,
       };
       const INITIAL_QUEUES = {
         with_approaches: [
@@ -694,6 +775,97 @@
         opt.textContent = label;
         if (selected) opt.selected = true;
         return opt;
+      };
+
+      const buildSelect = (options, selectedValue) => {
+        const select = document.createElement("select");
+        options.forEach((option) => {
+          const value = typeof option === "string" ? option : option.value;
+          const label = typeof option === "string" ? option : option.label;
+          select.appendChild(createOption(value, label, value === selectedValue));
+        });
+        return select;
+      };
+
+      const buildSettingField = (labelText, selectEl) => {
+        const label = document.createElement("label");
+        label.className = "setting";
+        const span = document.createElement("span");
+        span.textContent = labelText;
+        label.append(span, selectEl);
+        return label;
+      };
+
+      const normalizeChoice = (value, options, fallback) => {
+        const candidate = typeof value === "string" ? value : "";
+        const match = options.some((option) => {
+          const optionValue = typeof option === "string" ? option : option.value;
+          return optionValue === candidate;
+        });
+        return match ? candidate : fallback;
+      };
+
+      const normalizeAgentSettings = (settings, fallback) => {
+        const base = fallback || AGENT_SETTING_DEFAULTS;
+        return {
+          model: normalizeChoice(settings?.model, MODEL_OPTIONS, base.model),
+          text_verbosity: normalizeChoice(
+            settings?.text_verbosity,
+            VERBOSITY_OPTIONS,
+            base.text_verbosity
+          ),
+          reasoning_effort: normalizeChoice(
+            settings?.reasoning_effort,
+            REASONING_OPTIONS,
+            base.reasoning_effort
+          ),
+          background:
+            typeof settings?.background === "boolean" ? settings.background : base.background,
+        };
+      };
+
+      const buildAgentConfigCard = (agentKey, defaults) => {
+        if (!agentConfigList) return null;
+        const stageInfo = AGENTIC_STAGES[agentKey];
+        const safeDefaults = normalizeAgentSettings(defaults, AGENT_SETTING_DEFAULTS);
+
+        const card = document.createElement("div");
+        card.className = "agent-card";
+        card.dataset.agent = agentKey;
+
+        const header = document.createElement("div");
+        header.className = "agent-card-header";
+        const title = document.createElement("h3");
+        title.textContent = stageInfo?.label || agentKey;
+        header.appendChild(title);
+        card.appendChild(header);
+
+        const fields = document.createElement("div");
+        fields.className = "agent-card-fields";
+
+        const modelSelect = buildSelect(MODEL_OPTIONS, safeDefaults.model);
+        const verbositySelect = buildSelect(VERBOSITY_OPTIONS, safeDefaults.text_verbosity);
+        const effortSelect = buildSelect(REASONING_OPTIONS, safeDefaults.reasoning_effort);
+        const backgroundSelect = buildSelect(
+          BACKGROUND_OPTIONS,
+          safeDefaults.background ? "true" : "false"
+        );
+
+        fields.append(
+          buildSettingField("Model", modelSelect),
+          buildSettingField("Verbosity", verbositySelect),
+          buildSettingField("Reasoning effort", effortSelect),
+          buildSettingField("Background mode", backgroundSelect)
+        );
+
+        card.appendChild(fields);
+        agentConfigControls.set(agentKey, {
+          model: modelSelect,
+          verbosity: verbositySelect,
+          effort: effortSelect,
+          background: backgroundSelect,
+        });
+        return card;
       };
 
       const collectConversationMessages = () =>
@@ -1023,6 +1195,67 @@
         background: (backgroundSelect?.value || "false") === "true",
       });
 
+      const initializeAgentConfigs = () => {
+        if (!agentConfigList) return;
+        agentConfigControls.clear();
+        agentConfigList.replaceChildren();
+        const defaults = getSettingsSnapshot();
+        AGENT_CONFIG_ORDER.forEach((agentKey) => {
+          const card = buildAgentConfigCard(agentKey, defaults);
+          if (card) agentConfigList.appendChild(card);
+        });
+      };
+
+      const getAgentSettingsSnapshot = () => {
+        const snapshot = {};
+        AGENT_CONFIG_ORDER.forEach((agentKey) => {
+          const controls = agentConfigControls.get(agentKey);
+          if (!controls) return;
+          snapshot[agentKey] = normalizeAgentSettings(
+            {
+              model: controls.model?.value,
+              text_verbosity: controls.verbosity?.value,
+              reasoning_effort: controls.effort?.value,
+              background: (controls.background?.value || "false") === "true",
+            },
+            AGENT_SETTING_DEFAULTS
+          );
+        });
+        return snapshot;
+      };
+
+      const applyAgentSettingsSnapshot = (settingsMap) => {
+        const fallback = getSettingsSnapshot();
+        AGENT_CONFIG_ORDER.forEach((agentKey) => {
+          const controls = agentConfigControls.get(agentKey);
+          if (!controls) return;
+          const normalized = normalizeAgentSettings(settingsMap?.[agentKey], fallback);
+          controls.model.value = normalized.model;
+          controls.verbosity.value = normalized.text_verbosity;
+          controls.effort.value = normalized.reasoning_effort;
+          controls.background.value = normalized.background ? "true" : "false";
+        });
+      };
+
+      const getAgentSettingsForStage = (stage) => {
+        const controls = agentConfigControls.get(stage);
+        if (!controls) return null;
+        return normalizeAgentSettings(
+          {
+            model: controls.model?.value,
+            text_verbosity: controls.verbosity?.value,
+            reasoning_effort: controls.effort?.value,
+            background: (controls.background?.value || "false") === "true",
+          },
+          getSettingsSnapshot()
+        );
+      };
+
+      const resolveStageSettings = (stage) => {
+        if (!getAutoRunEnabled()) return getSettingsSnapshot();
+        return getAgentSettingsForStage(stage) || getSettingsSnapshot();
+      };
+
       const getStateFilename = () => {
         if (!stateFilenameInput) return DEFAULT_STATE_FILENAME;
         const value =
@@ -1068,6 +1301,7 @@
         state_filename: getStateFilename(),
         messages: collectConversationMessages(),
         settings: getSettingsSnapshot(),
+        agent_settings: getAgentSettingsSnapshot(),
         workflow: {
           active: agenticState.active,
           workflowType: agenticState.workflowType,
@@ -1336,6 +1570,7 @@
             backgroundSelect.value = settings.background ? "true" : "false";
           }
         }
+        applyAgentSettingsSnapshot(state.agent_settings);
 
         if (autoRunAgenticCheckbox) {
           autoRunAgenticCheckbox.checked = Boolean(state.workflow?.autoRun);
@@ -1847,7 +2082,7 @@
         return { payload: finalPayload, outputText: extractedText };
       };
 
-      const buildRequestPayload = () => {
+      const buildRequestPayload = (overrideSettings = null) => {
         const rows = Array.from(messagesContainer.querySelectorAll(".message-row"));
         if (!rows.length) {
           throw new Error("Add at least one message before sending.");
@@ -1866,10 +2101,14 @@
           messages.push({ role, content: [{ type, text }] });
         }
 
-        const model = modelSelect?.value || "gpt-5.1";
-        const backgroundMode = (backgroundSelect?.value || "false") === "true";
-        const reasoningEffort = effortSelect?.value || "high";
-        const textVerbosity = verbositySelect?.value || "high";
+        const baseSettings = getSettingsSnapshot();
+        const resolvedSettings = overrideSettings
+          ? { ...baseSettings, ...overrideSettings }
+          : baseSettings;
+        const model = resolvedSettings.model || "gpt-5.1";
+        const backgroundMode = Boolean(resolvedSettings.background);
+        const reasoningEffort = resolvedSettings.reasoning_effort || "high";
+        const textVerbosity = resolvedSettings.text_verbosity || "high";
 
         return {
           payload: {
@@ -2164,7 +2403,7 @@
         const content = await fetchSystemMessage(stageInfo.key);
         replaceFirstMessageWithContent(content);
 
-        const { payload, settings, messages } = buildRequestPayload();
+        const { payload, settings, messages } = buildRequestPayload(resolveStageSettings(stage));
         updatePayloadBox(messages, settings, "text");
 
         const controller = beginStageRequest();
@@ -2194,7 +2433,9 @@
         const content = await fetchSystemMessage(stageInfo.key);
         replaceFirstMessageWithContent(content);
 
-        const { payload, settings, messages } = buildRequestPayload();
+        const { payload, settings, messages } = buildRequestPayload(
+          resolveStageSettings("orchestrator")
+        );
         updatePayloadBox(messages, settings, "json_schema");
 
         const controller = beginStageRequest();
@@ -2786,6 +3027,7 @@
       stopWorkflowBtn?.addEventListener("click", () => stopWorkflow());
       autoRunAgenticCheckbox?.addEventListener("change", () => syncAutoRunControls());
       autoLoopLimitInput?.addEventListener("change", () => normalizeAutoLoopLimitInput());
+      initializeAgentConfigs();
       initializeMessages();
       normalizeAutoLoopLimitInput();
       syncAutoRunControls();

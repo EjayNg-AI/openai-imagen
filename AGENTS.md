@@ -35,6 +35,4 @@
 
 ** Coding Agent to add in a description of the tasks completed **
 
-- Added stop workflow control, auto-retry handling, and rollback UI for agentic workflow in the playground.
-- Added snapshot persistence endpoints and saved snapshot support under `scratchpad/saved_snapshots/`.
-- Added resume-from-snapshot control with confirmation of the next agent before resuming.
+- Added autonomous agent settings controls for each workflow stage, wired per-agent settings into auto-run requests, and persisted them in saved agentic state.
