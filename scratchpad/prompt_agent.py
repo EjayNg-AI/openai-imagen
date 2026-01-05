@@ -39,9 +39,10 @@ SYSTEM_MESSAGE_HEADINGS = {
 }
 ORCHESTRATOR_SCHEMA_HEADING = "SCHEMA FOR ORCHESTRA API CALL"
 DEFAULT_STATE_FILENAME = "agentic_workflow_state.json"
-STATE_PATH = SCRATCHPAD_DIR / DEFAULT_STATE_FILENAME
 STATE_FILENAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,120}$")
 SNAPSHOT_DIR = SCRATCHPAD_DIR / "saved_snapshots"
+STATE_DIR = SNAPSHOT_DIR
+LEGACY_STATE_DIR = SCRATCHPAD_DIR
 SNAPSHOT_LABEL_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,160}$")
 SNAPSHOT_FILENAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,320}$")
 _ORCHESTRATOR_SCHEMA_CACHE: Optional[Dict[str, object]] = None
@@ -62,8 +63,9 @@ def _normalize_state_filename(filename: Optional[str]) -> str:
     return cleaned
 
 
-def _resolve_state_path(filename: Optional[str]) -> Path:
-    return SCRATCHPAD_DIR / _normalize_state_filename(filename)
+def _resolve_state_path(filename: Optional[str], *, legacy: bool = False) -> Path:
+    base_dir = LEGACY_STATE_DIR if legacy else STATE_DIR
+    return base_dir / _normalize_state_filename(filename)
 
 
 def _ensure_snapshot_dir() -> None:
@@ -459,7 +461,11 @@ def get_agentic_state():
     except ValueError as exc:
         return jsonify(ok=False, error=str(exc)), 400
     if not state_path.exists():
-        return jsonify(ok=False, error="No saved state found."), 404
+        legacy_path = _resolve_state_path(filename, legacy=True)
+        if legacy_path.exists():
+            state_path = legacy_path
+        else:
+            return jsonify(ok=False, error="No saved state found."), 404
     try:
         state = json.loads(state_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
@@ -480,6 +486,7 @@ def save_agentic_state():
     state = payload.get("state")
     if not isinstance(state, dict):
         return jsonify(ok=False, error="state must be an object."), 400
+    _ensure_snapshot_dir()
     try:
         state_path.write_text(json.dumps(state, indent=2, ensure_ascii=False), encoding="utf-8")
     except OSError as exc:

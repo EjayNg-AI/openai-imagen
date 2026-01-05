@@ -35,4 +35,4 @@
 
 ** Coding Agent to add in a description of the tasks completed **
 
-- Added autonomous agent settings controls for each workflow stage, wired per-agent settings into auto-run requests, and persisted them in saved agentic state.
+- Store agentic workflow state files in `scratchpad/saved_snapshots` and update references in the agent workflow docs/UI.

@@ -18,7 +18,7 @@ After each Solver/Evaluator loop, the Orchestrator runs with JSON schema structu
 - UI: `scratchpad/prompt_agent.html`
 - Backend: `scratchpad/prompt_agent.py`
 - Orchestrator schema and system messages: `scratchpad/system_messages_consolidated.md`
-- Saved state: `scratchpad/agentic_workflow_state.json` (default; filename configurable in UI)
+- Saved state: `scratchpad/saved_snapshots/agentic_workflow_state.json` (default; filename configurable in UI)
 - Snapshot store: `scratchpad/saved_snapshots/` (versioned snapshot files)
 
 Routes added/used:
@@ -114,7 +114,7 @@ Background mode errors and cancellations are also surfaced, and the workflow sta
 
 ## Persistence and Resume Behavior
 
-State is saved to a JSON file in `scratchpad/`. The filename is taken from the Workflow filename field and defaults to `agentic_workflow_state.json` (single file per name, overwritten on each save).
+State is saved to a JSON file in `scratchpad/saved_snapshots/`. The filename is taken from the Workflow filename field and defaults to `agentic_workflow_state.json` (single file per name, overwritten on each save). Legacy state files in `scratchpad/` are still readable, but new saves write to `scratchpad/saved_snapshots/`.
 
 The saved state includes:
 
@@ -133,7 +133,7 @@ Snapshot behavior:
   - `my_workflow_2025-01-17T18-42-05Z_rollback_loop-2_stage-expert-evaluator.json`
 - Snapshots are created only on manual save and rollback actions (auto-saves do not create snapshots).
 - The snapshot list is filtered by the current Workflow filename.
-- The state file in `scratchpad/` is the mutable “current working copy” overwritten on each save/auto-save.
+- The state file in `scratchpad/saved_snapshots/` is the mutable “current working copy” overwritten on each save/auto-save.
 - Snapshots are immutable history entries; they are never overwritten and are only created manually or via rollback.
 
 Resume behavior:
