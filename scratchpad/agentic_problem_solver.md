@@ -97,7 +97,7 @@ After each Solver/Evaluator loop, the Orchestrator runs with JSON schema output:
 - The orchestrator response is parsed as JSON; parse errors halt the workflow.
 - The parsed JSON is rendered in the UI and saved in workflow state.
 
-If the orchestrator action is `FINAL` or `ASK_USER`, the workflow auto-ends, saves state, and displays the JSON decision. Otherwise, the UI asks whether to run another Solver/Evaluator loop.
+If the orchestrator action is `FINAL` or `ASK_USER`, the workflow auto-ends and displays the JSON decision. In autonomous mode, the state is auto-saved after each successful orchestrator output. Otherwise, the UI asks whether to run another Solver/Evaluator loop.
 
 ## Error Handling
 

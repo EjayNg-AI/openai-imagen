@@ -2583,7 +2583,9 @@
             agenticState.lastStage = stage;
             agenticState.loopCount += 1;
             agenticState.error = null;
-            await saveAgenticState("orchestrator-complete");
+            if (getAutoRunEnabled()) {
+              await saveAgenticState("orchestrator-complete");
+            }
 
             const action = parsed?.action;
             if (action === "FINAL" || action === "ASK_USER") {
