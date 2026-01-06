@@ -35,4 +35,4 @@
 
 ** Coding Agent to add in a description of the tasks completed **
 
-- Store agentic workflow state files in `scratchpad/saved_snapshots` and update references in the agent workflow docs/UI.
+
