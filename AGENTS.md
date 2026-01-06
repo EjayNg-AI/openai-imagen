@@ -34,5 +34,4 @@
 # Change log for agent-driven edits
 
 ** Coding Agent to add in a description of the tasks completed **
-
-
+- Added resume fallback to seed a Problem Solver -> Expert Evaluator -> Orchestrator loop when the queue is empty; clarified agentic workflow documentation.

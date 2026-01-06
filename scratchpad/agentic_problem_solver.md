@@ -140,8 +140,9 @@ Resume behavior:
 
 - "Resume agentic workflow" loads the saved state from the server file named in the Workflow filename field.
 - Resume prompts for confirmation and explicitly names the next agent before continuing.
+- If the saved queue is empty, Resume seeds a default Problem Solver -> Expert Evaluator -> Orchestrator loop before prompting.
 - If a stage was pending or failed, it continues or re-runs that stage after confirmation.
-- If the workflow is complete, Resume reports completion and does not continue.
+- If the workflow is marked complete and still has a queue, Resume reports completion and does not continue.
 
 Manual saves:
 
@@ -155,6 +156,7 @@ Use these controls when multiple checkpoints exist:
 
 - Resume agentic workflow
   - Loads the latest state file for the current Workflow filename.
+  - If the queue is empty, seeds a Problem Solver -> Expert Evaluator -> Orchestrator loop before prompting.
   - Shows a confirmation prompt that names the next agent.
   - On confirmation, runs the next stage.
 - Rollback to snapshot
@@ -163,6 +165,7 @@ Use these controls when multiple checkpoints exist:
   - Does not run any stage automatically.
 - Resume from snapshot
   - Loads the selected snapshot into the UI without creating a new snapshot version.
+  - If the queue is empty, seeds a Problem Solver -> Expert Evaluator -> Orchestrator loop before prompting.
   - Shows a confirmation prompt that names the next agent.
   - On confirmation, writes the main state file and runs the next stage.
 

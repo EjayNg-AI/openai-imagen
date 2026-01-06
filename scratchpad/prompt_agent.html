@@ -2641,6 +2641,16 @@
         return AGENTIC_STAGES[stage]?.label || stage || "next stage";
       };
 
+      const ensureResumeQueue = (sourceLabel) => {
+        if (agenticState.queue.length) return sourceLabel;
+        agenticState.queue = [...LOOP_QUEUE];
+        agenticState.completed = false;
+        agenticState.active = true;
+        agenticState.error = null;
+        const prefix = sourceLabel ? `${sourceLabel} ` : "";
+        return `${prefix}Queue empty; seeded Solver/Evaluator/Orchestrator loop.`;
+      };
+
       const promptForResume = (sourceLabel, onConfirm) => {
         const nextStage = agenticState.queue[0];
         if (!nextStage) {
@@ -2711,16 +2721,15 @@
         }
 
         if (agenticState.completed) {
-          showStatus("Workflow already completed.", "success");
-          return;
-        }
-        if (!agenticState.queue.length) {
-          showStatus("No pending workflow stage to resume.", "error");
-          return;
+          if (agenticState.queue.length) {
+            showStatus("Workflow already completed.", "success");
+            return;
+          }
         }
 
         agenticState.stopRequested = false;
-        promptForResume("Saved workflow state restored.", () => runNextStage());
+        const resumeLabel = ensureResumeQueue("Saved workflow state restored.");
+        promptForResume(resumeLabel, () => runNextStage());
       };
 
       const rollbackToSnapshot = async () => {
@@ -2775,7 +2784,8 @@
           applyStateSnapshot(snapshotState);
           await refreshSnapshotList({ silent: true });
           agenticState.stopRequested = false;
-          promptForResume(`Snapshot loaded (${snapshotName}).`, async () => {
+          const resumeLabel = ensureResumeQueue(`Snapshot loaded (${snapshotName}).`);
+          promptForResume(resumeLabel, async () => {
             await saveAgenticState("resume-from-snapshot", { silent: true });
             runNextStage();
           });
