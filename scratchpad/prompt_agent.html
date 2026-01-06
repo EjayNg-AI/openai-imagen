@@ -2642,13 +2642,24 @@
       };
 
       const ensureResumeQueue = (sourceLabel) => {
-        if (agenticState.queue.length) return sourceLabel;
-        agenticState.queue = [...LOOP_QUEUE];
-        agenticState.completed = false;
-        agenticState.active = true;
-        agenticState.error = null;
-        const prefix = sourceLabel ? `${sourceLabel} ` : "";
-        return `${prefix}Queue empty; seeded Solver/Evaluator/Orchestrator loop.`;
+        if (!agenticState.queue.length) {
+          agenticState.queue = [...LOOP_QUEUE];
+          agenticState.completed = false;
+          agenticState.active = true;
+          agenticState.error = null;
+          const prefix = sourceLabel ? `${sourceLabel} ` : "";
+          return `${prefix}Queue empty; seeded Solver/Evaluator/Orchestrator loop.`;
+        }
+
+        const queue = agenticState.queue;
+        const lastStage = queue[queue.length - 1];
+        if (!queue.includes("orchestrator") && lastStage === "expert_evaluator") {
+          agenticState.queue = [...queue, "orchestrator"];
+          const prefix = sourceLabel ? `${sourceLabel} ` : "";
+          return `${prefix}Queue normalized; appended Orchestrator after Expert Evaluator.`;
+        }
+
+        return sourceLabel;
       };
 
       const promptForResume = (sourceLabel, onConfirm) => {

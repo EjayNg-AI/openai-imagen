@@ -29,9 +29,22 @@
   `python -m pip install -r requirements.txt --upgrade`
   If coding agent is able to perform this command on behalf of the user, offer to do so.
 
+
+---
+
+# Persistent Information for Coding Agent
+
+**The coding agent may use this to store persistent information it needs to carry over to the next coding section.** 
+
+I will not delete/alter anything in this section unless I notify you beforehand.
+
+
 ---
 
 # Change log for agent-driven edits
 
 ** Coding Agent to add in a description of the tasks completed **
-- Added resume fallback to seed a Problem Solver -> Expert Evaluator -> Orchestrator loop when the queue is empty; clarified agentic workflow documentation.
+
+NOTE: This is for my reference after each coding session. The descriptions entered here in this section may not be retained to the next coding session. Do **not** use this section to store persistent information for your own reference. You will need to create a new section in this markdown file if you wish to do so (and use a flag to indicate that I should not delete/alter that section).
+
+- Added resume-time queue normalization to append the orchestrator after the expert evaluator when missing.
