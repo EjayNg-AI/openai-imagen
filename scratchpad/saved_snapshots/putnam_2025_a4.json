@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "saved_at": "2026-01-06T11:55:36.191Z",
-  "note": "orchestrator-complete",
-  "state_filename": "agentic_workflow_state.json",
+  "saved_at": "2026-01-06T12:22:55.744Z",
+  "note": "manual",
+  "state_filename": "putnam_2025_a4",
   "messages": [
     {
       "role": "developer",
@@ -60,12 +60,12 @@
     }
   },
   "workflow": {
-    "active": true,
+    "active": false,
     "workflowType": "without_approaches",
     "queue": [],
     "loopCount": 1,
     "error": null,
-    "completed": false,
+    "completed": true,
     "lastStage": "orchestrator",
     "autoRun": true,
     "autoLoopLimit": 3
