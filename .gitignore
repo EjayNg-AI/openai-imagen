@@ -22,4 +22,3 @@ saved_images/
 # ChatGPT export data (personal)
 chatgpt_conversation_history_*/
 **/viewer_data/
-**/viewer.html
