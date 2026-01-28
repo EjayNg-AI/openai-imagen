@@ -1,0 +1,1039 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ChatGPT Archive Viewer</title>
+    <style>
+      :root {
+        --bg: #f3efe6;
+        --bg-2: #efe5d6;
+        --panel: #fffaf0;
+        --surface: #fffdf8;
+        --ink: #1f1a16;
+        --muted: #6f655d;
+        --border: #d8cec1;
+        --accent: #1e6f5a;
+        --accent-2: #c97a1f;
+        --match: #ffe08a;
+        --shadow: rgba(31, 26, 22, 0.12);
+        --topbar-bg: rgba(255, 250, 240, 0.85);
+        --code-bg: #1e1a16;
+        --code-ink: #f5f1e8;
+        --topbar-height: 72px;
+        --font-serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, serif;
+        --font-sans: "Avenir Next", "Gill Sans", "Trebuchet MS", sans-serif;
+        --font-mono: "SF Mono", "Menlo", "Consolas", "Courier New", monospace;
+      }
+
+      body.dark {
+        --bg: #1b1a17;
+        --bg-2: #25211c;
+        --panel: #2a2520;
+        --surface: #2f2a24;
+        --ink: #f4efe7;
+        --muted: #c3b9ad;
+        --border: #4a4036;
+        --accent: #4cc9a6;
+        --accent-2: #e09b4d;
+        --match: #6b4f1e;
+        --shadow: rgba(0, 0, 0, 0.35);
+        --topbar-bg: rgba(30, 28, 25, 0.92);
+        --code-bg: #141210;
+        --code-ink: #f0e9df;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: var(--font-serif);
+        color: var(--ink);
+        background: linear-gradient(120deg, var(--bg), var(--bg-2));
+        min-height: 100vh;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background:
+          radial-gradient(1200px 600px at 85% -10%, rgba(201, 122, 31, 0.08), transparent 60%),
+          radial-gradient(900px 500px at -10% 10%, rgba(30, 111, 90, 0.08), transparent 60%);
+        pointer-events: none;
+        z-index: -1;
+      }
+
+      body.dark::before {
+        background:
+          radial-gradient(1200px 600px at 85% -10%, rgba(224, 155, 77, 0.12), transparent 60%),
+          radial-gradient(900px 500px at -10% 10%, rgba(76, 201, 166, 0.12), transparent 60%);
+      }
+
+      header.topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+        background: var(--topbar-bg);
+        backdrop-filter: blur(6px);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        min-height: var(--topbar-height);
+      }
+
+      .brand {
+        font-family: var(--font-sans);
+        font-size: 18px;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+      }
+
+      .top-controls {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-family: var(--font-sans);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: var(--muted);
+      }
+
+      .toggle input {
+        accent-color: var(--accent);
+      }
+
+      .search-group {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 6px 10px;
+        box-shadow: 0 6px 16px var(--shadow);
+      }
+
+      input[type="search"] {
+        border: none;
+        outline: none;
+        font-family: var(--font-sans);
+        font-size: 13px;
+        background: transparent;
+        color: var(--ink);
+        min-width: 160px;
+      }
+
+      .match-count {
+        font-family: var(--font-sans);
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      main.layout {
+        display: grid;
+        grid-template-columns: 280px 1fr 1.3fr;
+        gap: 16px;
+        padding: 16px 20px 24px;
+        height: calc(100vh - var(--topbar-height));
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: 0 10px 24px var(--shadow);
+        display: flex;
+        flex-direction: column;
+        min-height: 65vh;
+        height: 100%;
+        min-height: 0;
+        animation: fadeUp 0.4s ease both;
+      }
+
+      .panel:nth-child(1) { animation-delay: 0.05s; }
+      .panel:nth-child(2) { animation-delay: 0.1s; }
+      .panel:nth-child(3) { animation-delay: 0.15s; }
+
+      .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .panel-title {
+        font-family: var(--font-sans);
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+      }
+
+      .meta {
+        font-family: var(--font-sans);
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .panel-body {
+        padding: 12px 14px 16px;
+        overflow: auto;
+        flex: 1;
+        min-height: 0;
+      }
+
+      .conv-item {
+        border: 1px solid transparent;
+        border-radius: 12px;
+        padding: 10px 12px;
+        cursor: pointer;
+        transition: border-color 0.2s ease, background 0.2s ease;
+        margin-bottom: 8px;
+      }
+
+      .conv-item:hover {
+        border-color: var(--accent-2);
+        background: rgba(201, 122, 31, 0.08);
+      }
+
+      .conv-item.active {
+        border-color: var(--accent);
+        background: rgba(30, 111, 90, 0.12);
+      }
+
+      .conv-title {
+        font-family: var(--font-sans);
+        font-size: 13px;
+        margin-bottom: 6px;
+      }
+
+      .conv-meta {
+        font-family: var(--font-sans);
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      .tree-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 6px;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+
+      .tree-row.selected {
+        background: rgba(30, 111, 90, 0.14);
+      }
+
+      .tree-row:hover {
+        background: rgba(201, 122, 31, 0.08);
+      }
+
+      .tree-toggle {
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        font-family: var(--font-sans);
+        font-size: 12px;
+        color: var(--muted);
+        cursor: pointer;
+      }
+
+      .tree-toggle:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+
+      .tree-label {
+        font-size: 13px;
+        line-height: 1.3;
+      }
+
+      .tree-label.match {
+        background: var(--match);
+        border-radius: 4px;
+        padding: 1px 3px;
+      }
+
+      .tree-actions button {
+        border: 1px solid var(--border);
+        background: var(--surface);
+        border-radius: 10px;
+        padding: 4px 8px;
+        font-family: var(--font-sans);
+        font-size: 11px;
+        color: var(--muted);
+        cursor: pointer;
+      }
+
+      .message {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 12px 14px;
+        margin-bottom: 12px;
+        background: var(--surface);
+      }
+
+      .author {
+        font-family: var(--font-sans);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        margin-bottom: 8px;
+        color: var(--muted);
+      }
+
+      .author.user { color: #2b4a8a; }
+      .author.assistant { color: #1e6f5a; }
+      .author.system, .author.tool { color: #8a3b2b; }
+
+      .part {
+        margin-bottom: 8px;
+        white-space: pre-wrap;
+        line-height: 1.4;
+      }
+
+      .part.code, .part.output {
+        background: var(--code-bg);
+        color: var(--code-ink);
+        padding: 10px;
+        border-radius: 10px;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        overflow-x: auto;
+      }
+
+      .part.internal {
+        background: rgba(201, 122, 31, 0.08);
+        border-left: 3px solid var(--accent-2);
+        padding: 8px 10px;
+        border-radius: 8px;
+      }
+
+      .asset {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .asset img {
+        max-width: 100%;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+      }
+
+      .empty-state {
+        font-family: var(--font-sans);
+        color: var(--muted);
+        font-size: 13px;
+        padding: 12px;
+      }
+
+      mark {
+        background: var(--match);
+      }
+
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @media (max-width: 1200px) {
+        main.layout {
+          grid-template-columns: 1fr 1fr;
+        }
+        .panel {
+          min-height: 55vh;
+        }
+      }
+
+      @media (max-width: 900px) {
+        main.layout {
+          grid-template-columns: 1fr;
+          height: auto;
+        }
+        header.topbar {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .top-controls {
+          width: 100%;
+          justify-content: flex-start;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .panel {
+          animation: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">ChatGPT Archive Viewer</div>
+      <div class="top-controls">
+        <label class="toggle">
+          <input id="showInternal" type="checkbox">
+          <span>Show system and tool</span>
+        </label>
+        <label class="toggle">
+          <input id="darkMode" type="checkbox">
+          <span>Dark mode</span>
+        </label>
+        <div class="search-group">
+          <input id="msgSearch" type="search" placeholder="Search messages">
+          <span id="matchCount" class="match-count">0 matches</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="panel">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Conversations</div>
+            <div id="convCount" class="meta"></div>
+          </div>
+          <input id="convSearch" type="search" placeholder="Filter titles">
+        </div>
+        <div id="convList" class="panel-body"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Tree</div>
+          <div class="tree-actions">
+            <button id="expandAll" type="button">Expand all</button>
+            <button id="collapseAll" type="button">Collapse all</button>
+          </div>
+        </div>
+        <div id="treeRoot" class="panel-body"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <div>
+            <div id="convTitle" class="panel-title">Select a conversation</div>
+            <div id="convMeta" class="meta"></div>
+          </div>
+        </div>
+        <div id="transcript" class="panel-body"></div>
+      </section>
+    </main>
+
+    <script>
+      const DATA_DIR = "viewer_data";
+
+      const state = {
+        index: [],
+        assets: {},
+        conv: null,
+        nodes: {},
+        visibleChildren: {},
+        visibleSet: new Set(),
+        expanded: new Set(),
+        selected: null,
+        showInternal: false,
+        searchQuery: "",
+        matchIds: new Set(),
+      };
+
+      const convListEl = document.getElementById("convList");
+      const convCountEl = document.getElementById("convCount");
+      const convSearchEl = document.getElementById("convSearch");
+      const treeRootEl = document.getElementById("treeRoot");
+      const transcriptEl = document.getElementById("transcript");
+      const convTitleEl = document.getElementById("convTitle");
+      const convMetaEl = document.getElementById("convMeta");
+      const msgSearchEl = document.getElementById("msgSearch");
+      const matchCountEl = document.getElementById("matchCount");
+      const showInternalEl = document.getElementById("showInternal");
+      const darkModeEl = document.getElementById("darkMode");
+      const expandAllEl = document.getElementById("expandAll");
+      const collapseAllEl = document.getElementById("collapseAll");
+
+      function fetchJson(url) {
+        return fetch(url).then((res) => {
+          if (!res.ok) {
+            throw new Error("Failed to load " + url);
+          }
+          return res.json();
+        });
+      }
+
+      function formatTime(ts) {
+        if (!ts) return "";
+        const date = new Date(ts * 1000);
+        return date.toLocaleString();
+      }
+
+      function roleLabel(msg) {
+        const role = msg && msg.author && msg.author.role ? msg.author.role : "unknown";
+        if (role === "assistant") return "ChatGPT";
+        if (role === "tool") {
+          const name = msg.author && msg.author.name ? msg.author.name : "tool";
+          return "Tool: " + name;
+        }
+        if (role === "system" && msg.metadata && msg.metadata.is_user_system_message) {
+          return "Custom user info";
+        }
+        return role;
+      }
+
+      function isTextContentType(contentType) {
+        return contentType === "text" || contentType === "multimodal_text";
+      }
+
+      function extractMessageParts(msg) {
+        const parts = [];
+        if (!msg || !msg.content) return parts;
+        const content = msg.content;
+        const contentType = content.content_type;
+
+        if (isTextContentType(contentType)) {
+          const rawParts = Array.isArray(content.parts) ? content.parts : [];
+          for (let i = 0; i < rawParts.length; i++) {
+            const part = rawParts[i];
+            if (typeof part === "string") {
+              if (part.length > 0) parts.push({ kind: "text", text: part });
+            } else if (part && typeof part === "object") {
+              const partType = part.content_type;
+              if (partType === "audio_transcription") {
+                if (part.text) parts.push({ kind: "transcript", text: part.text });
+              } else if (
+                partType === "audio_asset_pointer" ||
+                partType === "image_asset_pointer" ||
+                partType === "video_container_asset_pointer"
+              ) {
+                if (part.asset_pointer) parts.push({ kind: "asset", asset_pointer: part.asset_pointer });
+              } else if (partType === "real_time_user_audio_video_asset_pointer") {
+                if (part.audio_asset_pointer && part.audio_asset_pointer.asset_pointer) {
+                  parts.push({ kind: "asset", asset_pointer: part.audio_asset_pointer.asset_pointer });
+                }
+                if (part.video_container_asset_pointer && part.video_container_asset_pointer.asset_pointer) {
+                  parts.push({ kind: "asset", asset_pointer: part.video_container_asset_pointer.asset_pointer });
+                }
+                if (Array.isArray(part.frames_asset_pointers)) {
+                  for (let j = 0; j < part.frames_asset_pointers.length; j++) {
+                    const frame = part.frames_asset_pointers[j];
+                    if (frame && frame.asset_pointer) {
+                      parts.push({ kind: "asset", asset_pointer: frame.asset_pointer });
+                    }
+                  }
+                }
+              } else if (part.text) {
+                parts.push({ kind: "text", text: part.text });
+              }
+            }
+          }
+          if (parts.length === 0 && content.text) {
+            parts.push({ kind: "text", text: content.text });
+          }
+          return parts;
+        }
+
+        if (contentType === "code" && content.text) {
+          parts.push({ kind: "code", text: content.text, language: content.language || "code" });
+          return parts;
+        }
+
+        if (contentType === "execution_output" && content.text) {
+          parts.push({ kind: "output", text: content.text });
+          return parts;
+        }
+
+        if (contentType === "thoughts" && Array.isArray(content.thoughts)) {
+          content.thoughts.forEach((thought) => {
+            const summary = thought.summary || "";
+            const body = thought.content || "";
+            const combined = summary && body ? summary + " - " + body : summary + body;
+            if (combined) parts.push({ kind: "internal", text: combined });
+          });
+          return parts;
+        }
+
+        if (contentType === "reasoning_recap" && content.content) {
+          parts.push({ kind: "internal", text: content.content });
+          return parts;
+        }
+
+        if (contentType === "tether_browsing_display") {
+          const text = content.summary || content.result || "[browsing display]";
+          parts.push({ kind: "internal", text: text });
+          return parts;
+        }
+
+        if (contentType === "user_editable_context") {
+          const profile = content.user_profile || "";
+          const instructions = content.user_instructions || "";
+          const combined = [profile, instructions].filter(Boolean).join("\\n\\n");
+          if (combined) parts.push({ kind: "internal", text: combined });
+          return parts;
+        }
+
+        if (content && content.text) {
+          parts.push({ kind: "text", text: content.text });
+        }
+        return parts;
+      }
+
+      function isNodeVisible(node) {
+        if (!node || !node.message || !node.message.content) return false;
+        const msg = node.message;
+        const role = msg.author && msg.author.role ? msg.author.role : "";
+        const contentType = msg.content.content_type;
+
+        if (!state.showInternal) {
+          if (role === "system" || role === "tool") return false;
+          if (!isTextContentType(contentType)) return false;
+        }
+
+        const parts = extractMessageParts(msg);
+        return parts.length > 0;
+      }
+
+      function getNodeText(node) {
+        if (!node) return "";
+        if (node._searchTextRaw !== undefined) return node._searchTextRaw;
+        const msg = node.message;
+        const parts = extractMessageParts(msg);
+        const text = parts
+          .map((part) => {
+            if (part.kind === "asset") {
+              return part.asset_pointer || "";
+            }
+            return part.text || "";
+          })
+          .join(" ")
+          .trim();
+        node._searchTextRaw = text;
+        node._searchText = text.toLowerCase();
+        return text;
+      }
+
+      function getNodeTextLower(node) {
+        if (!node) return "";
+        if (node._searchText !== undefined) return node._searchText;
+        getNodeText(node);
+        return node._searchText || "";
+      }
+
+      function buildVisibleTree() {
+        state.visibleChildren = {};
+        state.visibleSet = new Set();
+        const rootId = "__root__";
+        state.visibleChildren[rootId] = [];
+
+        const nodes = state.nodes;
+        const roots = [];
+        Object.keys(nodes).forEach((id) => {
+          const node = nodes[id];
+          if (!node || !node.parent) roots.push(id);
+        });
+
+        function addChild(parentId, childId) {
+          if (!state.visibleChildren[parentId]) {
+            state.visibleChildren[parentId] = [];
+          }
+          state.visibleChildren[parentId].push(childId);
+        }
+
+        function walk(nodeId, visibleParent) {
+          const node = nodes[nodeId];
+          if (!node) return;
+          const visible = isNodeVisible(node);
+          const currentVisible = visible ? nodeId : visibleParent;
+          if (visible) {
+            state.visibleSet.add(nodeId);
+            addChild(visibleParent, nodeId);
+          }
+          const children = Array.isArray(node.children) ? node.children : [];
+          children.forEach((childId) => walk(childId, currentVisible));
+        }
+
+        roots.forEach((root) => walk(root, rootId));
+      }
+
+      function expandPathTo(nodeId) {
+        let current = nodeId;
+        while (current && state.nodes[current]) {
+          if (state.visibleSet.has(current)) {
+            state.expanded.add(current);
+          }
+          current = state.nodes[current].parent;
+        }
+      }
+
+      function pickDefaultNode() {
+        let nodeId = state.conv && state.conv.current_node ? state.conv.current_node : null;
+        while (nodeId && state.nodes[nodeId] && !state.visibleSet.has(nodeId)) {
+          nodeId = state.nodes[nodeId].parent;
+        }
+        if (nodeId) return nodeId;
+        const rootChildren = state.visibleChildren["__root__"] || [];
+        return rootChildren.length > 0 ? rootChildren[0] : null;
+      }
+
+      function renderConversationList() {
+        const query = convSearchEl.value.trim().toLowerCase();
+        const filtered = state.index.filter((conv) => {
+          const title = (conv.title || "").toLowerCase();
+          return title.includes(query);
+        });
+
+        convCountEl.textContent = filtered.length + " conversations";
+        convListEl.innerHTML = "";
+
+        if (filtered.length === 0) {
+          const empty = document.createElement("div");
+          empty.className = "empty-state";
+          empty.textContent = "No conversations match your filter.";
+          convListEl.appendChild(empty);
+          return;
+        }
+
+        filtered.forEach((conv) => {
+          const item = document.createElement("div");
+          item.className = "conv-item";
+          if (state.conv && conv.id === state.conv.id) {
+            item.classList.add("active");
+          }
+          const title = document.createElement("div");
+          title.className = "conv-title";
+          title.textContent = conv.title || "(untitled)";
+          const meta = document.createElement("div");
+          meta.className = "conv-meta";
+          const update = formatTime(conv.update_time) || formatTime(conv.create_time);
+          meta.textContent = (update ? update + " | " : "") + (conv.message_count || 0) + " messages";
+          item.appendChild(title);
+          item.appendChild(meta);
+          item.addEventListener("click", () => loadConversation(conv.id));
+          convListEl.appendChild(item);
+        });
+      }
+
+      function renderTree() {
+        treeRootEl.innerHTML = "";
+        const rootChildren = state.visibleChildren["__root__"] || [];
+        if (rootChildren.length === 0) {
+          const empty = document.createElement("div");
+          empty.className = "empty-state";
+          empty.textContent = "No visible messages with current filters.";
+          treeRootEl.appendChild(empty);
+          return;
+        }
+
+        function renderNode(nodeId, depth) {
+          const node = state.nodes[nodeId];
+          if (!node) return;
+          const row = document.createElement("div");
+          row.className = "tree-row";
+          if (nodeId === state.selected) {
+            row.classList.add("selected");
+          }
+          row.style.paddingLeft = "0px";
+
+          const children = state.visibleChildren[nodeId] || [];
+          const hasChildren = children.length > 0;
+
+          const toggle = document.createElement("button");
+          toggle.type = "button";
+          toggle.className = "tree-toggle";
+          toggle.textContent = hasChildren ? (state.expanded.has(nodeId) ? "-" : "+") : ".";
+          toggle.disabled = !hasChildren;
+          toggle.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (!hasChildren) return;
+            if (state.expanded.has(nodeId)) {
+              state.expanded.delete(nodeId);
+            } else {
+              state.expanded.add(nodeId);
+            }
+            renderTree();
+          });
+
+          const label = document.createElement("div");
+          label.className = "tree-label";
+          const summary = getNodeText(node).replace(/\s+/g, " ").trim();
+          const snippet = summary.length > 0 ? summary.slice(0, 80) : "(no text)";
+          label.textContent = roleLabel(node.message) + ": " + snippet;
+          if (state.matchIds.has(nodeId)) {
+            label.classList.add("match");
+          }
+
+          row.appendChild(toggle);
+          row.appendChild(label);
+          row.addEventListener("click", () => {
+            state.selected = nodeId;
+            expandPathTo(nodeId);
+            renderTree();
+            renderTranscript();
+          });
+          treeRootEl.appendChild(row);
+
+          if (hasChildren && state.expanded.has(nodeId)) {
+            children.forEach((childId) => renderNode(childId, depth + 1));
+          }
+        }
+
+        rootChildren.forEach((childId) => renderNode(childId, 0));
+      }
+
+      function appendTextWithHighlights(container, text) {
+        const query = state.searchQuery;
+        if (!query) {
+          container.textContent = text;
+          return;
+        }
+        const lower = text.toLowerCase();
+        let index = 0;
+        let pos = lower.indexOf(query, index);
+        while (pos !== -1) {
+          if (pos > index) {
+            container.appendChild(document.createTextNode(text.slice(index, pos)));
+          }
+          const mark = document.createElement("mark");
+          mark.textContent = text.slice(pos, pos + query.length);
+          container.appendChild(mark);
+          index = pos + query.length;
+          pos = lower.indexOf(query, index);
+        }
+        if (index < text.length) {
+          container.appendChild(document.createTextNode(text.slice(index)));
+        }
+      }
+
+      function renderTranscript() {
+        transcriptEl.innerHTML = "";
+        if (!state.selected) {
+          const empty = document.createElement("div");
+          empty.className = "empty-state";
+          empty.textContent = "Select a node to render the conversation path.";
+          transcriptEl.appendChild(empty);
+          return;
+        }
+
+        const path = [];
+        let current = state.selected;
+        while (current && state.nodes[current]) {
+          path.push(current);
+          current = state.nodes[current].parent;
+        }
+        path.reverse();
+
+        if (!state.conv) return;
+
+        let targetEl = null;
+        path.forEach((nodeId) => {
+          const node = state.nodes[nodeId];
+          if (!node || !isNodeVisible(node)) return;
+          const msg = node.message;
+          const parts = extractMessageParts(msg);
+          if (parts.length === 0) return;
+
+          const msgEl = document.createElement("div");
+          msgEl.className = "message";
+          msgEl.dataset.nodeId = nodeId;
+
+          const author = document.createElement("div");
+          author.className = "author " + (msg.author && msg.author.role ? msg.author.role : "");
+          author.textContent = roleLabel(msg);
+          msgEl.appendChild(author);
+
+          parts.forEach((part) => {
+            if (part.kind === "asset") {
+              const assetWrap = document.createElement("div");
+              assetWrap.className = "part asset";
+              const link = state.assets[part.asset_pointer];
+              if (link) {
+                if (isImageLink(link)) {
+                  const img = document.createElement("img");
+                  img.src = link;
+                  img.alt = link;
+                  assetWrap.appendChild(img);
+                }
+                const anchor = document.createElement("a");
+                anchor.href = link;
+                anchor.textContent = link;
+                anchor.target = "_blank";
+                assetWrap.appendChild(anchor);
+              } else {
+                assetWrap.textContent = "[File missing]";
+              }
+              msgEl.appendChild(assetWrap);
+            } else {
+              const partEl = document.createElement("div");
+              partEl.className = "part";
+              if (part.kind === "code") partEl.classList.add("code");
+              if (part.kind === "output") partEl.classList.add("output");
+              if (part.kind === "internal") partEl.classList.add("internal");
+              if (part.kind === "transcript") {
+                partEl.classList.add("internal");
+                const label = document.createElement("div");
+                label.className = "meta";
+                label.textContent = "Transcript";
+                partEl.appendChild(label);
+              }
+              appendTextWithHighlights(partEl, part.text || "");
+              msgEl.appendChild(partEl);
+            }
+          });
+
+          transcriptEl.appendChild(msgEl);
+          if (nodeId === state.selected) {
+            targetEl = msgEl;
+          }
+        });
+
+        if (targetEl) {
+          requestAnimationFrame(() => {
+            targetEl.scrollIntoView({ block: "start", behavior: "smooth" });
+          });
+        }
+      }
+
+      function isImageLink(link) {
+        return /\.(png|jpg|jpeg|gif|webp|bmp|svg)$/i.test(link);
+      }
+
+      function updateMatches() {
+        state.matchIds.clear();
+        const query = state.searchQuery;
+        if (!query) {
+          matchCountEl.textContent = "0 matches";
+          return;
+        }
+        state.visibleSet.forEach((nodeId) => {
+          const node = state.nodes[nodeId];
+          if (!node) return;
+          const text = getNodeTextLower(node);
+          if (text.includes(query)) {
+            state.matchIds.add(nodeId);
+          }
+        });
+        matchCountEl.textContent = state.matchIds.size + " matches";
+      }
+
+      async function loadConversation(convId) {
+        const conv = await fetchJson(DATA_DIR + "/conversations/" + convId + ".json");
+        state.conv = conv;
+        state.nodes = conv.mapping || {};
+        state.expanded = new Set();
+        buildVisibleTree();
+        state.selected = pickDefaultNode();
+        if (state.selected) {
+          expandPathTo(state.selected);
+        }
+        updateMatches();
+        renderConversationList();
+        renderTree();
+        renderTranscript();
+
+        convTitleEl.textContent = conv.title || "(untitled)";
+        const meta = [];
+        if (conv.create_time) meta.push("Created: " + formatTime(conv.create_time));
+        if (conv.update_time) meta.push("Updated: " + formatTime(conv.update_time));
+        convMetaEl.textContent = meta.join(" | ");
+      }
+
+      async function init() {
+        const [index, assets] = await Promise.all([
+          fetchJson(DATA_DIR + "/index.json"),
+          fetchJson(DATA_DIR + "/assets.json"),
+        ]);
+        state.index = index.sort((a, b) => (b.update_time || 0) - (a.update_time || 0));
+        state.assets = assets || {};
+        renderConversationList();
+      }
+
+      convSearchEl.addEventListener("input", () => renderConversationList());
+
+      msgSearchEl.addEventListener("input", () => {
+        state.searchQuery = msgSearchEl.value.trim().toLowerCase();
+        updateMatches();
+        renderTree();
+        renderTranscript();
+      });
+
+      showInternalEl.addEventListener("change", () => {
+        state.showInternal = showInternalEl.checked;
+        if (!state.conv) return;
+        buildVisibleTree();
+        state.selected = pickDefaultNode();
+        if (state.selected) {
+          expandPathTo(state.selected);
+        }
+        updateMatches();
+        renderTree();
+        renderTranscript();
+      });
+
+      darkModeEl.addEventListener("change", () => {
+        const enabled = darkModeEl.checked;
+        document.body.classList.toggle("dark", enabled);
+        try {
+          localStorage.setItem("chatgpt_viewer_dark", enabled ? "1" : "0");
+        } catch (err) {
+          // ignore storage errors
+        }
+      });
+
+      expandAllEl.addEventListener("click", () => {
+        state.visibleSet.forEach((nodeId) => state.expanded.add(nodeId));
+        renderTree();
+      });
+
+      collapseAllEl.addEventListener("click", () => {
+        state.expanded.clear();
+        renderTree();
+      });
+
+      (function restoreTheme() {
+        try {
+          const saved = localStorage.getItem("chatgpt_viewer_dark");
+          if (saved === "1") {
+            darkModeEl.checked = true;
+            document.body.classList.add("dark");
+          }
+        } catch (err) {
+          // ignore storage errors
+        }
+      })();
+
+      init().catch((err) => {
+        convListEl.innerHTML = "";
+        const empty = document.createElement("div");
+        empty.className = "empty-state";
+        empty.textContent = "Failed to load viewer data. Run the build script first.";
+        convListEl.appendChild(empty);
+        console.error(err);
+      });
+    </script>
+  </body>
+</html>

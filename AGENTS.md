@@ -48,3 +48,7 @@ I will not delete/alter anything in this section unless I notify you beforehand.
 NOTE: This is for my reference after each coding session. The descriptions entered here in this section may not be retained to the next coding session. Do **not** use this section to store persistent information for your own reference. You will need to create a new section in this markdown file if you wish to do so (and use a flag to indicate that I should not delete/alter that section).
 
 - Added resume-time queue normalization to append the orchestrator after the expert evaluator when missing.
+- Built a static ChatGPT export viewer (tree + transcript) with a build script and HTML template.
+- Updated the viewer template to add independent scrolling, flat tree alignment, and a dark mode toggle.
+- Added auto-scroll to the selected message when a tree node is clicked.
+- Added scripts/README.md and ignored export viewer data in .gitignore.
