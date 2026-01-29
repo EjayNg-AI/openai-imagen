@@ -3,8 +3,19 @@ import argparse
 import json
 import re
 import sys
+import urllib.parse
+import urllib.request
 from json import JSONDecoder
-from pathlib import Path
+from pathlib import Path, PurePosixPath
+
+ASSET_URLS = {
+    "marked.min.js": "https://cdn.jsdelivr.net/npm/marked/marked.min.js",
+    "purify.min.js": "https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js",
+    "katex.min.js": "https://cdn.jsdelivr.net/npm/katex/dist/katex.min.js",
+    "auto-render.min.js": "https://cdn.jsdelivr.net/npm/katex/dist/contrib/auto-render.min.js",
+    "katex.min.css": "https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css",
+}
+KATEX_CSS_NAME = "katex.min.css"
 
 
 def iter_json_array(path):
@@ -161,6 +172,8 @@ def build_viewer(export_dir):
     with (out_dir / "assets.json").open("w", encoding="utf-8") as f:
         json.dump(assets, f, ensure_ascii=True, separators=(",", ":"))
 
+    ensure_viewer_assets(export_dir)
+
     template_path = Path(__file__).with_name("chatgpt_viewer_template.html")
     if not template_path.exists():
         raise FileNotFoundError("Missing viewer template: chatgpt_viewer_template.html")
@@ -171,6 +184,70 @@ def build_viewer(export_dir):
     print("Done.")
     print(f"Viewer: {viewer_path}")
     print(f"Data: {out_dir}")
+
+
+def ensure_viewer_assets(export_dir):
+    asset_dir = export_dir / "viewer_assets"
+    asset_dir.mkdir(parents=True, exist_ok=True)
+
+    print("Checking viewer assets...")
+    for name, url in ASSET_URLS.items():
+        path = asset_dir / name
+        if path.exists() and path.stat().st_size > 0:
+            continue
+        try:
+            download_asset(url, path)
+        except Exception as err:
+            print(f"  warning: failed to download {url}: {err}")
+
+    css_path = asset_dir / KATEX_CSS_NAME
+    if css_path.exists() and css_path.stat().st_size > 0:
+        try:
+            css_text = css_path.read_text(encoding="utf-8")
+            font_paths = extract_css_urls(css_text)
+            base_url = ASSET_URLS[KATEX_CSS_NAME].rsplit("/", 1)[0] + "/"
+            for font_path in font_paths:
+                rel_path = safe_rel_path(font_path)
+                if rel_path is None:
+                    continue
+                dest = asset_dir / rel_path
+                if dest.exists() and dest.stat().st_size > 0:
+                    continue
+                font_url = urllib.parse.urljoin(base_url, font_path)
+                try:
+                    download_asset(font_url, dest)
+                except Exception as err:
+                    print(f"  warning: failed to download {font_url}: {err}")
+        except Exception as err:
+            print(f"  warning: failed to parse KaTeX fonts: {err}")
+
+
+def download_asset(url, dest):
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    print(f"  downloading {url}")
+    with urllib.request.urlopen(url, timeout=30) as resp:
+        data = resp.read()
+    if not data:
+        raise RuntimeError("empty response")
+    dest.write_bytes(data)
+
+
+def extract_css_urls(css_text):
+    matches = re.findall(r"url\\(([^)]+)\\)", css_text)
+    urls = []
+    for raw in matches:
+        cleaned = raw.strip().strip('"').strip("'")
+        if not cleaned or cleaned.startswith("data:"):
+            continue
+        urls.append(cleaned)
+    return urls
+
+
+def safe_rel_path(url_path):
+    path = PurePosixPath(url_path)
+    if ".." in path.parts:
+        return None
+    return Path(*path.parts)
 
 
 def main():

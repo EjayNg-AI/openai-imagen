@@ -9,11 +9,13 @@ that can be served over a local static web server.
 
 - Reads `conversations.json` as a stream (safe for large files).
 - Extracts asset links from `chat.html`.
+- Downloads the offline rendering assets (Markdown + KaTeX) into `viewer_assets/` if missing. The viewer falls back to CDN assets if `viewer_assets/` is not present.
 - Writes:
   - `viewer.html` (the UI)
   - `viewer_data/index.json` (conversation metadata)
   - `viewer_data/conversations/<id>.json` (one file per conversation)
   - `viewer_data/assets.json` (asset pointer → local file mapping)
+  - `viewer_assets/` (offline Markdown/KaTeX renderer assets)
 
 ## Build (from repo root)
 
@@ -48,3 +50,4 @@ http://localhost:8000/viewer.html?ts=1
 - System/tool content is hidden by default; toggle it on as needed.
 - Dark mode is available and persists in local storage.
 - The transcript auto‑scrolls to the selected node.
+- Enable "Rendered view" for Markdown + LaTeX rendering (works offline after assets download).

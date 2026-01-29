@@ -152,6 +152,18 @@
         height: calc(100vh - var(--topbar-height));
       }
 
+      body.render-on main.layout {
+        grid-template-columns: 260px 1fr 1.15fr 1.15fr;
+      }
+
+      #renderPanel {
+        display: none;
+      }
+
+      body.render-on #renderPanel {
+        display: flex;
+      }
+
       .panel {
         background: var(--panel);
         border: 1px solid var(--border);
@@ -168,6 +180,7 @@
       .panel:nth-child(1) { animation-delay: 0.05s; }
       .panel:nth-child(2) { animation-delay: 0.1s; }
       .panel:nth-child(3) { animation-delay: 0.15s; }
+      .panel:nth-child(4) { animation-delay: 0.2s; }
 
       .panel-header {
         display: flex;
@@ -310,6 +323,8 @@
         margin-bottom: 8px;
         white-space: pre-wrap;
         line-height: 1.4;
+        overflow-wrap: anywhere;
+        word-break: break-word;
       }
 
       .part.code, .part.output {
@@ -320,6 +335,9 @@
         font-family: var(--font-mono);
         font-size: 12px;
         overflow-x: auto;
+        white-space: pre;
+        overflow-wrap: normal;
+        word-break: normal;
       }
 
       .part.internal {
@@ -327,6 +345,103 @@
         border-left: 3px solid var(--accent-2);
         padding: 8px 10px;
         border-radius: 8px;
+      }
+
+      .rendered-content {
+        font-family: var(--font-sans);
+        font-size: 14px;
+        line-height: 1.55;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+
+      .rendered-content h1,
+      .rendered-content h2,
+      .rendered-content h3 {
+        font-family: var(--font-sans);
+        margin: 12px 0 6px;
+      }
+
+      .rendered-content pre {
+        background: var(--code-bg);
+        color: var(--code-ink);
+        padding: 10px;
+        border-radius: 10px;
+        overflow-x: auto;
+        white-space: pre;
+        overflow-wrap: normal;
+        word-break: normal;
+      }
+
+      .rendered-content code {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        white-space: pre;
+        overflow-wrap: normal;
+        word-break: normal;
+      }
+
+      .rendered-content .katex,
+      .rendered-content .katex * {
+        overflow-wrap: normal;
+        word-break: normal;
+      }
+
+      .rendered-content .katex {
+        white-space: nowrap;
+      }
+
+      .rendered-content .katex-display {
+        overflow-x: auto;
+      }
+
+      .code-block {
+        position: relative;
+      }
+
+      .copy-btn {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        border-radius: 8px;
+        padding: 4px 8px;
+        font-family: var(--font-sans);
+        font-size: 11px;
+        color: var(--muted);
+        cursor: pointer;
+        z-index: 2;
+      }
+
+      .rendered-content blockquote {
+        margin: 8px 0;
+        border-left: 3px solid var(--accent-2);
+        padding: 6px 10px;
+        border-radius: 8px;
+        color: var(--muted);
+        background: rgba(201, 122, 31, 0.08);
+      }
+
+      .rendered-content img {
+        max-width: 100%;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+      }
+
+      .rendered-content a {
+        color: var(--accent);
+      }
+
+      .rendered-content table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+
+      .rendered-content th,
+      .rendered-content td {
+        border: 1px solid var(--border);
+        padding: 6px;
       }
 
       .asset {
@@ -367,6 +482,9 @@
         main.layout {
           grid-template-columns: 1fr 1fr;
         }
+        body.render-on main.layout {
+          grid-template-columns: 1fr 1fr;
+        }
         .panel {
           min-height: 55vh;
         }
@@ -376,6 +494,9 @@
         main.layout {
           grid-template-columns: 1fr;
           height: auto;
+        }
+        body.render-on main.layout {
+          grid-template-columns: 1fr;
         }
         header.topbar {
           flex-direction: column;
@@ -401,6 +522,18 @@
         <label class="toggle">
           <input id="showInternal" type="checkbox">
           <span>Show system and tool</span>
+        </label>
+        <label class="toggle">
+          <input id="renderToggle" type="checkbox">
+          <span>Rendered view</span>
+        </label>
+        <label class="toggle">
+          <input id="escapeBrackets" type="checkbox">
+          <span>Further escape brackets</span>
+        </label>
+        <label class="toggle">
+          <input id="unsafeCodeWrap" type="checkbox">
+          <span>Wrap code (unsafe)</span>
         </label>
         <label class="toggle">
           <input id="darkMode" type="checkbox">
@@ -445,7 +578,110 @@
         </div>
         <div id="transcript" class="panel-body"></div>
       </section>
+
+      <section id="renderPanel" class="panel">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Rendered</div>
+            <div class="meta">Markdown + LaTeX</div>
+          </div>
+        </div>
+        <div id="rendered" class="panel-body"></div>
+      </section>
     </main>
+
+    <script>
+      (function () {
+        const ASSETS = [
+          {
+            type: "css",
+            local: "viewer_assets/katex.min.css",
+            cdn: "https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css",
+            id: "katexCss",
+          },
+          {
+            type: "js",
+            local: "viewer_assets/marked.min.js",
+            cdn: "https://cdn.jsdelivr.net/npm/marked/marked.min.js",
+            global: "marked",
+          },
+          {
+            type: "js",
+            local: "viewer_assets/purify.min.js",
+            cdn: "https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js",
+            global: "DOMPurify",
+          },
+          {
+            type: "js",
+            local: "viewer_assets/katex.min.js",
+            cdn: "https://cdn.jsdelivr.net/npm/katex/dist/katex.min.js",
+            global: "katex",
+          },
+          {
+            type: "js",
+            local: "viewer_assets/auto-render.min.js",
+            cdn: "https://cdn.jsdelivr.net/npm/katex/dist/contrib/auto-render.min.js",
+            global: "renderMathInElement",
+          },
+        ];
+
+        function loadCssWithFallback(item) {
+          return new Promise((resolve) => {
+            const link = document.createElement("link");
+            link.rel = "stylesheet";
+            link.href = item.local;
+            if (item.id) link.id = item.id;
+            link.onload = () => resolve(true);
+            link.onerror = () => {
+              if (!item.cdn) return resolve(false);
+              const fallback = document.createElement("link");
+              fallback.rel = "stylesheet";
+              fallback.href = item.cdn;
+              fallback.onload = () => resolve(true);
+              fallback.onerror = () => resolve(false);
+              document.head.appendChild(fallback);
+            };
+            document.head.appendChild(link);
+          });
+        }
+
+        function loadScriptWithFallback(item) {
+          if (item.global && window[item.global]) return Promise.resolve(true);
+          return new Promise((resolve) => {
+            const script = document.createElement("script");
+            script.src = item.local;
+            script.async = false;
+            script.onload = () => resolve(true);
+            script.onerror = () => {
+              if (!item.cdn) return resolve(false);
+              const fallback = document.createElement("script");
+              fallback.src = item.cdn;
+              fallback.async = false;
+              fallback.onload = () => resolve(true);
+              fallback.onerror = () => resolve(false);
+              document.head.appendChild(fallback);
+            };
+            document.head.appendChild(script);
+          });
+        }
+
+        let libsPromise = null;
+        window.ensureViewerLibs = function () {
+          if (libsPromise) return libsPromise;
+          const cssPromise = loadCssWithFallback(ASSETS[0]);
+          libsPromise = cssPromise
+            .then(() => loadScriptWithFallback(ASSETS[1]))
+            .then(() => loadScriptWithFallback(ASSETS[2]))
+            .then(() => loadScriptWithFallback(ASSETS[3]))
+            .then(() => loadScriptWithFallback(ASSETS[4]))
+            .then(() => true)
+            .catch(() => false);
+          return libsPromise;
+        };
+
+        window.ensureViewerLibs();
+      })();
+    </script>
 
     <script>
       const DATA_DIR = "viewer_data";
@@ -460,6 +696,9 @@
         expanded: new Set(),
         selected: null,
         showInternal: false,
+        renderEnabled: false,
+        escapeBrackets: false,
+        wrapCodeUnsafe: false,
         searchQuery: "",
         matchIds: new Set(),
       };
@@ -474,9 +713,14 @@
       const msgSearchEl = document.getElementById("msgSearch");
       const matchCountEl = document.getElementById("matchCount");
       const showInternalEl = document.getElementById("showInternal");
+      const renderToggleEl = document.getElementById("renderToggle");
+      const escapeBracketsEl = document.getElementById("escapeBrackets");
+      const unsafeCodeWrapEl = document.getElementById("unsafeCodeWrap");
       const darkModeEl = document.getElementById("darkMode");
       const expandAllEl = document.getElementById("expandAll");
       const collapseAllEl = document.getElementById("collapseAll");
+      const renderPanelEl = document.getElementById("renderPanel");
+      const renderedEl = document.getElementById("rendered");
 
       function fetchJson(url) {
         return fetch(url).then((res) => {
@@ -916,10 +1160,436 @@
             targetEl.scrollIntoView({ block: "start", behavior: "smooth" });
           });
         }
+
+        applyCodeWrapMode();
+
+        if (state.renderEnabled) {
+          renderRenderedTranscript();
+        }
       }
 
       function isImageLink(link) {
         return /\.(png|jpg|jpeg|gif|webp|bmp|svg)$/i.test(link);
+      }
+
+      function escapeHtml(text) {
+        return String(text)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function partsToMarkdown(parts) {
+        const blocks = [];
+        parts.forEach((part) => {
+          if (part.kind === "asset") {
+            const link = state.assets[part.asset_pointer];
+            if (link) {
+              if (isImageLink(link)) {
+                blocks.push("![](" + link + ")");
+              } else {
+                blocks.push("[" + link + "](" + link + ")");
+              }
+            } else {
+              blocks.push("_[File missing]_");
+            }
+            return;
+          }
+          const text = part.text || "";
+          if (part.kind === "code") {
+            const lang = part.language || "";
+            blocks.push("```" + lang + "\n" + text + "\n```");
+          } else if (part.kind === "output") {
+            blocks.push("```text\n" + text + "\n```");
+          } else if (part.kind === "internal") {
+            blocks.push("> " + text.replace(/\n/g, "\n> "));
+          } else if (part.kind === "transcript") {
+            blocks.push("> Transcript:\n> " + text.replace(/\n/g, "\n> "));
+          } else {
+            blocks.push(text);
+          }
+        });
+        return blocks.join("\n\n");
+      }
+
+      function renderMarkdown(markdown) {
+        if (!window.marked || !window.DOMPurify) {
+          return "<pre>" + escapeHtml(markdown) + "</pre>";
+        }
+        if (!renderMarkdown._configured) {
+          marked.setOptions({ breaks: true, headerIds: false, mangle: false });
+          renderMarkdown._configured = true;
+        }
+        const raw = marked.parse(markdown);
+        return DOMPurify.sanitize(raw, { USE_PROFILES: { html: true } });
+      }
+
+      function looksLikeMath(inner) {
+        const text = (inner || "").trim();
+        if (!text) return false;
+        if (/\\[a-zA-Z]+/.test(text)) return true;
+        if (/[+\-*/^_=<>]/.test(text)) return true;
+        if (/^[A-Za-z0-9]+$/.test(text)) return true;
+        if (/^[A-Za-z0-9_^]+$/.test(text)) return true;
+        if (/^[0-9]+(?:,[0-9]{3})*(?:\.[0-9]+)?$/.test(text)) return true;
+        if (/^[0-9]*\.[0-9]+$/.test(text)) return true;
+        return false;
+      }
+
+      function escapeDelimitersInMarkdown(markdown) {
+        if (!markdown || markdown.indexOf("\\") === -1) return markdown;
+        let out = "";
+        let cursor = 0;
+        while (cursor < markdown.length) {
+          const nextFence = findNextFenceStart(markdown, cursor);
+          if (nextFence === -1) {
+            out += processInlineCode(markdown.slice(cursor));
+            break;
+          }
+          out += processInlineCode(markdown.slice(cursor, nextFence));
+          const fenceMarker = markdown.startsWith("~~~", nextFence) ? "~~~" : "```";
+          const fenceEnd = findFenceEnd(markdown, nextFence, fenceMarker);
+          if (fenceEnd === -1) {
+            out += markdown.slice(nextFence);
+            break;
+          }
+          out += markdown.slice(nextFence, fenceEnd);
+          cursor = fenceEnd;
+        }
+        return out;
+      }
+
+      function findNextFenceStart(text, start) {
+        let pos = start;
+        while (pos < text.length) {
+          const tick = text.indexOf("```", pos);
+          const tilde = text.indexOf("~~~", pos);
+          let next = -1;
+          if (tick === -1) next = tilde;
+          else if (tilde === -1) next = tick;
+          else next = Math.min(tick, tilde);
+          if (next === -1) return -1;
+          const atLineStart = next === 0 || text[next - 1] === "\n";
+          if (atLineStart) return next;
+          pos = next + 3;
+        }
+        return -1;
+      }
+
+      function findFenceEnd(text, start, marker) {
+        let lineStart = text.indexOf("\n", start);
+        if (lineStart === -1) return -1;
+        lineStart += 1;
+        while (lineStart <= text.length) {
+          const lineEnd = text.indexOf("\n", lineStart);
+          const line = lineEnd === -1 ? text.slice(lineStart) : text.slice(lineStart, lineEnd);
+          if (line.startsWith(marker)) {
+            return lineEnd === -1 ? text.length : lineEnd + 1;
+          }
+          if (lineEnd === -1) return -1;
+          lineStart = lineEnd + 1;
+        }
+        return -1;
+      }
+
+      function processInlineCode(text) {
+        let out = "";
+        let i = 0;
+        while (i < text.length) {
+          const tick = text.indexOf("`", i);
+          if (tick === -1) {
+            out += escapeDelimitersInText(text.slice(i));
+            break;
+          }
+          let j = tick;
+          while (j < text.length && text[j] === "`") j++;
+          const ticks = text.slice(tick, j);
+          const end = text.indexOf(ticks, j);
+          if (end === -1) {
+            out += escapeDelimitersInText(text.slice(i));
+            break;
+          }
+          out += escapeDelimitersInText(text.slice(i, tick));
+          out += text.slice(tick, end + ticks.length);
+          i = end + ticks.length;
+        }
+        return out;
+      }
+
+      function escapeDelimitersInText(text) {
+        if (!text || (text.indexOf("\\") === -1 && text.indexOf("$") === -1)) return text;
+        const inlineRegex = /\\\(([\s\S]*?)\\\)/g;
+        const blockRegex = /\\\[([\s\S]*?)\\\]/g;
+        let replaced = text.replace(inlineRegex, (match, inner) => {
+          if (!looksLikeMath(inner)) return match;
+          let updated = replaceMathSpacing(inner);
+          updated = normalizeMathInner(updated);
+          return " \\\\( " + updated + " \\\\) ";
+        });
+        replaced = replaced.replace(blockRegex, (match, inner) => {
+          if (!looksLikeMath(inner)) return match;
+          let updated = replaceMathSpacing(inner);
+          updated = normalizeMathInner(updated);
+          return " \\\\[ " + updated + " \\\\] ";
+        });
+        replaced = replaceMathSpacingInDollarMath(replaced);
+        return replaced;
+      }
+
+      function hardWrap(text, maxLen) {
+        if (!text || !maxLen) return text;
+        const lines = text.split(/\r?\n/);
+        const wrapped = lines.map((line) => wrapLine(line, maxLen));
+        return wrapped.join("\n");
+      }
+
+      function wrapLine(line, maxLen) {
+        if (line.length <= maxLen) return line;
+        let out = "";
+        let start = 0;
+        while (start < line.length) {
+          let end = Math.min(start + maxLen, line.length);
+          if (end < line.length) {
+            const slice = line.slice(start, end);
+            const lastSpace = slice.lastIndexOf(" ");
+            if (lastSpace > Math.floor(maxLen * 0.6)) {
+              end = start + lastSpace;
+            }
+          }
+          out += line.slice(start, end);
+          if (end < line.length) out += "\n";
+          start = end;
+          if (line[start] === " ") start += 1;
+        }
+        return out;
+      }
+
+      function ensureCodeWrapper(block) {
+        let wrapper = block.parentElement;
+        if (!wrapper || !wrapper.classList.contains("code-block")) {
+          wrapper = document.createElement("div");
+          wrapper.className = "code-block";
+          block.parentNode.insertBefore(wrapper, block);
+          wrapper.appendChild(block);
+        }
+        return wrapper;
+      }
+
+      function setCopyButton(wrapper, block) {
+        let button = wrapper.querySelector(".copy-btn");
+        if (state.wrapCodeUnsafe) {
+          if (button) button.remove();
+          return;
+        }
+        if (!button) {
+          button = document.createElement("button");
+          button.type = "button";
+          button.className = "copy-btn";
+          button.textContent = "Copy";
+          button.addEventListener("click", () => copyCodeBlock(block, button));
+          wrapper.appendChild(button);
+        }
+      }
+
+      function copyCodeBlock(block, button) {
+        const raw = block.dataset.raw || block.textContent || "";
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(raw).then(
+            () => flashButton(button, "Copied"),
+            () => fallbackCopy(raw, button)
+          );
+        } else {
+          fallbackCopy(raw, button);
+        }
+      }
+
+      function fallbackCopy(text, button) {
+        const area = document.createElement("textarea");
+        area.value = text;
+        area.style.position = "fixed";
+        area.style.left = "-9999px";
+        document.body.appendChild(area);
+        area.focus();
+        area.select();
+        try {
+          document.execCommand("copy");
+          flashButton(button, "Copied");
+        } catch (err) {
+          flashButton(button, "Failed");
+        }
+        document.body.removeChild(area);
+      }
+
+      function flashButton(button, text) {
+        if (!button) return;
+        const original = button.textContent;
+        button.textContent = text;
+        setTimeout(() => {
+          button.textContent = original;
+        }, 1200);
+      }
+
+      function applyCodeWrapMode() {
+        applyCodeWrapToRaw();
+        if (state.renderEnabled) {
+          applyCodeWrapToRendered();
+        }
+      }
+
+      function applyCodeWrapToRaw() {
+        const blocks = transcriptEl.querySelectorAll(".part.code, .part.output");
+        blocks.forEach((block) => {
+          if (!block.dataset.raw) {
+            block.dataset.raw = block.textContent || "";
+          }
+          const wrapper = ensureCodeWrapper(block);
+          setCopyButton(wrapper, block);
+          const raw = block.dataset.raw || "";
+          if (state.wrapCodeUnsafe) {
+            block.textContent = hardWrap(raw, 120);
+          } else {
+            block.innerHTML = "";
+            appendTextWithHighlights(block, raw);
+          }
+        });
+      }
+
+      function applyCodeWrapToRendered() {
+        const pres = renderedEl.querySelectorAll(".rendered-content pre");
+        pres.forEach((pre) => {
+          const code = pre.querySelector("code") || pre;
+          if (!code.dataset.raw) {
+            code.dataset.raw = code.textContent || "";
+          }
+          const wrapper = ensureCodeWrapper(pre);
+          setCopyButton(wrapper, code);
+          const raw = code.dataset.raw || "";
+          if (state.wrapCodeUnsafe) {
+            code.textContent = hardWrap(raw, 120);
+          } else {
+            code.textContent = raw;
+          }
+        });
+      }
+
+      function replaceMathSpacing(inner) {
+        if (!inner || inner.indexOf("\\") === -1) return inner;
+        return inner.replace(/\\;/g, " \\\\ ");
+      }
+
+      function normalizeMathInner(inner) {
+        if (!inner || inner.indexOf("\n") === -1) return inner;
+        return inner.replace(/\r?\n/g, " ");
+      }
+
+      function replaceMathSpacingInDollarMath(text) {
+        if (!text || text.indexOf("$") === -1) return text;
+        let replaced = text.replace(/(^|[^\\])\$\$([\s\S]*?)\$\$/g, (match, prefix, inner) => {
+          if (!looksLikeMath(inner)) return match;
+          let updated = replaceMathSpacing(inner);
+          updated = normalizeMathInner(updated);
+          return (prefix || "") + "$$" + updated + "$$";
+        });
+        replaced = replaced.replace(/(^|[^\\])\$([^\$]*?)\$/g, (match, prefix, inner) => {
+          if (!looksLikeMath(inner)) return match;
+          let updated = replaceMathSpacing(inner);
+          updated = normalizeMathInner(updated);
+          return (prefix || "") + "$" + updated + "$";
+        });
+        return replaced;
+      }
+
+      let renderedToken = 0;
+
+      function renderRenderedTranscript() {
+        if (!state.renderEnabled) return;
+        const token = ++renderedToken;
+        const ensure = typeof window.ensureViewerLibs === "function" ? window.ensureViewerLibs() : null;
+        Promise.resolve(ensure)
+          .catch(() => false)
+          .finally(() => {
+            if (!state.renderEnabled) return;
+            if (token !== renderedToken) return;
+            renderRenderedTranscriptNow();
+          });
+      }
+
+      function renderRenderedTranscriptNow() {
+        renderedEl.innerHTML = "";
+        if (!state.selected) {
+          const empty = document.createElement("div");
+          empty.className = "empty-state";
+          empty.textContent = "Select a node to render the conversation path.";
+          renderedEl.appendChild(empty);
+          return;
+        }
+
+        const path = [];
+        let current = state.selected;
+        while (current && state.nodes[current]) {
+          path.push(current);
+          current = state.nodes[current].parent;
+        }
+        path.reverse();
+
+        let targetEl = null;
+        path.forEach((nodeId) => {
+          const node = state.nodes[nodeId];
+          if (!node || !isNodeVisible(node)) return;
+          const msg = node.message;
+          const parts = extractMessageParts(msg);
+          if (parts.length === 0) return;
+
+          const msgEl = document.createElement("div");
+          msgEl.className = "message";
+          msgEl.dataset.nodeId = nodeId;
+
+          const author = document.createElement("div");
+          author.className = "author " + (msg.author && msg.author.role ? msg.author.role : "");
+          author.textContent = roleLabel(msg);
+          msgEl.appendChild(author);
+
+          const content = document.createElement("div");
+          content.className = "rendered-content";
+          let markdown = partsToMarkdown(parts);
+          if (state.escapeBrackets) {
+            markdown = escapeDelimitersInMarkdown(markdown);
+          }
+          content.innerHTML = renderMarkdown(markdown);
+          msgEl.appendChild(content);
+
+          renderedEl.appendChild(msgEl);
+          if (nodeId === state.selected) {
+            targetEl = msgEl;
+          }
+        });
+
+        if (window.renderMathInElement) {
+          try {
+            renderMathInElement(renderedEl, {
+              delimiters: [
+                { left: "$$", right: "$$", display: true },
+                { left: "$", right: "$", display: false },
+                { left: "\\(", right: "\\)", display: false },
+                { left: "\\[", right: "\\]", display: true },
+              ],
+              ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"],
+              throwOnError: false,
+            });
+          } catch (err) {
+            console.warn("Math render failed", err);
+          }
+        }
+
+        if (targetEl) {
+          requestAnimationFrame(() => {
+            targetEl.scrollIntoView({ block: "start", behavior: "smooth" });
+          });
+        }
+
+        applyCodeWrapMode();
       }
 
       function updateMatches() {
@@ -994,6 +1664,43 @@
         renderTranscript();
       });
 
+      renderToggleEl.addEventListener("change", () => {
+        state.renderEnabled = renderToggleEl.checked;
+        document.body.classList.toggle("render-on", state.renderEnabled);
+        if (state.renderEnabled) {
+          renderRenderedTranscript();
+        } else {
+          renderedEl.innerHTML = "";
+        }
+        try {
+          localStorage.setItem("chatgpt_viewer_render", state.renderEnabled ? "1" : "0");
+        } catch (err) {
+          // ignore storage errors
+        }
+      });
+
+      escapeBracketsEl.addEventListener("change", () => {
+        state.escapeBrackets = escapeBracketsEl.checked;
+        if (state.renderEnabled) {
+          renderRenderedTranscript();
+        }
+        try {
+          localStorage.setItem("chatgpt_viewer_escape", state.escapeBrackets ? "1" : "0");
+        } catch (err) {
+          // ignore storage errors
+        }
+      });
+
+      unsafeCodeWrapEl.addEventListener("change", () => {
+        state.wrapCodeUnsafe = unsafeCodeWrapEl.checked;
+        applyCodeWrapMode();
+        try {
+          localStorage.setItem("chatgpt_viewer_code_wrap", state.wrapCodeUnsafe ? "1" : "0");
+        } catch (err) {
+          // ignore storage errors
+        }
+      });
+
       darkModeEl.addEventListener("change", () => {
         const enabled = darkModeEl.checked;
         document.body.classList.toggle("dark", enabled);
@@ -1020,6 +1727,43 @@
           if (saved === "1") {
             darkModeEl.checked = true;
             document.body.classList.add("dark");
+          }
+        } catch (err) {
+          // ignore storage errors
+        }
+      })();
+
+      (function restoreRenderToggle() {
+        try {
+          const saved = localStorage.getItem("chatgpt_viewer_render");
+          if (saved === "1") {
+            renderToggleEl.checked = true;
+            state.renderEnabled = true;
+            document.body.classList.add("render-on");
+          }
+        } catch (err) {
+          // ignore storage errors
+        }
+      })();
+
+      (function restoreEscapeBrackets() {
+        try {
+          const saved = localStorage.getItem("chatgpt_viewer_escape");
+          if (saved === "1") {
+            escapeBracketsEl.checked = true;
+            state.escapeBrackets = true;
+          }
+        } catch (err) {
+          // ignore storage errors
+        }
+      })();
+
+      (function restoreCodeWrap() {
+        try {
+          const saved = localStorage.getItem("chatgpt_viewer_code_wrap");
+          if (saved === "1") {
+            unsafeCodeWrapEl.checked = true;
+            state.wrapCodeUnsafe = true;
           }
         } catch (err) {
           // ignore storage errors

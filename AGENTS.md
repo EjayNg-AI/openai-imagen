@@ -48,6 +48,19 @@ I will not delete/alter anything in this section unless I notify you beforehand.
 NOTE: This is for my reference after each coding session. The descriptions entered here in this section may not be retained to the next coding session. Do **not** use this section to store persistent information for your own reference. You will need to create a new section in this markdown file if you wish to do so (and use a flag to indicate that I should not delete/alter that section).
 
 - Added resume-time queue normalization to append the orchestrator after the expert evaluator when missing.
+- Added rendered-view toggle with markdown + LaTeX rendering support in the viewer template.
+- Added offline renderer asset download in build script and local asset wiring in template/README.
+- Added CDN fallback loader when offline renderer assets are missing.
+- Added optional LaTeX bracket escape toggle applied only in rendered view outside code blocks.
+- Added heuristic math detection for bracket escaping to preserve likely math inside delimiters.
+- Expanded math heuristic to treat alphanumeric strings (e.g., 123, 1a2b) as math.
+- Expanded math heuristic to treat underscores/carets in standalone tokens as math.
+- Moved LaTeX delimiter escaping to pre-Markdown processing and enabled KaTeX \\( \\) / \\[ \\] delimiters.
+- Expanded math heuristic to treat numeric forms with decimals/commas as math.
+- Added math-block replacement for \\; to \\  (space) in rendered view, including $/$$ segments.
+- Normalized newlines inside math blocks before Markdown to prevent KaTeX delimiters from splitting across <br>.
+- Added word-wrap rules for transcript/rendered text while preserving code/math formatting.
+- Added unsafe code-wrap toggle and safe-mode copy buttons for code blocks.
 - Built a static ChatGPT export viewer (tree + transcript) with a build script and HTML template.
 - Updated the viewer template to add independent scrolling, flat tree alignment, and a dark mode toggle.
 - Added auto-scroll to the selected message when a tree node is clicked.
