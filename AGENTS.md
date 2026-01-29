@@ -77,3 +77,5 @@ NOTE: This is for my reference after each coding session. The descriptions enter
 - Updated the viewer template to add independent scrolling, flat tree alignment, and a dark mode toggle.
 - Added auto-scroll to the selected message when a tree node is clicked.
 - Added scripts/README.md and ignored export viewer data in .gitignore.
+- Added a condensed quadratic assignment with 16 harder questions in latex/c_harder.tex.
+- Embedded solutions alongside questions in latex/c_harder.tex, switched to two-column footnotesize layout, and updated the title.
