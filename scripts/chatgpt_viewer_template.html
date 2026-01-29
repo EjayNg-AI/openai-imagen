@@ -102,6 +102,16 @@
         justify-content: flex-end;
       }
 
+      .select {
+        border: 1px solid var(--border);
+        background: var(--panel);
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-family: var(--font-sans);
+        font-size: 12px;
+        color: var(--muted);
+      }
+
       .toggle {
         display: inline-flex;
         align-items: center;
@@ -531,6 +541,10 @@
           <input id="escapeBrackets" type="checkbox">
           <span>Further escape brackets</span>
         </label>
+        <select id="mathRenderer" class="select">
+          <option value="katex">KaTeX (HTML)</option>
+          <option value="mathjax">MathJax (SVG)</option>
+        </select>
         <label class="toggle">
           <input id="unsafeCodeWrap" type="checkbox">
           <span>Wrap code (unsafe)</span>
@@ -624,6 +638,13 @@
             global: "renderMathInElement",
           },
         ];
+        const MATHJAX_ASSET = {
+          type: "js",
+          local: "viewer_assets/mathjax/tex-svg.js",
+          cdn: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js",
+          global: "MathJax",
+          readyCheck: () => window.MathJax && window.MathJax.typesetPromise,
+        };
 
         function loadCssWithFallback(item) {
           return new Promise((resolve) => {
@@ -646,6 +667,7 @@
         }
 
         function loadScriptWithFallback(item) {
+          if (item.readyCheck && item.readyCheck()) return Promise.resolve(true);
           if (item.global && window[item.global]) return Promise.resolve(true);
           return new Promise((resolve) => {
             const script = document.createElement("script");
@@ -679,6 +701,43 @@
           return libsPromise;
         };
 
+        let mathjaxPromise = null;
+        window.ensureMathJax = function () {
+          if (mathjaxPromise) return mathjaxPromise;
+          if (window.MathJax && window.MathJax.typesetPromise) {
+            return Promise.resolve(true);
+          }
+          if (!window.MathJax || !window.MathJax._configured) {
+            window.MathJax = {
+              tex: {
+                inlineMath: [
+                  ["$", "$"],
+                  ["\\\\(", "\\\\)"],
+                ],
+                displayMath: [
+                  ["$$", "$$"],
+                  ["\\\\[", "\\\\]"],
+                ],
+                processEscapes: true,
+              },
+              svg: { fontCache: "global" },
+              options: {
+                ignoreHtmlClass: "tex2jax_ignore",
+              },
+              _configured: true,
+            };
+          }
+          mathjaxPromise = loadScriptWithFallback(MATHJAX_ASSET)
+            .then(() => {
+              if (window.MathJax && window.MathJax.startup && window.MathJax.startup.promise) {
+                return window.MathJax.startup.promise.then(() => true).catch(() => false);
+              }
+              return true;
+            })
+            .catch(() => false);
+          return mathjaxPromise;
+        };
+
         window.ensureViewerLibs();
       })();
     </script>
@@ -698,6 +757,7 @@
         showInternal: false,
         renderEnabled: false,
         escapeBrackets: false,
+        mathRenderer: "katex",
         wrapCodeUnsafe: false,
         searchQuery: "",
         matchIds: new Set(),
@@ -715,6 +775,7 @@
       const showInternalEl = document.getElementById("showInternal");
       const renderToggleEl = document.getElementById("renderToggle");
       const escapeBracketsEl = document.getElementById("escapeBrackets");
+      const mathRendererEl = document.getElementById("mathRenderer");
       const unsafeCodeWrapEl = document.getElementById("unsafeCodeWrap");
       const darkModeEl = document.getElementById("darkMode");
       const expandAllEl = document.getElementById("expandAll");
@@ -1126,6 +1187,7 @@
                 anchor.href = link;
                 anchor.textContent = link;
                 anchor.target = "_blank";
+                anchor.rel = "noopener noreferrer";
                 assetWrap.appendChild(anchor);
               } else {
                 assetWrap.textContent = "[File missing]";
@@ -1218,18 +1280,157 @@
         if (!window.marked || !window.DOMPurify) {
           return "<pre>" + escapeHtml(markdown) + "</pre>";
         }
+        configurePurify();
         if (!renderMarkdown._configured) {
           marked.setOptions({ breaks: true, headerIds: false, mangle: false });
           renderMarkdown._configured = true;
         }
         const raw = marked.parse(markdown);
-        return DOMPurify.sanitize(raw, { USE_PROFILES: { html: true } });
+        return DOMPurify.sanitize(raw, PURIFY_CONFIG);
+      }
+
+      const PURIFY_CONFIG = {
+        USE_PROFILES: { html: true, svg: true },
+        ALLOWED_TAGS: [
+          "a",
+          "b",
+          "blockquote",
+          "br",
+          "code",
+          "div",
+          "del",
+          "em",
+          "h1",
+          "h2",
+          "h3",
+          "h4",
+          "h5",
+          "h6",
+          "hr",
+          "i",
+          "img",
+          "li",
+          "ol",
+          "p",
+          "pre",
+          "span",
+          "strong",
+          "sub",
+          "sup",
+          "table",
+          "thead",
+          "tbody",
+          "tr",
+          "th",
+          "td",
+          "ul",
+          "svg",
+          "g",
+          "path",
+          "circle",
+          "rect",
+          "line",
+          "polyline",
+          "polygon",
+          "ellipse",
+          "defs",
+          "linearGradient",
+          "radialGradient",
+          "stop",
+          "text",
+          "tspan",
+        ],
+        ALLOWED_ATTR: [
+          "href",
+          "title",
+          "target",
+          "rel",
+          "src",
+          "alt",
+          "class",
+          "colspan",
+          "rowspan",
+          "aria-label",
+          "aria-hidden",
+          "role",
+          "viewBox",
+          "width",
+          "height",
+          "fill",
+          "stroke",
+          "stroke-width",
+          "stroke-linecap",
+          "stroke-linejoin",
+          "stroke-miterlimit",
+          "opacity",
+          "fill-opacity",
+          "stroke-opacity",
+          "d",
+          "cx",
+          "cy",
+          "r",
+          "x",
+          "y",
+          "x1",
+          "y1",
+          "x2",
+          "y2",
+          "points",
+          "transform",
+          "font-size",
+          "font-family",
+          "text-anchor",
+        ],
+        FORBID_TAGS: [
+          "style",
+          "script",
+          "iframe",
+          "object",
+          "embed",
+          "link",
+          "meta",
+          "form",
+          "math",
+          "foreignObject",
+          "animate",
+          "set",
+          "animateMotion",
+          "animateTransform",
+          "mpath",
+        ],
+        ALLOW_DATA_ATTR: false,
+        KEEP_CONTENT: false,
+        FORBID_ATTR: ["xlink:href"],
+      };
+
+      function configurePurify() {
+        if (configurePurify._configured || !window.DOMPurify) return;
+        DOMPurify.setConfig(PURIFY_CONFIG);
+        DOMPurify.addHook("uponSanitizeAttribute", (node, data) => {
+          const name = data.attrName || "";
+          if (name === "style" || name.toLowerCase().startsWith("on")) {
+            data.keepAttr = false;
+          }
+        });
+        DOMPurify.addHook("afterSanitizeAttributes", (node) => {
+          if (node.nodeName === "A") {
+            const href = node.getAttribute("href") || "";
+            if (/^javascript:/i.test(href)) {
+              node.removeAttribute("href");
+            }
+            if (node.getAttribute("target") === "_blank") {
+              node.setAttribute("rel", "noopener noreferrer");
+            }
+          }
+        });
+        configurePurify._configured = true;
       }
 
       function looksLikeMath(inner) {
         const text = (inner || "").trim();
         if (!text) return false;
         if (/\\[a-zA-Z]+/.test(text)) return true;
+        if (/\\[^\\s]/.test(text)) return true;
         if (/[+\-*/^_=<>]/.test(text)) return true;
         if (/^[A-Za-z0-9]+$/.test(text)) return true;
         if (/^[A-Za-z0-9_^]+$/.test(text)) return true;
@@ -1326,12 +1527,14 @@
           if (!looksLikeMath(inner)) return match;
           let updated = replaceMathSpacing(inner);
           updated = normalizeMathInner(updated);
+          updated = preserveBackslashesForMarkdown(updated);
           return " \\\\( " + updated + " \\\\) ";
         });
         replaced = replaced.replace(blockRegex, (match, inner) => {
           if (!looksLikeMath(inner)) return match;
           let updated = replaceMathSpacing(inner);
           updated = normalizeMathInner(updated);
+          updated = preserveBackslashesForMarkdown(updated);
           return " \\\\[ " + updated + " \\\\] ";
         });
         replaced = replaceMathSpacingInDollarMath(replaced);
@@ -1475,13 +1678,21 @@
       }
 
       function replaceMathSpacing(inner) {
-        if (!inner || inner.indexOf("\\") === -1) return inner;
-        return inner.replace(/\\;/g, " \\\\ ");
+        return inner;
       }
 
       function normalizeMathInner(inner) {
         if (!inner || inner.indexOf("\n") === -1) return inner;
         return inner.replace(/\r?\n/g, " ");
+      }
+
+      function preserveBackslashesForMarkdown(inner) {
+        if (!inner || inner.indexOf("\\") === -1) return inner;
+        const placeholder = "__BSLASH__";
+        let temp = inner.replace(/\\\\/g, placeholder);
+        temp = temp.replace(/\\([^A-Za-z])/g, "\\\\$1");
+        temp = temp.replace(new RegExp(placeholder, "g"), "\\\\\\\\");
+        return temp;
       }
 
       function replaceMathSpacingInDollarMath(text) {
@@ -1490,12 +1701,14 @@
           if (!looksLikeMath(inner)) return match;
           let updated = replaceMathSpacing(inner);
           updated = normalizeMathInner(updated);
+          updated = preserveBackslashesForMarkdown(updated);
           return (prefix || "") + "$$" + updated + "$$";
         });
         replaced = replaced.replace(/(^|[^\\])\$([^\$]*?)\$/g, (match, prefix, inner) => {
           if (!looksLikeMath(inner)) return match;
           let updated = replaceMathSpacing(inner);
           updated = normalizeMathInner(updated);
+          updated = preserveBackslashesForMarkdown(updated);
           return (prefix || "") + "$" + updated + "$";
         });
         return replaced;
@@ -1566,7 +1779,24 @@
           }
         });
 
-        if (window.renderMathInElement) {
+        if (state.mathRenderer === "mathjax") {
+          const ensure = typeof window.ensureMathJax === "function" ? window.ensureMathJax() : null;
+          Promise.resolve(ensure)
+            .catch(() => false)
+            .then((ok) => {
+              if (!ok || !window.MathJax || !window.MathJax.typesetPromise) return;
+              try {
+                if (window.MathJax.typesetClear) {
+                  window.MathJax.typesetClear([renderedEl]);
+                }
+                window.MathJax.typesetPromise([renderedEl]).catch((err) => {
+                  console.warn("MathJax render failed", err);
+                });
+              } catch (err) {
+                console.warn("MathJax render failed", err);
+              }
+            });
+        } else if (window.renderMathInElement) {
           try {
             renderMathInElement(renderedEl, {
               delimiters: [
@@ -1577,6 +1807,9 @@
               ],
               ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"],
               throwOnError: false,
+              strict: "warn",
+              trust: false,
+              output: "html",
             });
           } catch (err) {
             console.warn("Math render failed", err);
@@ -1691,6 +1924,18 @@
         }
       });
 
+      mathRendererEl.addEventListener("change", () => {
+        state.mathRenderer = mathRendererEl.value;
+        if (state.renderEnabled) {
+          renderRenderedTranscript();
+        }
+        try {
+          localStorage.setItem("chatgpt_viewer_math", state.mathRenderer);
+        } catch (err) {
+          // ignore storage errors
+        }
+      });
+
       unsafeCodeWrapEl.addEventListener("change", () => {
         state.wrapCodeUnsafe = unsafeCodeWrapEl.checked;
         applyCodeWrapMode();
@@ -1752,6 +1997,18 @@
           if (saved === "1") {
             escapeBracketsEl.checked = true;
             state.escapeBrackets = true;
+          }
+        } catch (err) {
+          // ignore storage errors
+        }
+      })();
+
+      (function restoreMathRenderer() {
+        try {
+          const saved = localStorage.getItem("chatgpt_viewer_math");
+          if (saved === "mathjax" || saved === "katex") {
+            mathRendererEl.value = saved;
+            state.mathRenderer = saved;
           }
         } catch (err) {
           // ignore storage errors

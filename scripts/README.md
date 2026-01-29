@@ -44,6 +44,26 @@ If you don’t see changes after rebuilding, cache‑bust:
 http://localhost:8000/viewer.html?ts=1
 ```
 
+## Rebuild + reload sequence
+
+```
+python scripts/build_chatgpt_viewer.py chatgpt_conversation_history_2026-01-27
+cd chatgpt_conversation_history_2026-01-27
+python -m http.server 8000
+```
+
+Then reload with a cache-busting query string:
+
+```
+http://localhost:8000/viewer.html?ts=1
+```
+
+The rendering test page is also generated:
+
+```
+http://localhost:8000/render_test.html?ts=1
+```
+
 ## UI notes
 
 - Tree nodes are left‑aligned (no hierarchy indentation).
@@ -51,3 +71,4 @@ http://localhost:8000/viewer.html?ts=1
 - Dark mode is available and persists in local storage.
 - The transcript auto‑scrolls to the selected node.
 - Enable "Rendered view" for Markdown + LaTeX rendering (works offline after assets download).
+- Use the math renderer dropdown to switch between KaTeX (HTML) and MathJax (SVG).

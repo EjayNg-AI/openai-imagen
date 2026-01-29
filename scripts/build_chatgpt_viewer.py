@@ -16,6 +16,8 @@ ASSET_URLS = {
     "katex.min.css": "https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css",
 }
 KATEX_CSS_NAME = "katex.min.css"
+MATHJAX_URL = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+MATHJAX_LOCAL = Path("mathjax") / "tex-svg.js"
 
 
 def iter_json_array(path):
@@ -181,6 +183,14 @@ def build_viewer(export_dir):
     viewer_path = export_dir / "viewer.html"
     viewer_path.write_text(template_path.read_text(encoding="utf-8"), encoding="utf-8")
 
+    test_template_path = Path(__file__).with_name("chatgpt_render_test_template.html")
+    if test_template_path.exists():
+        test_path = export_dir / "render_test.html"
+        test_path.write_text(test_template_path.read_text(encoding="utf-8"), encoding="utf-8")
+        print(f"Render test: {test_path}")
+    else:
+        print("Render test template missing: chatgpt_render_test_template.html")
+
     print("Done.")
     print(f"Viewer: {viewer_path}")
     print(f"Data: {out_dir}")
@@ -204,8 +214,18 @@ def ensure_viewer_assets(export_dir):
     if css_path.exists() and css_path.stat().st_size > 0:
         try:
             css_text = css_path.read_text(encoding="utf-8")
+            normalized = css_text.replace("../fonts/", "fonts/")
+            if normalized != css_text:
+                css_path.write_text(normalized, encoding="utf-8")
+                css_text = normalized
             font_paths = extract_css_urls(css_text)
             base_url = ASSET_URLS[KATEX_CSS_NAME].rsplit("/", 1)[0] + "/"
+            alt_bases = [
+                "https://unpkg.com/katex/dist/",
+            ]
+            version = extract_katex_version(asset_dir / "katex.min.js")
+            if version:
+                alt_bases.append(f"https://cdnjs.cloudflare.com/ajax/libs/KaTeX/{version}/")
             for font_path in font_paths:
                 rel_path = safe_rel_path(font_path)
                 if rel_path is None:
@@ -213,13 +233,30 @@ def ensure_viewer_assets(export_dir):
                 dest = asset_dir / rel_path
                 if dest.exists() and dest.stat().st_size > 0:
                     continue
-                font_url = urllib.parse.urljoin(base_url, font_path)
-                try:
-                    download_asset(font_url, dest)
-                except Exception as err:
-                    print(f"  warning: failed to download {font_url}: {err}")
+                success = False
+                last_err = None
+                for base in [base_url] + alt_bases:
+                    font_url = urllib.parse.urljoin(base, font_path)
+                    try:
+                        download_asset(font_url, dest)
+                        success = True
+                        break
+                    except Exception as err:
+                        last_err = err
+                if not success:
+                    print(f"  warning: failed to download font {font_path}: {last_err}")
         except Exception as err:
             print(f"  warning: failed to parse KaTeX fonts: {err}")
+        fonts_dir = asset_dir / "fonts"
+        if not fonts_dir.exists() or not any(fonts_dir.iterdir()):
+            print("  warning: KaTeX fonts missing; check network access and rebuild.")
+
+    mathjax_path = asset_dir / MATHJAX_LOCAL
+    if not mathjax_path.exists() or mathjax_path.stat().st_size == 0:
+        try:
+            download_asset(MATHJAX_URL, mathjax_path)
+        except Exception as err:
+            print(f"  warning: failed to download {MATHJAX_URL}: {err}")
 
 
 def download_asset(url, dest):
@@ -233,7 +270,7 @@ def download_asset(url, dest):
 
 
 def extract_css_urls(css_text):
-    matches = re.findall(r"url\\(([^)]+)\\)", css_text)
+    matches = re.findall(r"url\(([^)]+)\)", css_text)
     urls = []
     for raw in matches:
         cleaned = raw.strip().strip('"').strip("'")
@@ -245,9 +282,25 @@ def extract_css_urls(css_text):
 
 def safe_rel_path(url_path):
     path = PurePosixPath(url_path)
-    if ".." in path.parts:
+    parts = list(path.parts)
+    while parts and parts[0] in (".", ".."):
+        parts.pop(0)
+    if ".." in parts:
         return None
-    return Path(*path.parts)
+    return Path(*parts)
+
+
+def extract_katex_version(js_path):
+    if not js_path.exists():
+        return None
+    try:
+        text = js_path.read_text(encoding="utf-8", errors="ignore")
+    except Exception:
+        return None
+    match = re.search(r"KaTeX\\s+v?(\\d+\\.\\d+\\.\\d+)", text)
+    if match:
+        return match.group(1)
+    return None
 
 
 def main():

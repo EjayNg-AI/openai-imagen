@@ -61,6 +61,18 @@ NOTE: This is for my reference after each coding session. The descriptions enter
 - Normalized newlines inside math blocks before Markdown to prevent KaTeX delimiters from splitting across <br>.
 - Added word-wrap rules for transcript/rendered text while preserving code/math formatting.
 - Added unsafe code-wrap toggle and safe-mode copy buttons for code blocks.
+- Added standalone render test template and build output, plus README rebuild/reload steps.
+- Tightened Markdown sanitization configuration and KaTeX safety options.
+- Allowed safe SVG tags/attrs in sanitization and expanded render test samples with dangerous-tag code and SVG.
+- Escaped the sample </script> string in render test template to avoid breaking the page script.
+- Broadened math detection to treat backslash escapes (e.g., \\;) as math.
+- Fixed KaTeX font download paths and preserved double backslashes inside math blocks.
+- Added MathJax (SVG) toggle, loader, and MathJax asset download support.
+- Fixed MathJax loader to avoid skipping script when only config object exists.
+- Added KaTeX font download warning when fonts are still missing.
+- Fixed MathJax processing class and removed \\; line-break replacement; added KaTeX font download fallbacks.
+- Fixed KaTeX font URL extraction and ensured MathJax waits for startup promise.
+- Preserved backslash spacing commands inside math and removed MathJax processHtmlClass restriction.
 - Built a static ChatGPT export viewer (tree + transcript) with a build script and HTML template.
 - Updated the viewer template to add independent scrolling, flat tree alignment, and a dark mode toggle.
 - Added auto-scroll to the selected message when a tree node is clicked.
