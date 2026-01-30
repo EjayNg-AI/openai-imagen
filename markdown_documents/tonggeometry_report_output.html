@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>tonggeometry_report</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1 id="tonggeometry-a-critical-assessment-of-chinas-latest-ai-geometry-breakthrough">TongGeometry: A Critical Assessment of China's Latest AI Geometry Breakthrough</h1>
+<p><strong>Report Date:</strong> January 30, 2026<br />
+<strong>Subject:</strong> Evaluation of claims regarding TongGeometry, a neuro-symbolic AI system for olympiad-level geometry<br />
+<strong>Author:</strong> Claude Opus 4.5</p>
+<hr />
+<h2 id="executive-summary">Executive Summary</h2>
+<p>On January 26, 2026, researchers from the Beijing Institute for
+General Artificial Intelligence (BIGAI) and Peking University published
+a paper in <em>Nature Machine Intelligence</em> introducing
+TongGeometry, an AI system claimed to both solve and propose
+International Mathematical Olympiad (IMO)-level geometry problems. The
+system reportedly solved all 30 problems in the IMO-AG-30 benchmark,
+outperforming the average IMO gold medalist on this specific
+dataset.</p>
+<p>While the research represents genuine technical progress in automated
+geometry reasoning, this report finds that the headline claims warrant
+significant qualification. The evaluation methodology has notable
+limitations including:</p>
+<ul>
+<li>A small (n=30) and potentially biased benchmark that skews toward
+easier problems</li>
+<li>Absence of machine-verifiable formal proofs in standard systems
+(Lean/Isabelle)</li>
+<li>Limited independent verification (single expert reviewer)</li>
+<li><strong>Most critically, no verifiable training cutoff date</strong>: The paper claims IMO 2024 and IMO 2025 problems were "unseen" during
+training, but provides no timestamps, cryptographic hashes, or
+third-party verification of when model training was completed. The 5-6
+month gaps between these competitions and the paper versions provide
+ample opportunity for data contamination that the methodology does not
+rule out.</li>
+</ul>
+<p>The problem generation capability is better supported, with evidence
+that competition-worthy problems were being generated before May 2024
+(based on USEMO submission timelines). However, the “temporal holdout”
+evidence for solving capability generalization is methodologically
+inadequate. The results are promising but should not be interpreted as
+demonstrating general superiority over human mathematicians or
+establishing robust generalization beyond training data without further
+validation.</p>
+<hr />
+<h2 id="background-and-context">1. Background and Context</h2>
+<h3 id="the-research-team">1.1 The Research Team</h3>
+<p>TongGeometry was developed by a consortium of Chinese
+institutions:</p>
+<ul>
+<li><strong>Beijing Institute for General Artificial Intelligence
+(BIGAI)</strong>: A government-backed research organization established
+in 2020, led by Professor Song-Chun Zhu (formerly of UCLA for 18 years).
+BIGAI pursues what it calls a “small data, big tasks” paradigm for
+artificial general intelligence.</li>
+<li><strong>Peking University</strong>: Multiple departments including
+the School of Psychological and Cognitive Sciences, School of
+Intelligence Science and Technology, and Institute for Artificial
+Intelligence.</li>
+<li><strong>Wuhan Institute for Artificial Intelligence</strong></li>
+</ul>
+<p>The first author is Zhang Chi, a researcher at BIGAI.</p>
+<h3 id="competitive-landscape">1.2 Competitive Landscape</h3>
+<p>TongGeometry enters a rapidly evolving field of AI mathematical reasoning. Google DeepMind's AlphaGeometry, published in 2024, achieved 25 out of 30 on the IMO-AG-30 benchmark and represented the first major breakthrough in neural-symbolic geometry proving. Its successor, AlphaGeometry2, released in 2025, improved this to an 84% solve rate on IMO geometry problems from 2000 to 2024. Meanwhile, Chinese AI lab DeepSeek has contributed DeepSeek Math-V2, which demonstrated gold-level IMO performance and was notably open-sourced. TongGeometry, developed by BIGAI and Peking University and published in 2026, claims to have achieved a perfect 30 out of 30 on the IMO-AG-30 benchmark while also introducing novel problem generation capabilities not present in competing systems.</p>
+<hr />
+<h2 id="technical-architecture">2. Technical Architecture</h2>
+<h3 id="core-innovation-dual-capability">2.1 Core Innovation: Dual Capability</h3>
+<p>TongGeometry's distinguishing feature is its claimed ability to both solve and propose olympiad-level geometry problems, functioning as what the authors describe as a "coach" rather than merely a "student." The system operates on the principle that geometry problems emerge when a fact's <em>construction sequence</em> (the minimum steps required to draw the geometric elements) forms a proper subset of its <em>proof sequence</em> (the minimum steps required to prove the fact). This theoretical duality enables both problem solving, through identifying auxiliary constructions needed to bridge the gap between construction and proof, and problem generation, through systematically discovering facts where this gap exists.</p>
+<h3 id="system-components">2.2 System Components</h3>
+<p>TongGeometry models geometry as a Markov chain in which states represent geometric diagrams constructed through sequences of actions. Each action adds geometric objects such as points, lines, or circles, and state transitions trigger deterministic derivation of new facts through rule application.</p>
+<p>The system employs a neuro-symbolic architecture with an actor-critic style approach. The policy model is a fine-tuned DeepSeek-Coder-1.3B language model that suggests auxiliary constructions during proof search. The value model estimates the remaining proof steps for each candidate path, guiding the search toward promising directions. These neural components work in conjunction with a deductive database, which serves as the symbolic engine that derives facts through systematic rule application.</p>
+<p>TongGeometry differs from AlphaGeometry in several key technical aspects. Rather than treating algebraic reasoning as a separate component, TongGeometry integrates it directly within the deductive database. The system uses canonical representation to eliminate redundant search paths, improving computational efficiency. Additionally, it supports native symmetric problem generation through symmetry maps, enabling the discovery of problems with elegant geometric symmetries.</p>
+<h3 id="training-data">2.3 Training Data</h3>
+<p>The system was trained on a massive self-generated dataset comprising 6.7 billion geometry problems requiring auxiliary constructions, of which 4.1 billion exhibit geometric symmetry. This dataset was generated through 30 days of parallel search on 10,368 CPU cores, with the search process guided by statistics derived from 196 human-created olympiad problems to ensure the generated problems reflect characteristics valued in competition mathematics.</p>
+<h3 id="limitations-acknowledged">2.4 Limitations Acknowledged by Authors</h3>
+<p>The TongGeometry authors acknowledge several limitations of their approach. First, regarding statistical prior dependency, they note: "By anchoring our generation to this prior, we risk constraining our search to a 'local optimum' defined by known human definitions of 'elegance'… We may be missing classes of valuable configurations that humans have not yet discovered." Second, the system has limited problem coverage and cannot handle geometry involving inequalities, variable numbers of points, or advanced techniques like inversion and projective geometry. Third, the authors acknowledge benchmark specificity, recognizing that results on IMO-AG-30 do not generalize to all geometry or mathematics.</p>
+<hr />
+<h2 id="claimed-results">3. Claimed Results</h2>
+<p>The results reported in this section are as claimed by the authors. Critical assessment of these claims, including verification methodology concerns, follows in Section 4.</p>
+<h3 id="problem-solving-performance">3.1 Problem Solving Performance</h3>
+<p><strong>IMO-AG-30 Benchmark Results:</strong></p>
+<ul>
+<li><strong>Wu's Method:</strong> 10/30 (Previous baseline)</li>
+<li><strong>AlphaGeometry (DD+AR):</strong> 25/30 (Google DeepMind, 2024)</li>
+<li><strong>TongGeometry (DD only):</strong> 18/30 (Symbolic engine alone)</li>
+<li><strong>TongGeometry (full):</strong> <strong>30/30</strong> (With neural guidance)</li>
+<li><strong>Average IMO Gold Medalist:</strong> 25.9/30 (Human benchmark)</li>
+</ul>
+<p><strong>Computational Efficiency:</strong></p>
+<ul>
+<li><strong>TongGeometry:</strong> 32 CPU cores + 1 NVIDIA RTX 4090, max 38 minutes per problem</li>
+<li><strong>AlphaGeometry:</strong> 246 CPU cores + 4 NVIDIA V100 GPUs for sub-90-minute solving</li>
+</ul>
+<p><strong>Temporal Holdout Validation (Claimed but Unverifiable):</strong></p>
+<p>The paper claims the system solved IMO 2024 P4 and IMO 2025 P2 (problems released after training completion), with solutions verified by a 2024 IMO gold medalist. However, no training cutoff date is specified, no cryptographic verification exists, and the timeline gaps (5-6 months between competitions and paper versions) provide opportunity for contamination. See Section 4.4 for detailed analysis.</p>
+<h3 id="problem-generation">3.2 Problem Generation</h3>
+<p>Three problems autonomously generated by TongGeometry were selected for actual competitions:</p>
+<ul>
+<li><strong>One problem:</strong> 2024 National High School Mathematics League (Beijing), the only geometry problem in a Chinese National Team qualifying exam</li>
+<li><strong>Two problems:</strong> 2024 US Ersatz Math Olympiad shortlist</li>
+</ul>
+<p><strong>Note on Potential Conflict of Interest:</strong> The USEMO
+2024 report indicates the competition was “sponsored by the CoRe Lab,
+Institute of Artificial Intelligence, Peking University", the same
+institution affiliated with TongGeometry’s development team. While this
+does not invalidate the problem selection (problems are evaluated on
+mathematical merit), it represents a relationship that should be
+disclosed.</p>
+<p>The system also independently rediscovered known geometric lemmas
+(e.g., nine-point center configurations) and foundational configurations
+(e.g., mixtilinear incircle), suggesting the search methodology
+converges toward mathematically meaningful structures.</p>
+<hr />
+<h2 id="critical-assessment">4. Critical Assessment</h2>
+<h3 id="benchmark-limitations">4.1 Benchmark Limitations</h3>
+<p><strong>Small Sample Size</strong></p>
+<p>The IMO-AG-30 benchmark contains only 30 problems, statistically insufficient for strong comparative claims. With such a small n, the difference between 25/30 and 30/30 is not necessarily significant.</p>
+<p><strong>Difficulty Selection Bias</strong></p>
+<p>Independent analysis indicates the benchmark skews toward easier problems:</p>
+<blockquote>
+<p>“The IMO-30 benchmark predominantly contains problems that are not
+especially challenging… compared with HAGeo-409, whose average
+difficulty is 3.47, the IMO-30 benchmark is relatively easy, with an
+average difficulty of only 2.85.”<br />
+- HAGeo benchmark paper (2024)</p>
+</blockquote>
+<p>IMO problems are graded by difficulty (Problems 1 &amp; 4 are easier;
+3 &amp; 6 are hardest). The benchmark’s composition may not reflect the
+full difficulty spectrum.</p>
+<p><strong>Benchmark Staleness</strong></p>
+<p>The IMO-AG-30 benchmark was created by Google DeepMind for AlphaGeometry evaluation. Using a competitor's benchmark introduces potential issues:</p>
+<ul>
+<li>Problems may have been optimized against by multiple systems</li>
+<li>No contamination detection methodology is described for ensuring training/test separation</li>
+</ul>
+<h3 id="formal-verification-gaps">4.2 Formal Verification Gaps</h3>
+<p><strong>No Machine-Verifiable Proofs</strong></p>
+<p>TongGeometry operates in a geometry-specific formal system independent of Lean, not in established formal verification systems like Lean 4 or Isabelle. This means:</p>
+<ul>
+<li>Proofs cannot be independently machine-verified</li>
+<li>The formal system may contain soundness issues</li>
+</ul>
+<p>Recent analysis of similar systems has identified this concern:</p>
+<blockquote>
+<p>“Systems like AlphaGeometry, TongGeometry and SeedGeometry… typically
+rely on specialized models and operate within geometry-specific formal
+systems independent of Lean. This isolation prevents integration with
+other mathematical domains… Additionally, their reliance on graphical
+verification and unordered formal systems can lead to logical
+unsoundness and incompleteness.”<br />
+- LeanGeo paper (2025)</p>
+</blockquote>
+<p><strong>Precedent for Incorrect "Solved" Problems</strong></p>
+<p>AlphaGeometry's proof for IMO-2020-P1 was later found to be incorrect:</p>
+<blockquote>
+<p>“We found the proof for IMO-2020-P1 to be incorrect… step 9 of the
+proof is wrong… This statement is incorrect because it implicitly
+assumes that M, N, and E are collinear, which is not proven.”<br />
+- HAGeo paper (2024)</p>
+</blockquote>
+<p>This precedent suggests that passing initial review does not
+guarantee correctness, and TongGeometry’s proofs require similar
+scrutiny.</p>
+<h3 id="verification-methodology">4.3 Verification Methodology</h3>
+<p><strong>Limited Expert Review</strong></p>
+<p>The paper states solutions were verified by "a 2024 IMO gold medallist" (singular). While expert review is valuable, a single reviewer is insufficient for validating 30+ complex proofs, particularly given the precedent of missed errors.</p>
+<p><strong>No Independent Replication</strong></p>
+<p>At time of writing, no independent research group has replicated TongGeometry's results. While the code is open-sourced (enabling future verification), the claims remain unconfirmed by external parties.</p>
+<p><strong>Resources Available for Independent Verification</strong></p>
+<p>The authors have made resources available that could enable independent verification:</p>
+<ul>
+<li><strong>GitHub repository:</strong> https://github.com/bigai-ai/tong-geometry</li>
+<li><strong>Zenodo archive:</strong> https://doi.org/10.5281/zenodo.17646188</li>
+<li>Model checkpoints and training data are reportedly included</li>
+</ul>
+<p><strong>Recommended Verification Steps:</strong></p>
+<ol type="1">
+<li>Examine GitHub commit history for timestamps relative to IMO 2024/2025</li>
+<li>Attempt to reproduce IMO-AG-30 results using published checkpoints</li>
+<li>Independently verify proofs using the deductive database engine</li>
+<li>Cross-check generated proofs against known correct solutions</li>
+</ol>
+<p>Until such independent verification is conducted, claims should be
+treated with appropriate skepticism.</p>
+<h3 id="critical-timeline-and-training-cutoff-issues">4.4 Critical Timeline and Training Cutoff Issues</h3>
+<p><strong>This represents the most significant methodological concern
+with the paper.</strong></p>
+<h4 id="reconstructed-timeline">Reconstructed Timeline</h4>
+<ul>
+<li><strong>~May 2024:</strong> USEMO 2024 problem submission deadline (TongGeometry submitted 6 problems)</li>
+<li><strong>July 11-22, 2024:</strong> <strong>IMO 2024</strong> (Bath, United Kingdom): IMO 2024 P4 released; official solutions published</li>
+<li><strong>October 26-27, 2024:</strong> USEMO 2024 competition held</li>
+<li><strong>December 14, 2024:</strong> arXiv preprint v1 submitted; mentions IMO 2024 P4, does NOT mention IMO 2025</li>
+<li><strong>July 10-20, 2025:</strong> <strong>IMO 2025</strong> (Australia): IMO 2025 P2 released</li>
+<li><strong>January 26, 2026:</strong> Nature Machine Intelligence publication; NOW includes both IMO 2024 P4 and IMO 2025 P2</li>
+</ul>
+<h4 id="unverifiable-claims">Unverifiable Claims</h4>
+<p>The Nature paper claims:</p>
+<blockquote>
+<p>"To demonstrate TongGeometry's problem-solving capabilities on contemporary competition problems, we evaluated its performance on IMO 2024 P4 (Fig. 4) and IMO 2025 P2, the geometry problems from the most recent IMO competition. This problem represents a particularly stringent test case since they only came after TongGeometry's training."</p>
+</blockquote>
+<p>However, <strong>nowhere in the paper is a training completion date specified.</strong> The claim that these problems "only came after TongGeometry's training" is unverifiable.</p>
+<p>The December 2024 arXiv preprint uses notably weaker language about IMO 2024 P4:</p>
+<blockquote>
+<p><em>"Figure 2 shows IMO 2024 P4, the geometry problem in the latest IMO competition, <strong>a relatively new problem without many documented solutions at the time of TongGeometry training</strong>."</em></p>
+</blockquote>
+<p>This phrasing is revealing:</p>
+<ol type="1">
+<li>It admits that solutions to IMO 2024 P4 <strong>existed</strong> at the time of training, just "not many"</li>
+<li>Official IMO solutions were published in July 2024, immediately after the competition</li>
+<li>By December 2024 (preprint submission), many solutions would have been documented</li>
+</ol>
+<p>The Nature publication (January 2026) strengthens this to "only came after TongGeometry's training", but provides no additional evidence to support the stronger claim.</p>
+<p>Furthermore, IMO 2025 P2 appears <strong>only</strong> in the Nature paper, not in the December 2024 preprint. This raises critical questions: Was the same frozen model used? Was there retraining between December 2024 and January 2026? When was the IMO 2025 evaluation actually conducted? The paper provides no information to answer these questions.</p>
+<h4 id="what-the-paper-actually-establishes">What the Paper Actually Establishes</h4>
+<p>The paper provides <strong>verifiable</strong> evidence that problem
+generation was occurring before May 2024:</p>
+<blockquote>
+<p><em>“Before submission deadlines for the 2024 National High School
+Mathematics League (Beijing) and 2024 US Ersatz Math Olympiad, we
+enlisted a 2023 IMO gold medallist and a Chinese National Team student
+member to evaluate proposal batches during initial search
+phases.”</em></p>
+</blockquote>
+<p>Since USEMO 2024 had submissions due around May 2024 and the
+competition was held in October 2024, this establishes that TongGeometry
+was generating competition-worthy problems before IMO 2024 occurred.</p>
+<p>However, <strong>problem generation capability is separate from problem-solving neural model training.</strong> The workflow is:</p>
+<ol type="1">
+<li>Run parallel search to generate billions of problems (30 days on 10,368 cores; could have started early 2024)</li>
+<li>Train neural policy/value models on this data (timing never specified)</li>
+<li>Evaluate on benchmarks (timing never specified)</li>
+</ol>
+<p>The paper conflates these phases, making it impossible to verify when
+the neural models were frozen relative to the IMO competitions.</p>
+<h4 id="required-evidence-and-implications">Required Evidence and Implications</h4>
+<p>What would establish credibility:</p>
+<ul>
+<li>A cryptographic hash of model weights published <strong>before</strong> IMO 2024/2025</li>
+<li>Third-party attestation of training completion date</li>
+<li>Pre-registered evaluation protocol</li>
+<li>Explicit training data cutoff with verifiable timestamps</li>
+<li>GitHub commit history predating the competitions (the Zenodo archive could potentially provide this)</li>
+</ul>
+<p><strong>None of these safeguards are documented in the paper.</strong></p>
+<p>The 5-6 month gaps between the IMO competitions and the paper versions provide ample opportunity for data contamination:</p>
+<ul>
+<li><strong>IMO 2024</strong> (July 2024) to Preprint (December 2024): 5 months</li>
+<li><strong>IMO 2025</strong> (July 2025) to Publication (January 2026): 6 months</li>
+</ul>
+<p>Without verifiable timestamps, the "temporal holdout" claim, which is presented as the strongest evidence for generalization, cannot be independently validated.</p>
+<h3 id="data-contamination-risks-beyond-timeline-issues">4.5 Data Contamination Risks</h3>
+<p>The paper does not describe systematic contamination detection methodology. Standard concerns include:</p>
+<ul>
+<li>Whether IMO-AG-30 problems or close variants appeared in training data</li>
+<li>Whether the 196 guiding statistics problems overlap with evaluation sets</li>
+<li>The MO-TG-225 benchmark was created by the same team, introducing potential selection bias</li>
+</ul>
+<p>The authors’ claim that “none of these problems appear in
+TongGeometry’s training dataset” for MO-TG-225 is reassuring but not
+independently verified.</p>
+<h3 id="framing-and-interpretation-issues">4.6 Framing and Interpretation Issues</h3>
+<p><strong>"Outperforms Gold Medalists" Claim</strong></p>
+<p>The paper carefully qualifies: "Note that we do not claim TongGeometry surpasses an average IMO gold medallist in geometry generally." However, this nuance is lost in media coverage. The comparison is:</p>
+<ul>
+<li>Against a constructed "average gold medalist" metric on historical problems</li>
+<li>Not against actual human competitors under identical conditions</li>
+<li>Limited to problems expressible in the system's DSL (86.8% of IMO geometry)</li>
+</ul>
+<p><strong>Chinese Media Amplification</strong></p>
+<p>State media coverage has extended claims beyond what the methodology supports:</p>
+<blockquote>
+<p>“TongGeometry clearly highlights the superiority of original domestic
+technology in terms of performance.”<br />
+- Xinhua News Agency</p>
+</blockquote>
+<p>Such framing conflates narrow benchmark performance with general
+capability superiority.</p>
+<hr />
+<h2 id="comparative-analysis">5. Comparative Analysis</h2>
+<h3 id="tonggeometry-vs.-alphageometry">5.1 TongGeometry vs. AlphaGeometry</h3>
+<ul>
+<li><strong>IMO-AG-30 performance:</strong>
+<ul>
+<li>TongGeometry: 30/30 (claimed)</li>
+<li>AlphaGeometry: 25/30 (AG1), higher for AG2</li>
+</ul></li>
+<li><strong>Computational resources:</strong>
+<ul>
+<li>TongGeometry: Consumer-grade hardware</li>
+<li>AlphaGeometry: Data center scale</li>
+</ul></li>
+<li><strong>Problem generation:</strong>
+<ul>
+<li>TongGeometry: Yes</li>
+<li>AlphaGeometry: No</li>
+</ul></li>
+<li><strong>Formal verification:</strong>
+<ul>
+<li>TongGeometry: Proprietary DSL</li>
+<li>AlphaGeometry: Proprietary DSL</li>
+</ul></li>
+<li><strong>Open source:</strong>
+<ul>
+<li>TongGeometry: Yes (GitHub/Zenodo)</li>
+<li>AlphaGeometry: Partially (AG1 only)</li>
+</ul></li>
+<li><strong>Peer review:</strong>
+<ul>
+<li>TongGeometry: Nature Machine Intelligence</li>
+<li>AlphaGeometry: Nature (AG1)</li>
+</ul></li>
+<li><strong>Training cutoff verification:</strong>
+<ul>
+<li>TongGeometry: <strong>Not specified</strong></li>
+<li>AlphaGeometry: <strong>Not specified</strong></li>
+</ul></li>
+<li><strong>Independent replication:</strong>
+<ul>
+<li>TongGeometry: <strong>Pending</strong></li>
+<li>AlphaGeometry: <strong>Partial</strong></li>
+</ul></li>
+</ul>
+<p><strong>Critical Note on Comparability:</strong></p>
+<p>Direct performance comparisons between TongGeometry and AlphaGeometry are complicated by:</p>
+<ul>
+<li>Different domain-specific languages requiring problem translation</li>
+<li>Neither system provides machine-verifiable proofs in standard formal systems</li>
+<li>Both lack explicit training cutoff documentation</li>
+<li>The IMO-AG-30 benchmark was created by DeepMind for AlphaGeometry, potentially favoring that system's design</li>
+</ul>
+<hr />
+<h2 id="implications-1">6. Implications</h2>
+<h3 id="for-ai-research">6.1 For AI Research</h3>
+<p><strong>Genuine Progress</strong></p>
+<p>Despite methodological concerns, TongGeometry represents meaningful advancement:</p>
+<ul>
+<li>The dual solve/propose capability is novel and potentially valuable</li>
+<li>Efficiency gains (consumer hardware) democratize access to such systems</li>
+<li>Open-sourcing enables community scrutiny and improvement</li>
+</ul>
+<p><strong>Research Directions</strong></p>
+<p>The field requires urgent methodological improvements that apply not just to TongGeometry but to AI mathematical reasoning research broadly:</p>
+<ul>
+<li>Larger, difficulty-graded benchmarks with formal holdout procedures</li>
+<li>Integration with established formal verification systems (Lean, Isabelle)</li>
+<li>Standardized contamination detection protocols</li>
+<li><strong>Mandatory training cutoff documentation</strong> with verifiable timestamps or cryptographic commitments</li>
+<li><strong>Pre-registration of evaluation protocols</strong> before competitions occur</li>
+<li>Independent replication studies with third-party verification</li>
+</ul>
+<h3 id="for-mathematics-education">6.2 For Mathematics Education</h3>
+<p>The authors have deployed TongGeometry in educational
+applications:</p>
+<blockquote>
+<p>“In a weekly competition, TongGeometry’s proposed problems are
+meticulously reviewed, edited and refined by experienced IMO coaches who
+adjust difficulty, enhance pedagogical value and ensure they align with
+the curriculum.”</p>
+</blockquote>
+<p>This represents a potentially valuable application (AI-assisted problem generation for training materials) that is less dependent on the system achieving superhuman problem-solving.</p>
+<h3 id="broader-context">6.3 Broader Context</h3>
+<p>TongGeometry's publication in a high-impact Western journal, combined with open-sourcing, positions Chinese AI research as competitive and transparent. However, nationalistic framing in Chinese media coverage risks conflating narrow benchmark performance with general technological superiority.</p>
+<hr />
+<h2 id="conclusions">7. Conclusions</h2>
+<h3 id="summary-assessment">7.1 Summary Assessment</h3>
+<ul>
+<li><strong>Solves all IMO-AG-30 problems:</strong> <strong>Plausible but requires verification</strong>. Results consistent with incremental progress, but benchmark limitations and verification gaps warrant caution.</li>
+<li><strong>Outperforms gold medalists:</strong> <strong>Oversimplified</strong>. True only on a specific, small, potentially easy benchmark; not generalizable.</li>
+<li><strong>Superior to AlphaGeometry:</strong> <strong>Partially supported</strong>. Efficiency gains appear genuine; performance comparison complicated by benchmark issues.</li>
+<li><strong>Can propose olympiad-worthy problems:</strong> <strong>Validated</strong>. Three problems selected for real competitions provides concrete evidence; timeline supports pre-May 2024 capability.</li>
+<li><strong>Consumer hardware efficiency:</strong> <strong>Credible</strong>. Specific claims are verifiable via open-source code.</li>
+<li><strong>IMO 2024/2025 as temporal holdout:</strong> <strong>Unverifiable</strong>. No training cutoff date specified; no cryptographic or third-party verification; the strongest generalization claim lacks adequate evidence.</li>
+</ul>
+<h3 id="recommendations">7.2 Recommendations</h3>
+<p><strong>For researchers citing this work:</strong></p>
+<ul>
+<li>Qualify claims with benchmark limitations</li>
+<li>Note absence of formal verification</li>
+<li><strong>Flag the unverifiable training cutoff date as a significant limitation</strong></li>
+<li>Await independent replication</li>
+</ul>
+<p><strong>For educators/practitioners:</strong></p>
+<ul>
+<li>Problem generation capability may be more immediately useful than solving</li>
+<li>Treat generated problems as requiring expert review before use</li>
+<li>The pre-May 2024 problem generation timeline is better established than solving claims</li>
+</ul>
+<p><strong>For policymakers/observers:</strong></p>
+<ul>
+<li>Distinguish between narrow benchmark performance and general capability</li>
+<li>Note that Chinese and Western systems operate at comparable levels</li>
+<li>Recognize that open-sourcing enables global scientific scrutiny</li>
+<li><strong>Be aware that headline claims about "outperforming humans" lack rigorous temporal controls</strong></li>
+</ul>
+<h3 id="concluding-remarks">7.3 Concluding Remarks</h3>
+<p>TongGeometry represents genuine scientific progress in automated geometry reasoning, meriting its publication in a respected journal. The dual capability to solve and propose problems is a meaningful innovation, and the computational efficiency claims appear credible. The problem generation capability is particularly well-supported, with evidence of competition-worthy problems being generated before May 2024.</p>
+<p>However, the headline claim of "outperforming IMO gold medalists" requires substantial qualification. Previous geometry AI systems have produced proofs that passed initial review but were later found incorrect, a precedent that demands caution. The 5-6 month gaps between the IMO competitions and the paper versions provide ample opportunity for data contamination that the methodology does not rule out.</p>
+<p>The appropriate interpretation is that TongGeometry demonstrates strong performance on a narrow benchmark and introduces valuable problem-generation capabilities, but the "temporal holdout" evidence for generalization beyond training data is methodologically inadequate. The research is promising and the open-sourcing commendable, but the extraordinary claims require more rigorous evidence than currently provided.</p>
+<p><strong>The field urgently needs standardized protocols for establishing training cutoff dates in AI evaluation, including pre-registration, cryptographic commitments, and third-party verification.</strong></p>
+<hr />
+<h2 id="references">References</h2>
+<h3 id="primary-sources">Primary Sources</h3>
+<ol type="1">
+<li><p>Zhang, C. et al. “Proposing and solving olympiad geometry with
+guided tree search.” <em>Nature Machine Intelligence</em> 8, 84-95
+(2026). https://doi.org/10.1038/s42256-025-01164-x</p></li>
+<li><p>Zhang, C. et al. “Proposing and solving olympiad geometry with
+guided tree search.” arXiv preprint (December 14, 2024).
+https://arxiv.org/abs/2412.10673. <strong>Note: This preprint version
+uses weaker language about IMO 2024 P4 and does not mention IMO 2025
+P2</strong></p></li>
+<li><p>TongGeometry Code Repository (GitHub):
+https://github.com/bigai-ai/tong-geometry</p></li>
+<li><p>TongGeometry Code and Data Archive (Zenodo):
+https://doi.org/10.5281/zenodo.17646188</p></li>
+</ol>
+<h3 id="comparative-systems">Comparative Systems</h3>
+<ol start="5" type="1">
+<li><p>Trinh, T.H. et al. “Solving olympiad geometry without human
+demonstrations.” <em>Nature</em> 625, 476-482 (2024).
+https://doi.org/10.1038/s41586-023-06747-5</p></li>
+<li><p>AlphaGeometry Code Repository (GitHub):
+https://github.com/google-deepmind/alphageometry</p></li>
+<li><p>Chervonyi, Y. et al. “Gold-medalist performance in solving
+olympiad geometry with AlphaGeometry2.” arXiv:2502.03544 (2025).
+https://arxiv.org/abs/2502.03544</p></li>
+<li><p>Sicca, V. et al. “Newclid: a user-friendly replacement for
+AlphaGeometry.” arXiv:2411.11938 (2024).
+https://arxiv.org/abs/2411.11938</p></li>
+<li><p>ByteDance Seed-Prover: “Seed-Prover: Deep and Broad Reasoning for
+Automated Theorem Proving.” arXiv:2507.23726 (2025).
+https://arxiv.org/abs/2507.23726. <strong>Note: Seed-Geometry builds on
+TongGeometry’s approach</strong></p></li>
+</ol>
+<h3 id="critical-analyses-and-benchmarks">Critical Analyses and Benchmarks</h3>
+<ol start="10" type="1">
+<li><p>HAGeo Benchmark Analysis: “HAGeo: A Large-scale Hard Geometry
+Benchmark for Evaluating Theorem Provers." arXiv:2512.00097 (2024).
+<strong>Source of benchmark difficulty comparison showing IMO-AG-30
+skews easier</strong></p></li>
+<li><p>LeanGeo: “Formalizing Competitional Geometry problems in Lean.”
+arXiv:2508.14644 (2025). <strong>Source of critique regarding
+proprietary DSLs and formal verification gaps</strong></p></li>
+<li><p>Sinha, S. et al. “Wu’s method can boost symbolic AI to rival
+silver medalists and AlphaGeometry to outperform gold medalists at IMO
+geometry.” arXiv:2404.06405 (2024).
+https://arxiv.org/abs/2404.06405</p></li>
+</ol>
+<h3 id="competition-and-benchmark-sources">Competition and Benchmark Sources</h3>
+<ol start="13" type="1">
+<li><p>IMO 2024 Official Problems and Solutions. International
+Mathematical Olympiad (Bath, United Kingdom, July 2024).
+https://www.imo-official.org/year_info.aspx?year=2024</p></li>
+<li><p>IMO 2025 Official Problems and Solutions. International
+Mathematical Olympiad (Australia, July 2025).
+https://www.imo-official.org/year_info.aspx?year=2025</p></li>
+<li><p>US Ersatz Math Olympiad (USEMO) 2024 Results and Solutions. Evan
+Chen. https://web.evanchen.cc/usemo.html. <strong>Note: TongGeometry
+problems made shortlist; competition held October 26-27,
+2024</strong></p></li>
+<li><p>USEMO 2024 Report (PDF).
+https://web.evanchen.cc/exams/report-usemo-2024.pdf. <strong>Confirms
+USEMO 2024 was sponsored by “CoRe Lab, Institute of Artificial
+Intelligence, Peking University”</strong></p></li>
+</ol>
+<h3 id="institutional-sources">Institutional Sources</h3>
+<ol start="17" type="1">
+<li><p>Beijing Institute for General Artificial Intelligence (BIGAI)
+GitHub Organization: https://github.com/bigai-ai</p></li>
+<li><p>BIGAI Official Website: https://www.bigai.ai/</p></li>
+</ol>
+<h3 id="media-coverage-cited-for-framing-analysis">Media Coverage</h3>
+<ol start="19" type="1">
+<li><p>Xinhua News Agency. “China Focus: Chinese researchers score
+breakthrough in general artificial intelligence logical reasoning.”
+January 27, 2026.
+https://english.news.cn/20260127/26a2c05ece9f493fbcb90525ce0201f0/c.html</p></li>
+<li><p>China Daily Asia. “Chinese researchers score breakthrough in
+general AI logical reasoning.” January 28, 2026.
+https://www.chinadailyasia.com/hk/article/627883</p></li>
+<li><p>Guangming Online. “Chinese researchers score breakthrough in
+general artificial intelligence logical reasoning.” January 28-29, 2026.
+https://en.gmw.cn/2026-01/28/content_38563295.htm</p></li>
+</ol>
+<h3 id="background-technical-references">Background Technical References</h3>
+<ol start="22" type="1">
+<li><p>Chou, S.-C., Gao, X.-S. &amp; Zhang, J.-Z. “A deductive database
+approach to automated geometry theorem proving and discovering.” <em>J.
+Autom. Reason.</em> 25, 219-246 (2000).</p></li>
+<li><p>Guo, D. et al. “DeepSeek-Coder: when the large language model
+meets programming.” arXiv:2401.14196 (2024).
+https://arxiv.org/abs/2401.14196. <strong>Base model fine-tuned for
+TongGeometry</strong></p></li>
+<li><p>Chen, E. <em>Euclidean Geometry in Mathematical Olympiads</em>
+(American Mathematical Society, 2021). <strong>Standard reference for
+olympiad geometry techniques</strong></p></li>
+<li><p>Chen, E. “A guessing game: mixtilinear incircles.”
+https://web.evanchen.cc/handouts/Mixt-GeoGuessr/Mixt-GeoGuessr.pdf.
+<strong>Configuration rediscovered by TongGeometry</strong></p></li>
+</ol>
+<hr />
+<h2 id="appendix-key-quotes-from-primary-sources">Appendix: Key Quotes from Primary Sources</h2>
+<h3 id="from-nature-paper-january-2026">From Nature Paper (January 2026)</h3>
+<blockquote>
+<p>“To demonstrate TongGeometry’s problem-solving capabilities on
+contemporary competition problems, we evaluated its performance on IMO
+2024 P4 (Fig. 4) and IMO 2025 P2, the geometry problems from the most
+recent IMO competition. <strong>This problem represents a particularly
+stringent test case since they only came after TongGeometry’s
+training.</strong>”</p>
+</blockquote>
+<blockquote>
+<p>“Note that <strong>we do not claim TongGeometry surpasses an average
+IMO gold medallist in geometry generally.</strong>”</p>
+</blockquote>
+<h3 id="from-arxiv-preprint-december-2024">From arXiv Preprint (December 2024)</h3>
+<blockquote>
+<p>“Figure 2 shows IMO 2024 P4, the geometry problem in the latest IMO
+competition, <strong>a relatively new problem without many documented
+solutions at the time of TongGeometry training</strong>.”</p>
+</blockquote>
+<p><strong>Critical Observation:</strong> The preprint acknowledges
+solutions existed; the Nature paper claims the problem came “after”
+training. No additional evidence supports this stronger claim.</p>
+<h3 id="from-leangeo-paper-2025">From LeanGeo Paper (2025)</h3>
+<blockquote>
+<p>“Systems like AlphaGeometry, TongGeometry and SeedGeometry… typically
+rely on specialized models and operate within geometry-specific formal
+systems independent of Lean. This isolation prevents integration with
+other mathematical domains… Additionally, <strong>their reliance on
+graphical verification and unordered formal systems can lead to logical
+unsoundness and incompleteness.</strong>”</p>
+</blockquote>
+<h3 id="from-hageo-paper-2024">From HAGeo Paper (2024)</h3>
+<blockquote>
+<p>“The IMO-30 benchmark predominantly contains problems that are not
+especially challenging… compared with HAGeo-409, whose average
+difficulty is 3.47, <strong>the IMO-30 benchmark is relatively easy,
+with an average difficulty of only 2.85.</strong>”</p>
+</blockquote>
+<blockquote>
+<p>“We found the proof for IMO-2020-P1 to be incorrect… <strong>step 9
+of the proof is wrong</strong>… This statement is incorrect because it
+implicitly assumes that M, N, and E are collinear, which is not
+proven.”</p>
+</blockquote>
+<hr />
+<p><em>This report was prepared for informational purposes and
+represents an independent assessment based on publicly available
+sources. The author has no affiliation with BIGAI, Peking University,
+Google DeepMind, or any competing research group.</em></p>
+<p><em>Last updated: January 30, 2026</em></p>
+</body>
+</html>
