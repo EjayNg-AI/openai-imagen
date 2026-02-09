@@ -88,3 +88,4 @@ NOTE: This is for my reference after each coding session. The descriptions enter
 - Added scripts/README.md and ignored export viewer data in .gitignore.
 - Added a condensed quadratic assignment with 16 harder questions in latex/c_harder.tex.
 - Embedded solutions alongside questions in latex/c_harder.tex, switched to two-column footnotesize layout, and updated the title.
+- Added `docs/background_mode_gpt52_codex_harness_summary.md` documenting the prior Codex harness background-mode test workflow, including unbuffered `-u` console behavior, outbound allowlist guidance, and a full verbatim copy of `scratchpad/background_mode_gpt52_test.py`.
