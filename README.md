@@ -39,6 +39,10 @@ Generated or edited images are:
   - `try.html` posts `{developer_message, user_message}` to `/api/responses`, which calls `responses.create` with a strict five-paragraph JSON schema. The backend extracts the paragraphs and returns them alongside the raw model dump; the UI pretty-prints both.
   - `prompt_runner.html` builds multi-turn conversations (developer/user/assistant rows) and POSTs `{messages:[...]}` to `/api/prompt-run`. The backend normalizes the array and forwards it to `responses.create` with text output + web search enabled. The UI shows only the assistant output, plus a “Last sent payload” box (with copy buttons) that reflects the exact parameters sent to OpenAI. System-message loader buttons pull sections from `scratchpad/system_messages_consolidated.md` via `/api/system-message/<key>` using keys: `approach-proposer`, `approach-evaluator`, `problem-solver`, `expert-evaluator`, `researcher`, `orchestrator`.
   - `prompt_runner_background.html` is the background-mode variant and uses the same system-message loader keys.
+- **Background-mode GPT-5.2 CLI test** (run `python -u scratchpad/background_mode_gpt52_test.py`):
+  - Submits one intentionally complex operations-research prompt to the Responses API using `model="gpt-5.2"`, `reasoning.effort="high"`, `text.verbosity="high"`, and `background=True`.
+  - Polls job status every 10 seconds using `client.responses.retrieve(response_id)` until a terminal status is reached.
+  - Writes timestamped status updates, logging events, final model output text, and the final full response payload into `scratchpad/background_mode_gpt52_test_report.md`.
 
 ---
 
@@ -118,3 +122,11 @@ response = client.responses.create(
 - Worker queue (Celery / RQ) to avoid blocking Flask
 - S3 (or MinIO) storage and signed download links
 - Broaden the responses playground into a reusable SDK demo or QA harness
+
+---
+
+## Codex outbound access note
+
+For Codex-harness network policy and allowlisting details for OpenAI API calls, see:
+
+- `docs/codex_outbound_network_access.md`

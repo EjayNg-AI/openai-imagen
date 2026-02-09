@@ -3,11 +3,18 @@
 - scratchpad/other_files/codeblocks_for_normal_api_requests.md
   Instructions on how to call the OpenAI API in Python
 
-- scratchpad/other_files/codeblocks_for_background_tasks_v2.md
+- scratchpad/other_files/codeblocks_for_background_tasks-v2.md
   Instructions on how to call the OpenAI API using background mode
 
 - scratchpad/other_files/codeblocks_for_json_output.md
   Instructions on how to use JSON schema input and elicit JSON output with the OpenAI API
+
+- scratchpad/background_mode_gpt52_test.py
+  Background-mode GPT-5.2 test harness that submits a complex prompt with high reasoning effort, polls every 10 seconds, and writes a markdown report to `scratchpad/background_mode_gpt52_test_report.md`. Run it with:
+  `python -u scratchpad/background_mode_gpt52_test.py`
+
+- docs/codex_outbound_network_access.md
+  Notes on Codex outbound-network precautions and the minimal domain allowlist for OpenAI Responses API calls from local scripts (including required `POST` + `GET` methods for `api.openai.com`).
 
 - scratchpad/experiment.py and scratchpad/experiment.html
   Playground for testing out new features. Safely experiment with code alterations and implementing new features with these playground files first before actual implementation with official code files.
@@ -47,6 +54,8 @@ I will not delete/alter anything in this section unless I notify you beforehand.
 
 NOTE: This is for my reference after each coding session. The descriptions entered here in this section may not be retained to the next coding session. Do **not** use this section to store persistent information for your own reference. You will need to create a new section in this markdown file if you wish to do so (and use a flag to indicate that I should not delete/alter that section).
 
+- Added `scratchpad/background_mode_gpt52_test.py`, a GPT-5.2 background-mode test script with reasoning effort set to high, 10-second polling, and markdown report logging for status updates plus final output payload. Command: `python -u scratchpad/background_mode_gpt52_test.py`.
+- Added `docs/codex_outbound_network_access.md` and README link documenting Codex outbound-network precautions plus the minimal allowlist for successful OpenAI Responses API calls (`api.openai.com` with `POST` and `GET`).
 - Added resume-time queue normalization to append the orchestrator after the expert evaluator when missing.
 - Added rendered-view toggle with markdown + LaTeX rendering support in the viewer template.
 - Added offline renderer asset download in build script and local asset wiring in template/README.
