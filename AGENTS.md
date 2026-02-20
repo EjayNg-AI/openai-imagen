@@ -89,3 +89,5 @@ NOTE: This is for my reference after each coding session. The descriptions enter
 - Added a condensed quadratic assignment with 16 harder questions in latex/c_harder.tex.
 - Embedded solutions alongside questions in latex/c_harder.tex, switched to two-column footnotesize layout, and updated the title.
 - Added `docs/background_mode_gpt52_codex_harness_summary.md` documenting the prior Codex harness background-mode test workflow, including unbuffered `-u` console behavior, outbound allowlist guidance, and a full verbatim copy of `scratchpad/background_mode_gpt52_test.py`.
+- Updated ChatGPT viewer build workflow to keep `chatgpt_conversation_history_YYYY-MM-DD/` exports fully gitignored while writing commit-ready viewer artifacts (later superseded by `chatgpt_viewer_sites/<export-folder-name>/`), including copied referenced assets and offline Markdown/LaTeX renderer assets.
+- Updated ChatGPT viewer default output routing to `chatgpt_viewer_sites/<export-folder-name>/` so builds from different raw export directories are isolated and do not overwrite each other.

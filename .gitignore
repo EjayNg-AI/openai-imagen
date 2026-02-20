@@ -19,6 +19,8 @@ __pycache__/
 # Generated assets
 saved_images/
 
-# ChatGPT export data (personal)
-chatgpt_conversation_history_*/
-**/viewer_data/
+# ChatGPT export data (personal raw exports)
+/chatgpt_conversation_history_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
+
+# Legacy ChatGPT viewer output (deprecated)
+/chatgpt_viewer_site/

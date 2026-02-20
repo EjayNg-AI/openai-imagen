@@ -2,6 +2,7 @@
 import argparse
 import json
 import re
+import shutil
 import sys
 import urllib.parse
 import urllib.request
@@ -18,6 +19,12 @@ ASSET_URLS = {
 KATEX_CSS_NAME = "katex.min.css"
 MATHJAX_URL = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
 MATHJAX_LOCAL = Path("mathjax") / "tex-svg.js"
+DEFAULT_OUTPUT_ROOT = Path(__file__).resolve().parents[1] / "chatgpt_viewer_sites"
+
+
+def default_output_dir_for_export(export_dir):
+    # Keep builds for different raw export folders isolated by default.
+    return DEFAULT_OUTPUT_ROOT / export_dir.name
 
 
 def iter_json_array(path):
@@ -112,15 +119,19 @@ def extract_assets_json(chat_html_path):
                 buf += chunk
 
 
-def build_viewer(export_dir):
+def build_viewer(export_dir, output_dir):
     conv_path = export_dir / "conversations.json"
     chat_path = export_dir / "chat.html"
     if not conv_path.exists():
         raise FileNotFoundError(f"Missing conversations.json in {export_dir}")
 
-    out_dir = export_dir / "viewer_data"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    out_dir = output_dir / "viewer_data"
     conv_out_dir = out_dir / "conversations"
     conv_out_dir.mkdir(parents=True, exist_ok=True)
+    for stale_file in conv_out_dir.glob("*.json"):
+        stale_file.unlink()
 
     index = []
     total = 0
@@ -174,30 +185,73 @@ def build_viewer(export_dir):
     with (out_dir / "assets.json").open("w", encoding="utf-8") as f:
         json.dump(assets, f, ensure_ascii=True, separators=(",", ":"))
 
-    ensure_viewer_assets(export_dir)
+    copy_export_assets(export_dir, output_dir, assets)
+    ensure_viewer_assets(output_dir)
 
     template_path = Path(__file__).with_name("chatgpt_viewer_template.html")
     if not template_path.exists():
         raise FileNotFoundError("Missing viewer template: chatgpt_viewer_template.html")
 
-    viewer_path = export_dir / "viewer.html"
+    viewer_path = output_dir / "viewer.html"
     viewer_path.write_text(template_path.read_text(encoding="utf-8"), encoding="utf-8")
 
     test_template_path = Path(__file__).with_name("chatgpt_render_test_template.html")
     if test_template_path.exists():
-        test_path = export_dir / "render_test.html"
+        test_path = output_dir / "render_test.html"
         test_path.write_text(test_template_path.read_text(encoding="utf-8"), encoding="utf-8")
         print(f"Render test: {test_path}")
     else:
         print("Render test template missing: chatgpt_render_test_template.html")
 
     print("Done.")
+    print(f"Source export: {export_dir}")
+    print(f"Output dir: {output_dir}")
     print(f"Viewer: {viewer_path}")
     print(f"Data: {out_dir}")
 
 
-def ensure_viewer_assets(export_dir):
-    asset_dir = export_dir / "viewer_assets"
+def copy_export_assets(export_dir, output_dir, assets):
+    if not assets:
+        return
+
+    print("Copying referenced export assets...")
+    copied = 0
+    missing = 0
+    skipped = 0
+    seen = set()
+
+    for raw_link in assets.values():
+        if not isinstance(raw_link, str) or not raw_link:
+            continue
+        rel_path = safe_rel_path(raw_link)
+        if rel_path is None:
+            skipped += 1
+            continue
+        key = rel_path.as_posix()
+        if key in seen:
+            continue
+        seen.add(key)
+
+        src = export_dir / rel_path
+        if not src.exists() or not src.is_file():
+            missing += 1
+            continue
+        dest = output_dir / rel_path
+        if src.resolve() == dest.resolve():
+            continue
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dest)
+        copied += 1
+
+    print(f"  copied {copied} referenced files")
+    if missing:
+        print(f"  warning: {missing} referenced files were missing in export folder")
+    if skipped:
+        print(f"  skipped {skipped} non-local asset links")
+
+
+def ensure_viewer_assets(output_dir):
+    asset_dir = output_dir / "viewer_assets"
     asset_dir.mkdir(parents=True, exist_ok=True)
 
     print("Checking viewer assets...")
@@ -281,11 +335,22 @@ def extract_css_urls(css_text):
 
 
 def safe_rel_path(url_path):
-    path = PurePosixPath(url_path)
-    parts = list(path.parts)
-    while parts and parts[0] in (".", ".."):
-        parts.pop(0)
-    if ".." in parts:
+    parsed = urllib.parse.urlparse(url_path)
+    if parsed.scheme or parsed.netloc:
+        return None
+    path = PurePosixPath(parsed.path)
+    if path.is_absolute():
+        return None
+
+    parts = []
+    for part in path.parts:
+        if part in ("", "."):
+            continue
+        if part == "..":
+            return None
+        parts.append(part)
+
+    if not parts:
         return None
     return Path(*parts)
 
@@ -306,6 +371,15 @@ def extract_katex_version(js_path):
 def main():
     parser = argparse.ArgumentParser(description="Build a static viewer for ChatGPT export data.")
     parser.add_argument("export_dir", help="Path to the ChatGPT export folder")
+    parser.add_argument(
+        "--output-dir",
+        "-o",
+        default=None,
+        help=(
+            "Directory for generated viewer artifacts (viewer.html, viewer_data, viewer_assets). "
+            "Default: <repo>/chatgpt_viewer_sites/<export-folder-name>"
+        ),
+    )
     args = parser.parse_args()
 
     export_dir = Path(args.export_dir).expanduser().resolve()
@@ -313,7 +387,11 @@ def main():
         print(f"Export folder not found: {export_dir}", file=sys.stderr)
         sys.exit(1)
 
-    build_viewer(export_dir)
+    if args.output_dir:
+        output_dir = Path(args.output_dir).expanduser().resolve()
+    else:
+        output_dir = default_output_dir_for_export(export_dir).resolve()
+    build_viewer(export_dir, output_dir)
 
 
 if __name__ == "__main__":
