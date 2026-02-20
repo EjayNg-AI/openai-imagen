@@ -127,6 +127,10 @@
         accent-color: var(--accent);
       }
 
+      .toggle input:disabled + span {
+        opacity: 0.6;
+      }
+
       .search-group {
         display: inline-flex;
         align-items: center;
@@ -154,6 +158,98 @@
         color: var(--muted);
       }
 
+      .composer {
+        margin: 12px 20px 0;
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--panel);
+        box-shadow: 0 10px 24px var(--shadow);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .composer-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .composer-label {
+        font-family: var(--font-sans);
+        font-size: 12px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+      }
+
+      #chatModel {
+        border: 1px solid var(--border);
+        background: var(--surface);
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-family: var(--font-sans);
+        font-size: 12px;
+        color: var(--ink);
+        min-width: 170px;
+      }
+
+      #chatPrompt {
+        width: 100%;
+        min-height: 84px;
+        resize: vertical;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 10px;
+        background: var(--surface);
+        color: var(--ink);
+        font-family: var(--font-sans);
+        font-size: 13px;
+        line-height: 1.4;
+      }
+
+      .chat-btn {
+        border: 1px solid var(--border);
+        background: var(--surface);
+        border-radius: 10px;
+        padding: 6px 10px;
+        font-family: var(--font-sans);
+        font-size: 12px;
+        color: var(--muted);
+        cursor: pointer;
+      }
+
+      .chat-btn.primary {
+        background: var(--accent);
+        color: #ffffff;
+        border-color: var(--accent);
+      }
+
+      body.dark .chat-btn.primary {
+        color: #111111;
+      }
+
+      .chat-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .chat-status {
+        font-family: var(--font-sans);
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .chat-status.error {
+        color: #8a3b2b;
+      }
+
+      .chat-status.success {
+        color: var(--accent);
+      }
+
       main.layout {
         display: grid;
         grid-template-columns: 280px 1fr 1.3fr;
@@ -166,12 +262,21 @@
         grid-template-columns: 260px 1fr 1.15fr 1.15fr;
       }
 
+      body.render-on.render-focus-on main.layout {
+        grid-template-columns: 260px 1fr;
+      }
+
       #renderPanel {
         display: none;
       }
 
       body.render-on #renderPanel {
         display: flex;
+      }
+
+      body.render-on.render-focus-on #treePanel,
+      body.render-on.render-focus-on #transcriptPanel {
+        display: none;
       }
 
       .panel {
@@ -495,17 +600,29 @@
         body.render-on main.layout {
           grid-template-columns: 1fr 1fr;
         }
+        body.render-on.render-focus-on main.layout {
+          grid-template-columns: 1fr 1fr;
+        }
         .panel {
           min-height: 55vh;
         }
       }
 
       @media (max-width: 900px) {
+        .composer {
+          margin: 12px 16px 0;
+        }
+        .composer-row {
+          align-items: flex-start;
+        }
         main.layout {
           grid-template-columns: 1fr;
           height: auto;
         }
         body.render-on main.layout {
+          grid-template-columns: 1fr;
+        }
+        body.render-on.render-focus-on main.layout {
           grid-template-columns: 1fr;
         }
         header.topbar {
@@ -538,6 +655,10 @@
           <span>Rendered view</span>
         </label>
         <label class="toggle">
+          <input id="focusRendered" type="checkbox" disabled>
+          <span>Focus rendered</span>
+        </label>
+        <label class="toggle">
           <input id="escapeBrackets" type="checkbox">
           <span>Further escape brackets</span>
         </label>
@@ -560,6 +681,38 @@
       </div>
     </header>
 
+    <section class="composer">
+      <div class="composer-row">
+        <span class="composer-label">Model</span>
+        <input id="chatModel" type="text" value="gpt-5.1" placeholder="gpt-5.1">
+        <span class="composer-label">Reasoning</span>
+        <select id="chatReasoning" class="select">
+          <option value="none">none</option>
+          <option value="low">low</option>
+          <option value="medium">medium</option>
+          <option value="high" selected>high</option>
+          <option value="xhigh">xhigh</option>
+        </select>
+        <span class="composer-label">Verbosity</span>
+        <select id="chatVerbosity" class="select">
+          <option value="low">low</option>
+          <option value="medium" selected>medium</option>
+          <option value="high">high</option>
+        </select>
+        <label class="toggle">
+          <input id="chatBackground" type="checkbox">
+          <span>Background</span>
+        </label>
+      </div>
+      <textarea id="chatPrompt" placeholder="Enter prompt text"></textarea>
+      <div class="composer-row">
+        <button id="chatNewSend" class="chat-btn primary" type="button">New conversation</button>
+        <button id="chatContinueSend" class="chat-btn primary" type="button">Continue selected</button>
+        <button id="chatCancel" class="chat-btn" type="button" disabled>Cancel background</button>
+        <span id="chatStatus" class="chat-status">Live chat requires chatgpt_viewer_server.py.</span>
+      </div>
+    </section>
+
     <main class="layout">
       <section class="panel">
         <div class="panel-header">
@@ -572,7 +725,7 @@
         <div id="convList" class="panel-body"></div>
       </section>
 
-      <section class="panel">
+      <section id="treePanel" class="panel">
         <div class="panel-header">
           <div class="panel-title">Tree</div>
           <div class="tree-actions">
@@ -583,7 +736,7 @@
         <div id="treeRoot" class="panel-body"></div>
       </section>
 
-      <section class="panel">
+      <section id="transcriptPanel" class="panel">
         <div class="panel-header">
           <div>
             <div id="convTitle" class="panel-title">Select a conversation</div>
@@ -756,11 +909,16 @@
         selected: null,
         showInternal: false,
         renderEnabled: false,
+        focusRendered: false,
         escapeBrackets: false,
         mathRenderer: "katex",
         wrapCodeUnsafe: false,
         searchQuery: "",
         matchIds: new Set(),
+        chatBackendReady: false,
+        chatPendingResponseId: null,
+        chatPollHandle: null,
+        chatBusy: false,
       };
 
       const convListEl = document.getElementById("convList");
@@ -774,6 +932,7 @@
       const matchCountEl = document.getElementById("matchCount");
       const showInternalEl = document.getElementById("showInternal");
       const renderToggleEl = document.getElementById("renderToggle");
+      const focusRenderedEl = document.getElementById("focusRendered");
       const escapeBracketsEl = document.getElementById("escapeBrackets");
       const mathRendererEl = document.getElementById("mathRenderer");
       const unsafeCodeWrapEl = document.getElementById("unsafeCodeWrap");
@@ -782,6 +941,15 @@
       const collapseAllEl = document.getElementById("collapseAll");
       const renderPanelEl = document.getElementById("renderPanel");
       const renderedEl = document.getElementById("rendered");
+      const chatModelEl = document.getElementById("chatModel");
+      const chatReasoningEl = document.getElementById("chatReasoning");
+      const chatVerbosityEl = document.getElementById("chatVerbosity");
+      const chatBackgroundEl = document.getElementById("chatBackground");
+      const chatPromptEl = document.getElementById("chatPrompt");
+      const chatNewSendEl = document.getElementById("chatNewSend");
+      const chatContinueSendEl = document.getElementById("chatContinueSend");
+      const chatCancelEl = document.getElementById("chatCancel");
+      const chatStatusEl = document.getElementById("chatStatus");
 
       function fetchJson(url) {
         return fetch(url).then((res) => {
@@ -796,6 +964,274 @@
         if (!ts) return "";
         const date = new Date(ts * 1000);
         return date.toLocaleString();
+      }
+
+      function applyRenderFocusState() {
+        if (!state.renderEnabled) {
+          state.focusRendered = false;
+        }
+        focusRenderedEl.disabled = !state.renderEnabled;
+        focusRenderedEl.checked = state.focusRendered;
+        document.body.classList.toggle("render-focus-on", state.renderEnabled && state.focusRendered);
+      }
+
+      function updateConversationHeader(conv) {
+        convTitleEl.textContent = conv && conv.title ? conv.title : "(untitled)";
+        const meta = [];
+        if (conv && conv.create_time) meta.push("Created: " + formatTime(conv.create_time));
+        if (conv && conv.update_time) meta.push("Updated: " + formatTime(conv.update_time));
+        convMetaEl.textContent = meta.join(" | ");
+      }
+
+      function setChatStatus(text, tone) {
+        chatStatusEl.textContent = text || "";
+        chatStatusEl.className = "chat-status";
+        if (tone === "error") chatStatusEl.classList.add("error");
+        if (tone === "success") chatStatusEl.classList.add("success");
+      }
+
+      function persistChatSettings() {
+        try {
+          localStorage.setItem("chatgpt_viewer_chat_model", chatModelEl.value.trim() || "gpt-5.1");
+          localStorage.setItem("chatgpt_viewer_chat_reasoning", chatReasoningEl.value);
+          localStorage.setItem("chatgpt_viewer_chat_verbosity", chatVerbosityEl.value);
+          localStorage.setItem("chatgpt_viewer_chat_background", chatBackgroundEl.checked ? "1" : "0");
+        } catch (err) {
+          // ignore storage errors
+        }
+      }
+
+      function stopChatPolling() {
+        if (state.chatPollHandle) {
+          clearInterval(state.chatPollHandle);
+          state.chatPollHandle = null;
+        }
+      }
+
+      function updateChatControls() {
+        const backendReady = state.chatBackendReady;
+        const hasContinueTarget = Boolean(state.conv && state.selected);
+        const busy = state.chatBusy;
+        const hasPending = Boolean(state.chatPendingResponseId);
+
+        chatModelEl.disabled = !backendReady || busy;
+        chatReasoningEl.disabled = !backendReady || busy;
+        chatVerbosityEl.disabled = !backendReady || busy;
+        chatBackgroundEl.disabled = !backendReady || busy;
+        chatPromptEl.disabled = !backendReady || busy;
+
+        chatNewSendEl.disabled = !backendReady || busy;
+        chatContinueSendEl.disabled = !backendReady || busy || !hasContinueTarget;
+        chatCancelEl.disabled = !backendReady || !hasPending;
+      }
+
+      function upsertIndexEntry(entry) {
+        if (!entry || !entry.id) return;
+        let replaced = false;
+        for (let i = 0; i < state.index.length; i++) {
+          if (state.index[i] && state.index[i].id === entry.id) {
+            state.index[i] = entry;
+            replaced = true;
+            break;
+          }
+        }
+        if (!replaced) {
+          state.index.push(entry);
+        }
+        state.index.sort((a, b) => (b.update_time || 0) - (a.update_time || 0));
+      }
+
+      function applyConversationUpdate(payload) {
+        const conv = payload && payload.conversation ? payload.conversation : null;
+        if (!conv) {
+          throw new Error("Missing updated conversation data.");
+        }
+        state.conv = conv;
+        state.nodes = conv.mapping || {};
+        state.expanded = new Set();
+
+        if (payload && payload.index_entry) {
+          upsertIndexEntry(payload.index_entry);
+        }
+
+        buildVisibleTree();
+        const selectedFromPayload = payload && payload.selected_node_id ? payload.selected_node_id : null;
+        if (selectedFromPayload && state.nodes[selectedFromPayload]) {
+          state.selected = selectedFromPayload;
+        } else {
+          state.selected = pickDefaultNode();
+        }
+        if (state.selected) {
+          expandPathTo(state.selected);
+        }
+
+        updateMatches();
+        renderConversationList();
+        renderTree();
+        renderTranscript();
+        updateConversationHeader(conv);
+      }
+
+      async function checkChatBackend() {
+        try {
+          const res = await fetch("/api/archive/health", { cache: "no-store" });
+          if (!res.ok) throw new Error("backend unavailable");
+          const payload = await res.json();
+          if (!payload || !payload.ok) throw new Error("backend unavailable");
+          state.chatBackendReady = true;
+          setChatStatus("Live chat connected.", "success");
+        } catch (err) {
+          state.chatBackendReady = false;
+          setChatStatus("Live chat requires chatgpt_viewer_server.py.", "error");
+        }
+        updateChatControls();
+      }
+
+      function buildChatPayload(mode) {
+        const prompt = chatPromptEl.value.trim();
+        if (!prompt) {
+          throw new Error("Prompt cannot be empty.");
+        }
+        const model = chatModelEl.value.trim() || "gpt-5.1";
+        const payload = {
+          prompt: prompt,
+          model: model,
+          reasoning_effort: chatReasoningEl.value || "high",
+          text_verbosity: chatVerbosityEl.value || "medium",
+          background: chatBackgroundEl.checked,
+        };
+
+        if (mode === "continue") {
+          if (!state.conv || !state.conv.id) {
+            throw new Error("Select a conversation to continue.");
+          }
+          if (!state.selected) {
+            throw new Error("Select a tree node to continue from.");
+          }
+          payload.conversation_id = state.conv.id;
+          payload.anchor_node_id = state.selected;
+        }
+        return payload;
+      }
+
+      async function pollBackgroundChat(responseId) {
+        try {
+          const res = await fetch(
+            "/api/archive/chat/background/" + encodeURIComponent(responseId),
+            { cache: "no-store" }
+          );
+          const payload = await res.json().catch(() => ({}));
+          if (!res.ok || !payload.ok) {
+            throw new Error(payload.error || "Background polling failed.");
+          }
+          if (!payload.done) {
+            setChatStatus("Background request running (" + responseId + ")...", null);
+            return;
+          }
+
+          state.chatPendingResponseId = null;
+          stopChatPolling();
+          state.chatBusy = false;
+
+          if (payload.status !== "completed") {
+            setChatStatus("Background request " + payload.status + ".", "error");
+            updateChatControls();
+            return;
+          }
+
+          applyConversationUpdate(payload);
+          chatPromptEl.value = "";
+          setChatStatus("Assistant response saved.", "success");
+          updateChatControls();
+        } catch (err) {
+          state.chatPendingResponseId = null;
+          stopChatPolling();
+          state.chatBusy = false;
+          setChatStatus(err.message || "Background polling failed.", "error");
+          updateChatControls();
+        }
+      }
+
+      function startBackgroundChat(responseId) {
+        state.chatPendingResponseId = responseId;
+        stopChatPolling();
+        setChatStatus("Background request started (" + responseId + ").", null);
+        state.chatPollHandle = setInterval(() => {
+          pollBackgroundChat(responseId);
+        }, 2000);
+        pollBackgroundChat(responseId);
+      }
+
+      async function submitChat(mode) {
+        if (!state.chatBackendReady) {
+          setChatStatus("Live chat backend is not available.", "error");
+          return;
+        }
+
+        let payload;
+        try {
+          payload = buildChatPayload(mode);
+        } catch (err) {
+          setChatStatus(err.message || "Invalid request.", "error");
+          return;
+        }
+
+        const endpoint = mode === "new" ? "/api/archive/chat/new" : "/api/archive/chat/continue";
+
+        state.chatBusy = true;
+        updateChatControls();
+        setChatStatus("Sending request...", null);
+
+        try {
+          const res = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data.ok) {
+            throw new Error(data.error || "Chat request failed.");
+          }
+
+          if (data.done === false && data.response_id) {
+            startBackgroundChat(data.response_id);
+            updateChatControls();
+            return;
+          }
+
+          applyConversationUpdate(data);
+          chatPromptEl.value = "";
+          setChatStatus("Assistant response saved.", "success");
+          state.chatBusy = false;
+          updateChatControls();
+        } catch (err) {
+          state.chatBusy = false;
+          setChatStatus(err.message || "Chat request failed.", "error");
+          updateChatControls();
+        }
+      }
+
+      async function cancelBackgroundChat() {
+        if (!state.chatPendingResponseId) return;
+        const responseId = state.chatPendingResponseId;
+        try {
+          const res = await fetch(
+            "/api/archive/chat/background/" + encodeURIComponent(responseId) + "/cancel",
+            { method: "POST" }
+          );
+          const payload = await res.json().catch(() => ({}));
+          if (!res.ok || !payload.ok) {
+            throw new Error(payload.error || "Cancel request failed.");
+          }
+          setChatStatus("Background request cancellation sent.", null);
+        } catch (err) {
+          setChatStatus(err.message || "Cancel request failed.", "error");
+        } finally {
+          state.chatPendingResponseId = null;
+          state.chatBusy = false;
+          stopChatPolling();
+          updateChatControls();
+        }
       }
 
       function roleLabel(msg) {
@@ -1224,6 +1660,7 @@
         }
 
         applyCodeWrapMode();
+        updateChatControls();
 
         if (state.renderEnabled) {
           renderRenderedTranscript();
@@ -1857,12 +2294,7 @@
         renderConversationList();
         renderTree();
         renderTranscript();
-
-        convTitleEl.textContent = conv.title || "(untitled)";
-        const meta = [];
-        if (conv.create_time) meta.push("Created: " + formatTime(conv.create_time));
-        if (conv.update_time) meta.push("Updated: " + formatTime(conv.update_time));
-        convMetaEl.textContent = meta.join(" | ");
+        updateConversationHeader(conv);
       }
 
       async function init() {
@@ -1873,6 +2305,7 @@
         state.index = index.sort((a, b) => (b.update_time || 0) - (a.update_time || 0));
         state.assets = assets || {};
         renderConversationList();
+        updateChatControls();
       }
 
       convSearchEl.addEventListener("input", () => renderConversationList());
@@ -1900,6 +2333,10 @@
       renderToggleEl.addEventListener("change", () => {
         state.renderEnabled = renderToggleEl.checked;
         document.body.classList.toggle("render-on", state.renderEnabled);
+        if (!state.renderEnabled) {
+          state.focusRendered = false;
+        }
+        applyRenderFocusState();
         if (state.renderEnabled) {
           renderRenderedTranscript();
         } else {
@@ -1907,6 +2344,17 @@
         }
         try {
           localStorage.setItem("chatgpt_viewer_render", state.renderEnabled ? "1" : "0");
+          localStorage.setItem("chatgpt_viewer_focus_rendered", state.focusRendered ? "1" : "0");
+        } catch (err) {
+          // ignore storage errors
+        }
+      });
+
+      focusRenderedEl.addEventListener("change", () => {
+        state.focusRendered = focusRenderedEl.checked;
+        applyRenderFocusState();
+        try {
+          localStorage.setItem("chatgpt_viewer_focus_rendered", state.focusRendered ? "1" : "0");
         } catch (err) {
           // ignore storage errors
         }
@@ -1966,6 +2414,45 @@
         renderTree();
       });
 
+      chatNewSendEl.addEventListener("click", () => {
+        submitChat("new");
+      });
+
+      chatContinueSendEl.addEventListener("click", () => {
+        submitChat("continue");
+      });
+
+      chatCancelEl.addEventListener("click", () => {
+        cancelBackgroundChat();
+      });
+
+      chatModelEl.addEventListener("change", () => {
+        persistChatSettings();
+      });
+      chatModelEl.addEventListener("blur", () => {
+        persistChatSettings();
+      });
+      chatReasoningEl.addEventListener("change", () => {
+        persistChatSettings();
+      });
+      chatVerbosityEl.addEventListener("change", () => {
+        persistChatSettings();
+      });
+      chatBackgroundEl.addEventListener("change", () => {
+        persistChatSettings();
+      });
+
+      chatPromptEl.addEventListener("keydown", (event) => {
+        if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+          event.preventDefault();
+          if (state.conv && state.selected) {
+            submitChat("continue");
+          } else {
+            submitChat("new");
+          }
+        }
+      });
+
       (function restoreTheme() {
         try {
           const saved = localStorage.getItem("chatgpt_viewer_dark");
@@ -1989,6 +2476,18 @@
         } catch (err) {
           // ignore storage errors
         }
+      })();
+
+      (function restoreRenderFocus() {
+        try {
+          const saved = localStorage.getItem("chatgpt_viewer_focus_rendered");
+          if (saved === "1") {
+            state.focusRendered = true;
+          }
+        } catch (err) {
+          // ignore storage errors
+        }
+        applyRenderFocusState();
       })();
 
       (function restoreEscapeBrackets() {
@@ -2026,6 +2525,42 @@
           // ignore storage errors
         }
       })();
+
+      (function restoreChatSettings() {
+        try {
+          const savedModel = localStorage.getItem("chatgpt_viewer_chat_model");
+          if (savedModel && savedModel.trim()) {
+            chatModelEl.value = savedModel.trim();
+          }
+          const savedReasoning = localStorage.getItem("chatgpt_viewer_chat_reasoning");
+          if (
+            savedReasoning === "none" ||
+            savedReasoning === "low" ||
+            savedReasoning === "medium" ||
+            savedReasoning === "high" ||
+            savedReasoning === "xhigh"
+          ) {
+            chatReasoningEl.value = savedReasoning;
+          }
+          const savedVerbosity = localStorage.getItem("chatgpt_viewer_chat_verbosity");
+          if (savedVerbosity === "low" || savedVerbosity === "medium" || savedVerbosity === "high") {
+            chatVerbosityEl.value = savedVerbosity;
+          }
+          const savedBackground = localStorage.getItem("chatgpt_viewer_chat_background");
+          if (savedBackground === "1") {
+            chatBackgroundEl.checked = true;
+          }
+        } catch (err) {
+          // ignore storage errors
+        }
+      })();
+
+      window.addEventListener("beforeunload", () => {
+        stopChatPolling();
+      });
+
+      updateChatControls();
+      checkChatBackend();
 
       init().catch((err) => {
         convListEl.innerHTML = "";

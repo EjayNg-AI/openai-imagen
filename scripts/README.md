@@ -20,6 +20,10 @@ bundles outside those folders by default.
   - `viewer_data/conversations/<id>.json` (one file per conversation)
   - `viewer_data/assets.json` (asset pointer -> local file mapping)
   - `viewer_assets/` (offline renderer assets)
+- Supports live authoring via `scripts/chatgpt_viewer_server.py`, including:
+  - creating a new conversation directly in the built archive
+  - creating new turns in existing conversations by branching from the selected node
+  - persisting those additions back into `viewer_data/`
 
 ## Build (from repo root)
 
@@ -38,6 +42,14 @@ Optional explicit output directory:
 python3 scripts/build_chatgpt_viewer.py chatgpt_conversation_history_2026-01-27 --output-dir chatgpt_viewer_sites/custom-name
 ```
 
+Rebuild safety default:
+- Existing `viewer_data/` is preserved by default, so live-added conversations/turns are not overwritten on rebuild.
+- To fully regenerate `viewer_data/` from the raw export, pass:
+
+```bash
+python3 scripts/build_chatgpt_viewer.py chatgpt_conversation_history_2026-01-27 --no-preserve-viewer-data
+```
+
 ## Run (from the viewer output folder)
 
 ```bash
@@ -50,6 +62,41 @@ Then open:
 ```text
 http://localhost:8000/viewer.html
 ```
+
+## Live chat authoring (new + continue turns)
+
+Use the dedicated viewer server (not `python -m http.server`) when you want to:
+- create a new conversation inside the built archive
+- create new turns in an existing archive conversation from the selected tree node
+
+The server writes updates to `viewer_data/` in the selected viewer site folder.
+Those updates persist across browser reloads and server restarts because they are written to disk.
+
+Example:
+
+```bash
+python3 scripts/chatgpt_viewer_server.py --viewer-dir chatgpt_viewer_sites/chatgpt_conversation_history_2026-01-27 --port 8000
+```
+
+Then open:
+
+```text
+http://localhost:8000/viewer.html
+```
+
+Requirements:
+- `OPENAI_API_KEY` must be set
+- install dependencies from `requirements.txt`
+
+## Persistence + rebuild behavior
+
+- Live authoring writes to:
+  - `viewer_data/index.json`
+  - `viewer_data/conversations/<id>.json`
+- Default rebuild behavior is safe for live additions:
+  - `python3 scripts/build_chatgpt_viewer.py <export_dir>` preserves existing `viewer_data/` if present.
+- To intentionally discard live additions and regenerate `viewer_data/` from raw export:
+  - `python3 scripts/build_chatgpt_viewer.py <export_dir> --no-preserve-viewer-data`
 
 If you do not see changes after rebuilding, cache-bust:
 
@@ -80,7 +127,12 @@ http://localhost:8000/viewer.html?ts=1
 ## Git note
 
 - Raw exports like `chatgpt_conversation_history_YYYY-MM-DD/` are gitignored.
-- Build output in `chatgpt_viewer_sites/` is not gitignored, so it can be committed.
+- Build output in `chatgpt_viewer_sites/` can be committed.
+- Live-authored conversation updates in `viewer_data/` are committable, so you can push
+  new conversations/turns and continue from another machine.
+- Temporary files are gitignored:
+  - `viewer_data/*.tmp`
+  - `viewer_data/conversations/*.tmp`
 - Different raw export folders build to different default output folders, so
   builds can coexist without overwriting each other.
 - Legacy `chatgpt_viewer_site/` is deprecated and gitignored.

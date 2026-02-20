@@ -1,4 +1,10 @@
 flask
+blinker
+click
+itsdangerous
+jinja2
+markupsafe
+werkzeug
 python-dotenv
 openai
 pillow
@@ -6,4 +12,3 @@ python-chess
 pytest
 pytest-cov
 pytest-mock
-

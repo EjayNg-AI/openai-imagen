@@ -119,16 +119,22 @@ def extract_assets_json(chat_html_path):
                 buf += chunk
 
 
-def build_viewer(export_dir, output_dir):
+def has_existing_viewer_data(out_dir, conv_out_dir):
+    if not (out_dir / "index.json").exists():
+        return False
+    if not conv_out_dir.exists():
+        return False
+    if any(conv_out_dir.glob("*.json")):
+        return True
+    return (out_dir / "assets.json").exists()
+
+
+def build_viewer_data(export_dir, out_dir, conv_out_dir):
     conv_path = export_dir / "conversations.json"
     chat_path = export_dir / "chat.html"
     if not conv_path.exists():
         raise FileNotFoundError(f"Missing conversations.json in {export_dir}")
 
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    out_dir = output_dir / "viewer_data"
-    conv_out_dir = out_dir / "conversations"
     conv_out_dir.mkdir(parents=True, exist_ok=True)
     for stale_file in conv_out_dir.glob("*.json"):
         stale_file.unlink()
@@ -184,6 +190,30 @@ def build_viewer(export_dir, output_dir):
 
     with (out_dir / "assets.json").open("w", encoding="utf-8") as f:
         json.dump(assets, f, ensure_ascii=True, separators=(",", ":"))
+
+    return assets
+
+
+def build_viewer(export_dir, output_dir, preserve_viewer_data=True):
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    out_dir = output_dir / "viewer_data"
+    conv_out_dir = out_dir / "conversations"
+
+    if preserve_viewer_data and has_existing_viewer_data(out_dir, conv_out_dir):
+        print("Preserving existing viewer_data (index.json, conversations/, assets.json).")
+        assets_path = out_dir / "assets.json"
+        if assets_path.exists():
+            try:
+                assets = json.loads(assets_path.read_text(encoding="utf-8"))
+                if not isinstance(assets, dict):
+                    assets = {}
+            except Exception:
+                assets = {}
+        else:
+            assets = {}
+    else:
+        assets = build_viewer_data(export_dir, out_dir, conv_out_dir)
 
     copy_export_assets(export_dir, output_dir, assets)
     ensure_viewer_assets(output_dir)
@@ -380,6 +410,16 @@ def main():
             "Default: <repo>/chatgpt_viewer_sites/<export-folder-name>"
         ),
     )
+    parser.add_argument(
+        "--preserve-viewer-data",
+        dest="preserve_viewer_data",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help=(
+            "Preserve existing viewer_data on rebuild (default: enabled). "
+            "Use --no-preserve-viewer-data to fully regenerate viewer_data from conversations.json."
+        ),
+    )
     args = parser.parse_args()
 
     export_dir = Path(args.export_dir).expanduser().resolve()
@@ -391,7 +431,7 @@ def main():
         output_dir = Path(args.output_dir).expanduser().resolve()
     else:
         output_dir = default_output_dir_for_export(export_dir).resolve()
-    build_viewer(export_dir, output_dir)
+    build_viewer(export_dir, output_dir, preserve_viewer_data=args.preserve_viewer_data)
 
 
 if __name__ == "__main__":

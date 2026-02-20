@@ -24,3 +24,7 @@ saved_images/
 
 # Legacy ChatGPT viewer output (deprecated)
 /chatgpt_viewer_site/
+
+# ChatGPT viewer temporary runtime files
+/chatgpt_viewer_sites/**/viewer_data/*.tmp
+/chatgpt_viewer_sites/**/viewer_data/conversations/*.tmp

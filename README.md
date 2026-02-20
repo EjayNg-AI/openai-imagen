@@ -35,6 +35,10 @@ Generated or edited images are:
 ### Playgrounds
 
 - **Image playground** (run `python app.py`): dark-mode UI at `http://127.0.0.1:5000` for `images.generate` and `images.edit`. It validates prompts/background/format, saves returned images under `saved_images/`, and exposes both previews and saved URLs.
+- **ChatGPT archive viewer** (build with `python3 scripts/build_chatgpt_viewer.py <export_dir>`):
+  - Viewer artifacts are generated under `chatgpt_viewer_sites/<export-folder-name>/` by default.
+  - Live authoring (new conversation + new turns in existing conversations) is available via `python3 scripts/chatgpt_viewer_server.py --viewer-dir <site_dir> --port 8000`.
+  - Rebuilds are safe by default: existing `viewer_data/` (including live-added turns) is preserved unless you pass `--no-preserve-viewer-data`.
 - **Responses playground** (run `python scratchpad/examplecode.py` → `http://127.0.0.1:2357`):
   - `try.html` posts `{developer_message, user_message}` to `/api/responses`, which calls `responses.create` with a strict five-paragraph JSON schema. The backend extracts the paragraphs and returns them alongside the raw model dump; the UI pretty-prints both.
   - `prompt_runner.html` builds multi-turn conversations (developer/user/assistant rows) and POSTs `{messages:[...]}` to `/api/prompt-run`. The backend normalizes the array and forwards it to `responses.create` with text output + web search enabled. The UI shows only the assistant output, plus a “Last sent payload” box (with copy buttons) that reflects the exact parameters sent to OpenAI. System-message loader buttons pull sections from `scratchpad/system_messages_consolidated.md` via `/api/system-message/<key>` using keys: `approach-proposer`, `approach-evaluator`, `problem-solver`, `expert-evaluator`, `researcher`, `orchestrator`.

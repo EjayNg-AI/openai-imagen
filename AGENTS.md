@@ -45,6 +45,83 @@
 
 I will not delete/alter anything in this section unless I notify you beforehand.
 
+## [DO NOT DELETE/ALTER] Codex Restart Checkpoint - 2026-02-20
+
+### Scope completed in this session
+
+1. ChatGPT archive viewer now supports a **live composer UI** in `scripts/chatgpt_viewer_template.html` for:
+   - New conversation creation
+   - Continuing selected conversation node (branching from selected node)
+   - Model/reasoning/verbosity/background controls (saved in localStorage)
+   - Background polling and cancellation UX
+
+2. Added a dedicated backend server `scripts/chatgpt_viewer_server.py` that:
+   - Serves viewer static files from a built site folder
+   - Calls OpenAI Responses API for new/continue chat
+   - Persists generated turns into `viewer_data/` (`index.json` + `conversations/<id>.json`)
+   - Exposes endpoints:
+     - `POST /api/archive/chat/new`
+     - `POST /api/archive/chat/continue`
+     - `GET /api/archive/chat/background/<response_id>`
+     - `POST /api/archive/chat/background/<response_id>/cancel`
+     - `GET /api/archive/health`
+   - Enforces context normalization to user/assistant only and strict alternating sequence, with payload beginning and ending with user before API call.
+
+3. Updated docs in `scripts/README.md` with live server usage:
+   - `python3 scripts/chatgpt_viewer_server.py --viewer-dir <path> --port 8000`
+
+4. Rebuilt both tracked viewer outputs so template changes are reflected:
+   - `chatgpt_viewer_sites/chatgpt_conversation_history_2026-01-27/viewer.html`
+   - `chatgpt_viewer_sites/chatgpt_conversation_history_2026-02-20/viewer.html`
+
+5. Updated `requirements.txt` to explicitly include Flask core runtime deps plus dotenv:
+   - `flask`
+   - `blinker`
+   - `click`
+   - `itsdangerous`
+   - `jinja2`
+   - `markupsafe`
+   - `werkzeug`
+   - `python-dotenv`
+
+### Important runtime note
+
+- In this Codex environment, `flask` was not installed, so server runtime endpoints were not end-to-end exercised here.
+- `scripts/chatgpt_viewer_server.py` compile check passed (`py_compile`), and it now exits with a clear message if dependencies are missing.
+
+### Working tree state at checkpoint
+
+Modified tracked files:
+- `chatgpt_viewer_sites/chatgpt_conversation_history_2026-01-27/viewer.html`
+- `chatgpt_viewer_sites/chatgpt_conversation_history_2026-02-20/viewer.html`
+- `requirements.txt`
+- `scripts/README.md`
+- `scripts/chatgpt_viewer_template.html`
+
+Untracked files/folders currently present:
+- `scripts/chatgpt_viewer_server.py`
+- `cleanup_zone_ids.py`
+- `.agents/`
+
+### Resume procedure for next Codex session
+
+1. Install deps:
+   - `python -m pip install -r requirements.txt --upgrade`
+2. Start live viewer server (example):
+   - `python3 scripts/chatgpt_viewer_server.py --viewer-dir chatgpt_viewer_sites/chatgpt_conversation_history_2026-02-20 --port 8000`
+3. Open:
+   - `http://localhost:8000/viewer.html`
+4. Smoke-test:
+   - Create new conversation from composer.
+   - Continue selected node in existing conversation.
+   - Test both foreground and background modes.
+
+### Known follow-up checks (if needed)
+
+- Confirm strict alternation behavior against a few legacy conversations with mixed/system/tool nodes.
+- Confirm background job persistence happens exactly once on completion.
+- If committing, include both updated tracked `viewer.html` files since this repo tracks built viewer artifacts.
+
 
 ---
 
@@ -91,3 +168,13 @@ NOTE: This is for my reference after each coding session. The descriptions enter
 - Added `docs/background_mode_gpt52_codex_harness_summary.md` documenting the prior Codex harness background-mode test workflow, including unbuffered `-u` console behavior, outbound allowlist guidance, and a full verbatim copy of `scratchpad/background_mode_gpt52_test.py`.
 - Updated ChatGPT viewer build workflow to keep `chatgpt_conversation_history_YYYY-MM-DD/` exports fully gitignored while writing commit-ready viewer artifacts (later superseded by `chatgpt_viewer_sites/<export-folder-name>/`), including copied referenced assets and offline Markdown/LaTeX renderer assets.
 - Updated ChatGPT viewer default output routing to `chatgpt_viewer_sites/<export-folder-name>/` so builds from different raw export directories are isolated and do not overwrite each other.
+- Resumed from checkpoint and smoke-tested `scripts/chatgpt_viewer_server.py` locally: verified `/api/archive/health`, static `viewer.html`, and request validation behavior.
+- Ran end-to-end live chat authoring checks in a temporary viewer-site copy (to avoid repo mutations): foreground `chat/new`, foreground `chat/continue`, and background create+poll all returned successful persisted results.
+- Verified explicit outbound access path to `api.openai.com` with a minimal Responses API background create+retrieve test that completed successfully.
+- Added `--preserve-viewer-data` / `--no-preserve-viewer-data` to `scripts/build_chatgpt_viewer.py` with safe default preserve behavior so rebuilds do not overwrite live-added `viewer_data` conversations and turns.
+- Updated `scripts/README.md` build docs to document the new preserve-by-default behavior and full-regeneration opt-out flag.
+- Expanded `scripts/README.md` documentation to explicitly describe live authoring in existing archives (new conversations + new turns from selected nodes), on-disk persistence, and rebuild safety semantics.
+- Updated top-level `README.md` playground section with ChatGPT archive viewer workflow and preserve-by-default rebuild note (`--no-preserve-viewer-data` for full regeneration).
+- Updated `.gitignore` to ignore mutable live-authoring viewer data (`chatgpt_viewer_sites/**/viewer_data/index.json`, `conversations/*.json`, and `*.tmp`) so local turn additions are not accidentally staged as new files.
+- Updated `scripts/README.md` Git note to document the new `.gitignore` behavior for mutable `viewer_data` files.
+- Revised `.gitignore` policy to keep live `viewer_data` conversation/index JSON files committable for cross-device sync, while still ignoring only temporary `*.tmp` runtime files.
