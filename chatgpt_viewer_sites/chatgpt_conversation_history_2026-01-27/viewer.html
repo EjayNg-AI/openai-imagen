@@ -185,7 +185,8 @@
         letter-spacing: 0.6px;
       }
 
-      #chatModel {
+      #chatModel,
+      #chatTitle {
         border: 1px solid var(--border);
         background: var(--surface);
         border-radius: 999px;
@@ -685,6 +686,13 @@
       <div class="composer-row">
         <span class="composer-label">Model</span>
         <input id="chatModel" type="text" value="gpt-5.1" placeholder="gpt-5.1">
+        <span class="composer-label">Title (new)</span>
+        <input
+          id="chatTitle"
+          type="text"
+          maxlength="80"
+          placeholder="Optional short title (max 80 chars)"
+        >
         <span class="composer-label">Reasoning</span>
         <select id="chatReasoning" class="select">
           <option value="none">none</option>
@@ -897,6 +905,7 @@
 
     <script>
       const DATA_DIR = "viewer_data";
+      const CHAT_BACKGROUND_POLL_INTERVAL_MS = 10000;
 
       const state = {
         index: [],
@@ -917,6 +926,7 @@
         matchIds: new Set(),
         chatBackendReady: false,
         chatPendingResponseId: null,
+        chatPendingMode: null,
         chatPollHandle: null,
         chatBusy: false,
       };
@@ -942,6 +952,7 @@
       const renderPanelEl = document.getElementById("renderPanel");
       const renderedEl = document.getElementById("rendered");
       const chatModelEl = document.getElementById("chatModel");
+      const chatTitleEl = document.getElementById("chatTitle");
       const chatReasoningEl = document.getElementById("chatReasoning");
       const chatVerbosityEl = document.getElementById("chatVerbosity");
       const chatBackgroundEl = document.getElementById("chatBackground");
@@ -1015,6 +1026,7 @@
         const hasPending = Boolean(state.chatPendingResponseId);
 
         chatModelEl.disabled = !backendReady || busy;
+        chatTitleEl.disabled = !backendReady || busy;
         chatReasoningEl.disabled = !backendReady || busy;
         chatVerbosityEl.disabled = !backendReady || busy;
         chatBackgroundEl.disabled = !backendReady || busy;
@@ -1101,6 +1113,11 @@
           background: chatBackgroundEl.checked,
         };
 
+        const rawTitle = chatTitleEl.value.trim();
+        if (rawTitle.length > 80) {
+          throw new Error("Title must be 80 characters or fewer.");
+        }
+
         if (mode === "continue") {
           if (!state.conv || !state.conv.id) {
             throw new Error("Select a conversation to continue.");
@@ -1110,6 +1127,8 @@
           }
           payload.conversation_id = state.conv.id;
           payload.anchor_node_id = state.selected;
+        } else if (rawTitle) {
+          payload.title = rawTitle;
         }
         return payload;
       }
@@ -1130,6 +1149,8 @@
           }
 
           state.chatPendingResponseId = null;
+          const completedMode = state.chatPendingMode;
+          state.chatPendingMode = null;
           stopChatPolling();
           state.chatBusy = false;
 
@@ -1141,10 +1162,14 @@
 
           applyConversationUpdate(payload);
           chatPromptEl.value = "";
+          if (completedMode === "new") {
+            chatTitleEl.value = "";
+          }
           setChatStatus("Assistant response saved.", "success");
           updateChatControls();
         } catch (err) {
           state.chatPendingResponseId = null;
+          state.chatPendingMode = null;
           stopChatPolling();
           state.chatBusy = false;
           setChatStatus(err.message || "Background polling failed.", "error");
@@ -1152,13 +1177,14 @@
         }
       }
 
-      function startBackgroundChat(responseId) {
+      function startBackgroundChat(responseId, mode) {
         state.chatPendingResponseId = responseId;
+        state.chatPendingMode = mode;
         stopChatPolling();
-        setChatStatus("Background request started (" + responseId + ").", null);
+        setChatStatus("Background request started (" + responseId + "). Polling every 10s.", null);
         state.chatPollHandle = setInterval(() => {
           pollBackgroundChat(responseId);
-        }, 2000);
+        }, CHAT_BACKGROUND_POLL_INTERVAL_MS);
         pollBackgroundChat(responseId);
       }
 
@@ -1194,13 +1220,16 @@
           }
 
           if (data.done === false && data.response_id) {
-            startBackgroundChat(data.response_id);
+            startBackgroundChat(data.response_id, mode);
             updateChatControls();
             return;
           }
 
           applyConversationUpdate(data);
           chatPromptEl.value = "";
+          if (mode === "new") {
+            chatTitleEl.value = "";
+          }
           setChatStatus("Assistant response saved.", "success");
           state.chatBusy = false;
           updateChatControls();
@@ -1228,6 +1257,7 @@
           setChatStatus(err.message || "Cancel request failed.", "error");
         } finally {
           state.chatPendingResponseId = null;
+          state.chatPendingMode = null;
           state.chatBusy = false;
           stopChatPolling();
           updateChatControls();

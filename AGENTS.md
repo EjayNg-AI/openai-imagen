@@ -178,3 +178,13 @@ NOTE: This is for my reference after each coding session. The descriptions enter
 - Updated `.gitignore` to ignore mutable live-authoring viewer data (`chatgpt_viewer_sites/**/viewer_data/index.json`, `conversations/*.json`, and `*.tmp`) so local turn additions are not accidentally staged as new files.
 - Updated `scripts/README.md` Git note to document the new `.gitignore` behavior for mutable `viewer_data` files.
 - Revised `.gitignore` policy to keep live `viewer_data` conversation/index JSON files committable for cross-device sync, while still ignoring only temporary `*.tmp` runtime files.
+- Updated `scripts/chatgpt_viewer_server.py` model call payload so live archive authoring requests always include web search with `search_context_size: "high"` (and approximate user location), for both foreground and background flows.
+- Updated `scripts/README.md` and top-level `README.md` to document the always-on high-context web-search behavior for archive viewer live authoring calls.
+- Updated live archive composer/background behavior:
+  - Added optional short title input (max 80 chars) for new conversation creation in `scripts/chatgpt_viewer_template.html`.
+  - Added backend support for optional `title` in `POST /api/archive/chat/new` with validation and persistence for both foreground and background completion paths in `scripts/chatgpt_viewer_server.py`.
+  - Changed archive-viewer background polling cadence to 10 seconds in the viewer template.
+- Rebuilt tracked viewer outputs so both `chatgpt_viewer_sites/*/viewer.html` files include the new title input and 10-second background polling behavior.
+- Expanded viewer documentation coverage:
+  - Added a `Live API behavior` section in `scripts/README.md` documenting required/optional payload fields for `chat/new` and `chat/continue`, title fallback behavior, and background poll/cancel endpoints.
+  - Clarified in top-level `README.md` that omitted new-conversation titles default to prompt-derived titles.

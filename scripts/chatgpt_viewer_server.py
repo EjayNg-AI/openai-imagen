@@ -33,6 +33,15 @@ except ImportError:  # pragma: no cover
 
 VALID_REASONING = {"none", "low", "medium", "high", "xhigh"}
 VALID_VERBOSITY = {"low", "medium", "high"}
+MAX_CONVERSATION_TITLE_CHARS = 80
+
+
+def default_web_search_tool() -> Dict[str, object]:
+    return {
+        "type": "web_search",
+        "user_location": {"type": "approximate"},
+        "search_context_size": "high",
+    }
 
 
 def now_ts() -> float:
@@ -99,6 +108,21 @@ def normalize_prompt(value: object) -> str:
     text = value.strip()
     if not text:
         raise ValueError("prompt must not be empty.")
+    return text
+
+
+def normalize_optional_title(value: object) -> Optional[str]:
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise ValueError("title must be a string.")
+    text = " ".join(value.strip().split())
+    if not text:
+        return None
+    if len(text) > MAX_CONVERSATION_TITLE_CHARS:
+        raise ValueError(
+            f"title must be {MAX_CONVERSATION_TITLE_CHARS} characters or fewer."
+        )
     return text
 
 
@@ -330,6 +354,7 @@ class ChatService:
             "input": messages,
             "text": {"format": {"type": "text"}, "verbosity": text_verbosity},
             "reasoning": {"summary": None, "effort": reasoning_effort},
+            "tools": [default_web_search_tool()],
         }
         if background:
             payload["background"] = True
@@ -482,9 +507,9 @@ def title_from_prompt(prompt: str) -> str:
     text = " ".join(prompt.strip().split())
     if not text:
         return "(untitled)"
-    if len(text) <= 80:
+    if len(text) <= MAX_CONVERSATION_TITLE_CHARS:
         return text
-    return text[:77].rstrip() + "..."
+    return text[: MAX_CONVERSATION_TITLE_CHARS - 3].rstrip() + "..."
 
 
 def make_app(viewer_dir: Path) -> Flask:
@@ -505,6 +530,7 @@ def make_app(viewer_dir: Path) -> Flask:
 
         try:
             prompt = normalize_prompt(payload.get("prompt"))
+            custom_title = normalize_optional_title(payload.get("title"))
             model = payload.get("model") if isinstance(payload.get("model"), str) else "gpt-5.1"
             model = model.strip() or "gpt-5.1"
             reasoning_effort = normalize_choice(
@@ -517,6 +543,7 @@ def make_app(viewer_dir: Path) -> Flask:
         except ValueError as exc:
             return jsonify(ok=False, error=str(exc)), 400
 
+        conv_title = custom_title or title_from_prompt(prompt)
         messages = build_api_messages_from_turns([], prompt)
 
         try:
@@ -541,7 +568,7 @@ def make_app(viewer_dir: Path) -> Flask:
                     "mode": "new",
                     "prompt": prompt,
                     "model": model,
-                    "title": title_from_prompt(prompt),
+                    "title": conv_title,
                     "persisted": False,
                 },
             )
@@ -559,7 +586,7 @@ def make_app(viewer_dir: Path) -> Flask:
                 prompt,
                 assistant_text,
                 model=model,
-                title=title_from_prompt(prompt),
+                title=conv_title,
             )
         except Exception as exc:  # noqa: BLE001
             app.logger.exception("Failed to persist new conversation")

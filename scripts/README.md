@@ -67,10 +67,40 @@ http://localhost:8000/viewer.html
 
 Use the dedicated viewer server (not `python -m http.server`) when you want to:
 - create a new conversation inside the built archive
+- optionally provide a short title for a new conversation (max 80 chars)
 - create new turns in an existing archive conversation from the selected tree node
 
 The server writes updates to `viewer_data/` in the selected viewer site folder.
 Those updates persist across browser reloads and server restarts because they are written to disk.
+
+Model call policy for live authoring:
+- `POST /api/archive/chat/new` and `POST /api/archive/chat/continue` always enable the web search tool.
+- Search context size is always `high` (`search_context_size: "high"`).
+
+Background polling policy in the viewer UI:
+- Background response polling runs every 10 seconds.
+
+## Live API behavior
+
+`POST /api/archive/chat/new`
+- Required:
+  - `prompt` (string)
+- Optional:
+  - `title` (string, max 80 chars). If omitted/blank, title is derived from the prompt.
+  - `model`, `reasoning_effort`, `text_verbosity`, `background`
+
+`POST /api/archive/chat/continue`
+- Required:
+  - `conversation_id` (string)
+  - `anchor_node_id` (string)
+  - `prompt` (string)
+- Optional:
+  - `model`, `reasoning_effort`, `text_verbosity`, `background`
+
+Background flow:
+- Start with `background: true` on `chat/new` or `chat/continue`.
+- Poll `GET /api/archive/chat/background/<response_id>` until `done=true`.
+- Cancel via `POST /api/archive/chat/background/<response_id>/cancel`.
 
 Example:
 

@@ -38,6 +38,9 @@ Generated or edited images are:
 - **ChatGPT archive viewer** (build with `python3 scripts/build_chatgpt_viewer.py <export_dir>`):
   - Viewer artifacts are generated under `chatgpt_viewer_sites/<export-folder-name>/` by default.
   - Live authoring (new conversation + new turns in existing conversations) is available via `python3 scripts/chatgpt_viewer_server.py --viewer-dir <site_dir> --port 8000`.
+  - New conversations can include an optional short title (max 80 chars); if omitted, title is derived from the prompt.
+  - Background-mode polling in the viewer runs every 10 seconds.
+  - Live authoring model calls always enable web search with `search_context_size: "high"`.
   - Rebuilds are safe by default: existing `viewer_data/` (including live-added turns) is preserved unless you pass `--no-preserve-viewer-data`.
 - **Responses playground** (run `python scratchpad/examplecode.py` → `http://127.0.0.1:2357`):
   - `try.html` posts `{developer_message, user_message}` to `/api/responses`, which calls `responses.create` with a strict five-paragraph JSON schema. The backend extracts the paragraphs and returns them alongside the raw model dump; the UI pretty-prints both.
