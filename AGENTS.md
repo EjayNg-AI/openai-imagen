@@ -188,3 +188,8 @@ NOTE: This is for my reference after each coding session. The descriptions enter
 - Expanded viewer documentation coverage:
   - Added a `Live API behavior` section in `scripts/README.md` documenting required/optional payload fields for `chat/new` and `chat/continue`, title fallback behavior, and background poll/cancel endpoints.
   - Clarified in top-level `README.md` that omitted new-conversation titles default to prompt-derived titles.
+- Added a multi-archive hub flow to `scripts/chatgpt_viewer_server.py` with `--sites-root` mode, archive listing, archive-scoped live-chat endpoints, and blank archive creation from a hub UI.
+- Added `scripts/chatgpt_archive_hub_template.html` and updated `scripts/chatgpt_viewer_template.html` to auto-detect single vs multi-archive API routes.
+- Added repository-local renderer asset archive management (`scripts/viewer_asset_archive/` + `manifest.json` + `scripts/viewer_asset_utils.py`) and removed CDN fallback/download behavior from viewer runtime and build flow.
+- Rewrote `scripts/README.md` into a comprehensive CLI/API reference covering all command-line arguments for build/server/asset tooling, server modes/routes, payload schemas, workflows, and troubleshooting; aligned top-level `README.md` viewer section with complete argument summaries.
+- Added `docs/chatgpt_viewer_cli_cheat_sheet.md` as a single-page CLI command matrix and linked it from both `README.md` and `scripts/README.md`.

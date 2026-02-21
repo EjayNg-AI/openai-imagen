@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ChatGPT Archive Hub</title>
+    <style>
+      :root {
+        --bg-a: #f7f5ef;
+        --bg-b: #dfe8f2;
+        --panel: #ffffff;
+        --ink: #172030;
+        --muted: #5f6773;
+        --accent: #0f5fd6;
+        --accent-ink: #ffffff;
+        --border: #d8dde6;
+        --danger: #8c2727;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Avenir Next", "Segoe UI", Tahoma, sans-serif;
+        color: var(--ink);
+        min-height: 100vh;
+        background: radial-gradient(1000px 500px at 10% 0%, var(--bg-b), var(--bg-a));
+      }
+
+      .wrap {
+        width: min(1080px, 94vw);
+        margin: 28px auto 40px;
+      }
+
+      .hero {
+        padding: 22px;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: 0 8px 28px rgba(8, 24, 54, 0.08);
+      }
+
+      .hero h1 {
+        margin: 0;
+        font-size: 26px;
+        letter-spacing: 0.2px;
+      }
+
+      .hero p {
+        margin: 8px 0 0;
+        color: var(--muted);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: 16px;
+        margin-top: 16px;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 16px;
+        box-shadow: 0 6px 16px rgba(10, 20, 40, 0.06);
+      }
+
+      .panel h2 {
+        margin: 0 0 12px;
+        font-size: 16px;
+      }
+
+      .field-label {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      input[type="text"] {
+        width: 100%;
+        padding: 10px 11px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        font-size: 14px;
+      }
+
+      .btn-row {
+        margin-top: 10px;
+        display: flex;
+        gap: 8px;
+      }
+
+      button {
+        border: 1px solid transparent;
+        border-radius: 10px;
+        padding: 8px 11px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .btn-primary {
+        background: var(--accent);
+        color: var(--accent-ink);
+      }
+
+      .btn-ghost {
+        border-color: var(--border);
+        background: #f9fbff;
+        color: #17459a;
+      }
+
+      .status {
+        margin-top: 10px;
+        min-height: 18px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .status.error {
+        color: var(--danger);
+      }
+
+      .archive-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .archive-item {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 11px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .archive-name {
+        margin: 0;
+        font-size: 15px;
+      }
+
+      .archive-meta {
+        margin: 4px 0 0;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .archive-tag {
+        display: inline-block;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 11px;
+        border: 1px solid var(--border);
+        color: #5a6270;
+      }
+
+      @media (max-width: 900px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <header class="hero">
+        <h1>ChatGPT Archive Hub</h1>
+        <p>Browse existing archive viewers, or create a blank archive and start a fresh conversation set.</p>
+      </header>
+
+      <section class="grid">
+        <article class="panel">
+          <h2>Create Blank Archive</h2>
+          <label class="field-label" for="archiveName">Archive name</label>
+          <input id="archiveName" type="text" maxlength="80" placeholder="e.g. experiments-feb-2026">
+          <div class="btn-row">
+            <button id="createArchive" class="btn-primary" type="button">Create & Open</button>
+          </div>
+          <div id="createStatus" class="status"></div>
+        </article>
+
+        <article class="panel">
+          <div class="btn-row" style="margin-top:0; justify-content:space-between; align-items:center;">
+            <h2 style="margin:0;">Available Archives</h2>
+            <button id="refreshArchives" class="btn-ghost" type="button">Refresh</button>
+          </div>
+          <div id="archiveList" class="archive-list"></div>
+        </article>
+      </section>
+    </main>
+
+    <script>
+      const archiveNameEl = document.getElementById("archiveName");
+      const createArchiveEl = document.getElementById("createArchive");
+      const refreshArchivesEl = document.getElementById("refreshArchives");
+      const archiveListEl = document.getElementById("archiveList");
+      const createStatusEl = document.getElementById("createStatus");
+
+      function setCreateStatus(text, isError) {
+        createStatusEl.textContent = text || "";
+        createStatusEl.className = isError ? "status error" : "status";
+      }
+
+      function formatTime(ts) {
+        if (!ts) return "unknown update";
+        const d = new Date(ts * 1000);
+        if (Number.isNaN(d.getTime())) return "unknown update";
+        return d.toLocaleString();
+      }
+
+      function archiveOpenPath(slug) {
+        return "/archives/" + encodeURIComponent(slug) + "/viewer.html";
+      }
+
+      function renderArchives(list) {
+        archiveListEl.innerHTML = "";
+        if (!Array.isArray(list) || list.length === 0) {
+          archiveListEl.innerHTML = "<div class=\"status\">No archives found.</div>";
+          return;
+        }
+        list.forEach((item) => {
+          const row = document.createElement("div");
+          row.className = "archive-item";
+
+          const left = document.createElement("div");
+          const h3 = document.createElement("h3");
+          h3.className = "archive-name";
+          h3.textContent = item.title || item.slug || "(unnamed)";
+          left.appendChild(h3);
+
+          const meta = document.createElement("p");
+          meta.className = "archive-meta";
+          const convCount = typeof item.conversation_count === "number" ? item.conversation_count : 0;
+          meta.textContent = convCount + " conversations • updated " + formatTime(item.updated_at);
+          left.appendChild(meta);
+
+          if (item.is_blank) {
+            const tag = document.createElement("span");
+            tag.className = "archive-tag";
+            tag.textContent = "blank";
+            left.appendChild(tag);
+          }
+
+          row.appendChild(left);
+
+          const right = document.createElement("div");
+          const openBtn = document.createElement("button");
+          openBtn.type = "button";
+          openBtn.className = "btn-primary";
+          openBtn.textContent = "Open";
+          openBtn.addEventListener("click", () => {
+            window.location.href = archiveOpenPath(item.slug);
+          });
+          right.appendChild(openBtn);
+          row.appendChild(right);
+          archiveListEl.appendChild(row);
+        });
+      }
+
+      async function loadArchives() {
+        try {
+          const res = await fetch("/api/archives", { cache: "no-store" });
+          const payload = await res.json().catch(() => ({}));
+          if (!res.ok || !payload.ok) {
+            throw new Error(payload.error || "Failed to load archives.");
+          }
+          renderArchives(payload.archives || []);
+        } catch (err) {
+          archiveListEl.innerHTML = "";
+          const errorEl = document.createElement("div");
+          errorEl.className = "status error";
+          errorEl.textContent = err.message || "Failed to load archives.";
+          archiveListEl.appendChild(errorEl);
+        }
+      }
+
+      async function createArchive() {
+        const name = archiveNameEl.value.trim();
+        setCreateStatus("Creating archive...", false);
+        createArchiveEl.disabled = true;
+        try {
+          const res = await fetch("/api/archives", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name }),
+          });
+          const payload = await res.json().catch(() => ({}));
+          if (!res.ok || !payload.ok) {
+            throw new Error(payload.error || "Failed to create archive.");
+          }
+          setCreateStatus("Archive created. Opening...", false);
+          const openPath = payload.open_url || archiveOpenPath(payload.archive.slug);
+          window.location.href = openPath;
+        } catch (err) {
+          setCreateStatus(err.message || "Failed to create archive.", true);
+          createArchiveEl.disabled = false;
+        }
+      }
+
+      refreshArchivesEl.addEventListener("click", loadArchives);
+      createArchiveEl.addEventListener("click", createArchive);
+      archiveNameEl.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          createArchive();
+        }
+      });
+
+      loadArchives();
+    </script>
+  </body>
+</html>

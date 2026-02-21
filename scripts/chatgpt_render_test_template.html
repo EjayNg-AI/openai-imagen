@@ -242,63 +242,49 @@
           {
             type: "css",
             local: "viewer_assets/katex.min.css",
-            cdn: "https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css",
             id: "katexCss",
           },
           {
             type: "js",
             local: "viewer_assets/marked.min.js",
-            cdn: "https://cdn.jsdelivr.net/npm/marked/marked.min.js",
             global: "marked",
           },
           {
             type: "js",
             local: "viewer_assets/purify.min.js",
-            cdn: "https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js",
             global: "DOMPurify",
           },
           {
             type: "js",
             local: "viewer_assets/katex.min.js",
-            cdn: "https://cdn.jsdelivr.net/npm/katex/dist/katex.min.js",
             global: "katex",
           },
           {
             type: "js",
             local: "viewer_assets/auto-render.min.js",
-            cdn: "https://cdn.jsdelivr.net/npm/katex/dist/contrib/auto-render.min.js",
             global: "renderMathInElement",
           },
         ];
         const MATHJAX_ASSET = {
           type: "js",
           local: "viewer_assets/mathjax/tex-svg.js",
-          cdn: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js",
           global: "MathJax",
           readyCheck: () => window.MathJax && window.MathJax.typesetPromise,
         };
 
-        function loadCssWithFallback(item) {
+        function loadCssAsset(item) {
           return new Promise((resolve) => {
             const link = document.createElement("link");
             link.rel = "stylesheet";
             link.href = item.local;
             if (item.id) link.id = item.id;
             link.onload = () => resolve(true);
-            link.onerror = () => {
-              if (!item.cdn) return resolve(false);
-              const fallback = document.createElement("link");
-              fallback.rel = "stylesheet";
-              fallback.href = item.cdn;
-              fallback.onload = () => resolve(true);
-              fallback.onerror = () => resolve(false);
-              document.head.appendChild(fallback);
-            };
+            link.onerror = () => resolve(false);
             document.head.appendChild(link);
           });
         }
 
-        function loadScriptWithFallback(item) {
+        function loadScriptAsset(item) {
           if (item.readyCheck && item.readyCheck()) return Promise.resolve(true);
           if (item.global && window[item.global]) return Promise.resolve(true);
           return new Promise((resolve) => {
@@ -306,15 +292,7 @@
             script.src = item.local;
             script.async = false;
             script.onload = () => resolve(true);
-            script.onerror = () => {
-              if (!item.cdn) return resolve(false);
-              const fallback = document.createElement("script");
-              fallback.src = item.cdn;
-              fallback.async = false;
-              fallback.onload = () => resolve(true);
-              fallback.onerror = () => resolve(false);
-              document.head.appendChild(fallback);
-            };
+            script.onerror = () => resolve(false);
             document.head.appendChild(script);
           });
         }
@@ -322,13 +300,13 @@
         let libsPromise = null;
         window.ensureViewerLibs = function () {
           if (libsPromise) return libsPromise;
-          const cssPromise = loadCssWithFallback(ASSETS[0]);
+          const cssPromise = loadCssAsset(ASSETS[0]);
           libsPromise = cssPromise
-            .then(() => loadScriptWithFallback(ASSETS[1]))
-            .then(() => loadScriptWithFallback(ASSETS[2]))
-            .then(() => loadScriptWithFallback(ASSETS[3]))
-            .then(() => loadScriptWithFallback(ASSETS[4]))
-            .then(() => true)
+            .then((ok) => (ok ? loadScriptAsset(ASSETS[1]) : false))
+            .then((ok) => (ok ? loadScriptAsset(ASSETS[2]) : false))
+            .then((ok) => (ok ? loadScriptAsset(ASSETS[3]) : false))
+            .then((ok) => (ok ? loadScriptAsset(ASSETS[4]) : false))
+            .then((ok) => !!ok)
             .catch(() => false);
           return libsPromise;
         };
@@ -359,7 +337,7 @@
               _configured: true,
             };
           }
-          mathjaxPromise = loadScriptWithFallback(MATHJAX_ASSET)
+          mathjaxPromise = loadScriptAsset(MATHJAX_ASSET)
             .then(() => {
               if (window.MathJax && window.MathJax.startup && window.MathJax.startup.promise) {
                 return window.MathJax.startup.promise.then(() => true).catch(() => false);

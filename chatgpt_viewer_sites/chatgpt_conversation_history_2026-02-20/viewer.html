@@ -771,63 +771,67 @@
           {
             type: "css",
             local: "viewer_assets/katex.min.css",
-            cdn: "https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css",
             id: "katexCss",
           },
           {
             type: "js",
             local: "viewer_assets/marked.min.js",
-            cdn: "https://cdn.jsdelivr.net/npm/marked/marked.min.js",
             global: "marked",
           },
           {
             type: "js",
             local: "viewer_assets/purify.min.js",
-            cdn: "https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js",
             global: "DOMPurify",
           },
           {
             type: "js",
             local: "viewer_assets/katex.min.js",
-            cdn: "https://cdn.jsdelivr.net/npm/katex/dist/katex.min.js",
             global: "katex",
           },
           {
             type: "js",
             local: "viewer_assets/auto-render.min.js",
-            cdn: "https://cdn.jsdelivr.net/npm/katex/dist/contrib/auto-render.min.js",
             global: "renderMathInElement",
           },
         ];
         const MATHJAX_ASSET = {
           type: "js",
           local: "viewer_assets/mathjax/tex-svg.js",
-          cdn: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js",
           global: "MathJax",
           readyCheck: () => window.MathJax && window.MathJax.typesetPromise,
         };
 
-        function loadCssWithFallback(item) {
+        function showAssetBanner(message) {
+          if (document.getElementById("assetStatusBanner")) return;
+          const el = document.createElement("div");
+          el.id = "assetStatusBanner";
+          el.textContent = message;
+          el.style.position = "fixed";
+          el.style.top = "0";
+          el.style.left = "0";
+          el.style.right = "0";
+          el.style.zIndex = "9999";
+          el.style.background = "#5a1010";
+          el.style.color = "#fff";
+          el.style.padding = "8px 12px";
+          el.style.font = "600 13px/1.4 ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif";
+          el.style.textAlign = "center";
+          document.body.appendChild(el);
+        }
+
+        function loadCssAsset(item) {
           return new Promise((resolve) => {
             const link = document.createElement("link");
             link.rel = "stylesheet";
             link.href = item.local;
             if (item.id) link.id = item.id;
             link.onload = () => resolve(true);
-            link.onerror = () => {
-              if (!item.cdn) return resolve(false);
-              const fallback = document.createElement("link");
-              fallback.rel = "stylesheet";
-              fallback.href = item.cdn;
-              fallback.onload = () => resolve(true);
-              fallback.onerror = () => resolve(false);
-              document.head.appendChild(fallback);
-            };
+            link.onerror = () => resolve(false);
             document.head.appendChild(link);
           });
         }
 
-        function loadScriptWithFallback(item) {
+        function loadScriptAsset(item) {
           if (item.readyCheck && item.readyCheck()) return Promise.resolve(true);
           if (item.global && window[item.global]) return Promise.resolve(true);
           return new Promise((resolve) => {
@@ -835,15 +839,7 @@
             script.src = item.local;
             script.async = false;
             script.onload = () => resolve(true);
-            script.onerror = () => {
-              if (!item.cdn) return resolve(false);
-              const fallback = document.createElement("script");
-              fallback.src = item.cdn;
-              fallback.async = false;
-              fallback.onload = () => resolve(true);
-              fallback.onerror = () => resolve(false);
-              document.head.appendChild(fallback);
-            };
+            script.onerror = () => resolve(false);
             document.head.appendChild(script);
           });
         }
@@ -851,14 +847,26 @@
         let libsPromise = null;
         window.ensureViewerLibs = function () {
           if (libsPromise) return libsPromise;
-          const cssPromise = loadCssWithFallback(ASSETS[0]);
+          const cssPromise = loadCssAsset(ASSETS[0]);
           libsPromise = cssPromise
-            .then(() => loadScriptWithFallback(ASSETS[1]))
-            .then(() => loadScriptWithFallback(ASSETS[2]))
-            .then(() => loadScriptWithFallback(ASSETS[3]))
-            .then(() => loadScriptWithFallback(ASSETS[4]))
-            .then(() => true)
-            .catch(() => false);
+            .then((ok) => (ok ? loadScriptAsset(ASSETS[1]) : false))
+            .then((ok) => (ok ? loadScriptAsset(ASSETS[2]) : false))
+            .then((ok) => (ok ? loadScriptAsset(ASSETS[3]) : false))
+            .then((ok) => (ok ? loadScriptAsset(ASSETS[4]) : false))
+            .then((ok) => {
+              if (!ok) {
+                showAssetBanner(
+                  "Local renderer assets missing. Rendered mode is unavailable until viewer_assets/ is restored."
+                );
+              }
+              return !!ok;
+            })
+            .catch(() => {
+              showAssetBanner(
+                "Local renderer assets missing. Rendered mode is unavailable until viewer_assets/ is restored."
+              );
+              return false;
+            });
           return libsPromise;
         };
 
@@ -888,7 +896,7 @@
               _configured: true,
             };
           }
-          mathjaxPromise = loadScriptWithFallback(MATHJAX_ASSET)
+          mathjaxPromise = loadScriptAsset(MATHJAX_ASSET)
             .then(() => {
               if (window.MathJax && window.MathJax.startup && window.MathJax.startup.promise) {
                 return window.MathJax.startup.promise.then(() => true).catch(() => false);
@@ -906,6 +914,17 @@
     <script>
       const DATA_DIR = "viewer_data";
       const CHAT_BACKGROUND_POLL_INTERVAL_MS = 10000;
+
+      function detectArchiveApiBase() {
+        const path = window.location.pathname || "";
+        const match = path.match(/^\/archives\/([^/]+)(?:\/viewer\.html|\/?)$/);
+        if (match && match[1]) {
+          return "/api/archives/" + encodeURIComponent(match[1]);
+        }
+        return "/api/archive";
+      }
+
+      const ARCHIVE_API_BASE = detectArchiveApiBase();
 
       const state = {
         index: [],
@@ -1086,7 +1105,7 @@
 
       async function checkChatBackend() {
         try {
-          const res = await fetch("/api/archive/health", { cache: "no-store" });
+          const res = await fetch(ARCHIVE_API_BASE + "/health", { cache: "no-store" });
           if (!res.ok) throw new Error("backend unavailable");
           const payload = await res.json();
           if (!payload || !payload.ok) throw new Error("backend unavailable");
@@ -1136,7 +1155,7 @@
       async function pollBackgroundChat(responseId) {
         try {
           const res = await fetch(
-            "/api/archive/chat/background/" + encodeURIComponent(responseId),
+            ARCHIVE_API_BASE + "/chat/background/" + encodeURIComponent(responseId),
             { cache: "no-store" }
           );
           const payload = await res.json().catch(() => ({}));
@@ -1202,7 +1221,8 @@
           return;
         }
 
-        const endpoint = mode === "new" ? "/api/archive/chat/new" : "/api/archive/chat/continue";
+        const endpoint =
+          mode === "new" ? ARCHIVE_API_BASE + "/chat/new" : ARCHIVE_API_BASE + "/chat/continue";
 
         state.chatBusy = true;
         updateChatControls();
@@ -1245,7 +1265,7 @@
         const responseId = state.chatPendingResponseId;
         try {
           const res = await fetch(
-            "/api/archive/chat/background/" + encodeURIComponent(responseId) + "/cancel",
+            ARCHIVE_API_BASE + "/chat/background/" + encodeURIComponent(responseId) + "/cancel",
             { method: "POST" }
           );
           const payload = await res.json().catch(() => ({}));

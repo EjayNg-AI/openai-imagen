@@ -36,12 +36,18 @@ Generated or edited images are:
 
 - **Image playground** (run `python app.py`): dark-mode UI at `http://127.0.0.1:5000` for `images.generate` and `images.edit`. It validates prompts/background/format, saves returned images under `saved_images/`, and exposes both previews and saved URLs.
 - **ChatGPT archive viewer** (build with `python3 scripts/build_chatgpt_viewer.py <export_dir>`):
+  - CLI cheat sheet: `docs/chatgpt_viewer_cli_cheat_sheet.md`.
   - Viewer artifacts are generated under `chatgpt_viewer_sites/<export-folder-name>/` by default.
-  - Live authoring (new conversation + new turns in existing conversations) is available via `python3 scripts/chatgpt_viewer_server.py --viewer-dir <site_dir> --port 8000`.
+  - Live authoring single-archive mode: `python3 scripts/chatgpt_viewer_server.py --viewer-dir <site_dir> [--host 127.0.0.1] [--port 8000]`.
+  - Multi-archive hub mode: `python3 scripts/chatgpt_viewer_server.py --sites-root chatgpt_viewer_sites [--asset-archive-dir scripts/viewer_asset_archive] [--host 127.0.0.1] [--port 8000]`.
   - New conversations can include an optional short title (max 80 chars); if omitted, title is derived from the prompt.
   - Background-mode polling in the viewer runs every 10 seconds.
   - Live authoring model calls always enable web search with `search_context_size: "high"`.
+  - Renderer assets are sourced from repository-local `scripts/viewer_asset_archive/` and copied into each site's `viewer_assets/` (no CDN fallback).
   - Rebuilds are safe by default: existing `viewer_data/` (including live-added turns) is preserved unless you pass `--no-preserve-viewer-data`.
+  - Build CLI args: `python3 scripts/build_chatgpt_viewer.py <export_dir> [--output-dir <dir>] [--preserve-viewer-data|--no-preserve-viewer-data] [--asset-archive-dir <dir>]`.
+  - Asset-archive tooling: `python3 scripts/viewer_asset_utils.py [--archive-dir <dir>] [--write-manifest] [--verify]`.
+  - Full docs: `scripts/README.md`.
 - **Responses playground** (run `python scratchpad/examplecode.py` → `http://127.0.0.1:2357`):
   - `try.html` posts `{developer_message, user_message}` to `/api/responses`, which calls `responses.create` with a strict five-paragraph JSON schema. The backend extracts the paragraphs and returns them alongside the raw model dump; the UI pretty-prints both.
   - `prompt_runner.html` builds multi-turn conversations (developer/user/assistant rows) and POSTs `{messages:[...]}` to `/api/prompt-run`. The backend normalizes the array and forwards it to `responses.create` with text output + web search enabled. The UI shows only the assistant output, plus a “Last sent payload” box (with copy buttons) that reflects the exact parameters sent to OpenAI. System-message loader buttons pull sections from `scratchpad/system_messages_consolidated.md` via `/api/system-message/<key>` using keys: `approach-proposer`, `approach-evaluator`, `problem-solver`, `expert-evaluator`, `researcher`, `orchestrator`.

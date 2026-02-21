@@ -1,178 +1,304 @@
-# ChatGPT Export Viewer Builder
+# ChatGPT Archive Viewer Tooling
 
-This folder contains a builder script that turns a ChatGPT export
-(`conversations.json` + `chat.html`) into a static, searchable viewer.
+This directory contains the build/server tooling for ChatGPT conversation archive viewers.
 
-It keeps raw export folders ignored while writing commit-friendly viewer
-bundles outside those folders by default.
+Quick command matrix: `docs/chatgpt_viewer_cli_cheat_sheet.md`
 
-## What it does
+## Components
 
-- Reads `conversations.json` as a stream (safe for large files).
-- Extracts asset links from `chat.html`.
-- Copies referenced export assets into the output bundle so attachment links resolve.
-- Downloads offline rendering assets (Markdown + KaTeX + MathJax) into
-  `viewer_assets/` if missing. The viewer falls back to CDN assets if these
-  files are not present.
-- Writes:
-  - `viewer.html` (the UI)
-  - `viewer_data/index.json` (conversation metadata)
-  - `viewer_data/conversations/<id>.json` (one file per conversation)
-  - `viewer_data/assets.json` (asset pointer -> local file mapping)
-  - `viewer_assets/` (offline renderer assets)
-- Supports live authoring via `scripts/chatgpt_viewer_server.py`, including:
-  - creating a new conversation directly in the built archive
-  - creating new turns in existing conversations by branching from the selected node
-  - persisting those additions back into `viewer_data/`
+- `build_chatgpt_viewer.py`
+: Builds a static viewer site from one ChatGPT export folder.
+- `chatgpt_viewer_server.py`
+: Runs live authoring API + static hosting in either single-archive or multi-archive hub mode.
+- `viewer_asset_utils.py`
+: Verifies and maintains the canonical offline renderer asset archive manifest.
+- `chatgpt_viewer_template.html`
+: Viewer page template copied into each built archive.
+- `chatgpt_archive_hub_template.html`
+: Hub page template used by multi-archive mode.
+- `viewer_asset_archive/`
+: Canonical repository-local renderer assets.
 
-## Build (from repo root)
+## Renderer Asset Policy
 
-Default output directory is per-export:
-`chatgpt_viewer_sites/<export-folder-name>/`.
+Renderer dependencies are local-only and CDN-independent.
 
-Example:
+- Build/runtime do not download renderer assets from CDN.
+- Each archive site gets a local copy at `viewer_assets/`.
+- The canonical source is `scripts/viewer_asset_archive/`.
+- Integrity is enforced by `scripts/viewer_asset_archive/manifest.json`.
+- If local assets are missing at runtime, rendered mode is disabled and the viewer shows an explicit warning banner.
+
+## Command-Line Reference
+
+### `build_chatgpt_viewer.py`
+
+Usage:
+
+```bash
+python3 scripts/build_chatgpt_viewer.py \
+  [--output-dir OUTPUT_DIR] \
+  [--preserve-viewer-data | --no-preserve-viewer-data] \
+  [--asset-archive-dir ASSET_ARCHIVE_DIR] \
+  export_dir
+```
+
+Arguments:
+
+- `export_dir` (required positional)
+: Path to ChatGPT export folder (must contain `conversations.json`; optionally `chat.html`).
+- `--output-dir`, `-o`
+: Output site directory.
+  Default: `<repo>/chatgpt_viewer_sites/<export-folder-name>`.
+- `--preserve-viewer-data` / `--no-preserve-viewer-data`
+: Preserve existing `viewer_data/` on rebuild (default: preserve).
+- `--asset-archive-dir`
+: Canonical local renderer asset archive to copy from.
+  Default: `scripts/viewer_asset_archive`.
+
+Examples:
 
 ```bash
 python3 scripts/build_chatgpt_viewer.py chatgpt_conversation_history_2026-01-27
-```
-
-Optional explicit output directory:
-
-```bash
 python3 scripts/build_chatgpt_viewer.py chatgpt_conversation_history_2026-01-27 --output-dir chatgpt_viewer_sites/custom-name
-```
-
-Rebuild safety default:
-- Existing `viewer_data/` is preserved by default, so live-added conversations/turns are not overwritten on rebuild.
-- To fully regenerate `viewer_data/` from the raw export, pass:
-
-```bash
 python3 scripts/build_chatgpt_viewer.py chatgpt_conversation_history_2026-01-27 --no-preserve-viewer-data
+python3 scripts/build_chatgpt_viewer.py chatgpt_conversation_history_2026-01-27 --asset-archive-dir scripts/viewer_asset_archive
 ```
 
-## Run (from the viewer output folder)
+### `chatgpt_viewer_server.py`
+
+Usage:
 
 ```bash
+python3 scripts/chatgpt_viewer_server.py \
+  (--viewer-dir VIEWER_DIR | --sites-root SITES_ROOT) \
+  [--asset-archive-dir ASSET_ARCHIVE_DIR] \
+  [--host HOST] \
+  [--port PORT]
+```
+
+Arguments:
+
+- `--viewer-dir`, `-d`
+: Single-archive mode. Serve one built viewer site folder.
+- `--sites-root`
+: Multi-archive hub mode. Serve archive hub + archive-scoped routes for all site folders under root.
+- `--asset-archive-dir`
+: Canonical renderer archive used when creating blank archives in hub mode.
+  Default: `scripts/viewer_asset_archive`.
+- `--host`
+: Bind host. Default: `127.0.0.1`.
+- `--port`
+: Bind port. Default: `8000`.
+
+Examples:
+
+```bash
+# Single archive mode
+python3 scripts/chatgpt_viewer_server.py --viewer-dir chatgpt_viewer_sites/chatgpt_conversation_history_2026-01-27 --host 127.0.0.1 --port 8000
+
+# Multi-archive hub mode
+python3 scripts/chatgpt_viewer_server.py --sites-root chatgpt_viewer_sites --host 127.0.0.1 --port 8000
+
+# Multi-archive with explicit asset archive path
+python3 scripts/chatgpt_viewer_server.py --sites-root chatgpt_viewer_sites --asset-archive-dir scripts/viewer_asset_archive --port 8000
+```
+
+### `viewer_asset_utils.py`
+
+Usage:
+
+```bash
+python3 scripts/viewer_asset_utils.py \
+  [--archive-dir ARCHIVE_DIR] \
+  [--write-manifest] \
+  [--verify]
+```
+
+Arguments:
+
+- `--archive-dir`
+: Asset archive directory to operate on.
+  Default: `scripts/viewer_asset_archive`.
+- `--write-manifest`
+: Recompute and write `manifest.json` checksums.
+- `--verify`
+: Verify archive files against `manifest.json`.
+
+Examples:
+
+```bash
+python3 scripts/viewer_asset_utils.py --verify
+python3 scripts/viewer_asset_utils.py --write-manifest --verify
+```
+
+## Build Output Layout
+
+Each built site directory contains:
+
+- `viewer.html`
+- `render_test.html`
+- `viewer_data/index.json`
+- `viewer_data/assets.json`
+- `viewer_data/conversations/*.json`
+- `viewer_assets/*` (copied from canonical local archive)
+
+## Server Modes and Routes
+
+### Single-Archive Mode (`--viewer-dir`)
+
+Open:
+
+```text
+http://localhost:8000/viewer.html
+```
+
+Core routes:
+
+- `GET /api/archive/health`
+- `POST /api/archive/chat/new`
+- `POST /api/archive/chat/continue`
+- `GET /api/archive/chat/background/<response_id>`
+- `POST /api/archive/chat/background/<response_id>/cancel`
+
+### Multi-Archive Hub Mode (`--sites-root`)
+
+Open hub:
+
+```text
+http://localhost:8000/
+```
+
+Hub routes:
+
+- `GET /api/archives`
+: List archive sites discovered in `--sites-root`.
+- `POST /api/archives`
+: Create blank archive site and return open URL.
+
+Archive pages:
+
+- `GET /archives/<slug>/viewer.html`
+- `GET /archives/<slug>/<asset_path>`
+
+Archive-scoped live API routes:
+
+- `GET /api/archives/<slug>/health`
+- `POST /api/archives/<slug>/chat/new`
+- `POST /api/archives/<slug>/chat/continue`
+- `GET /api/archives/<slug>/chat/background/<response_id>`
+- `POST /api/archives/<slug>/chat/background/<response_id>/cancel`
+
+## Live Chat API Payloads
+
+### `chat/new`
+
+Required JSON fields:
+
+- `prompt` (string)
+
+Optional JSON fields:
+
+- `title` (string, max 80 chars)
+- `model` (string)
+- `reasoning_effort` (`none|low|medium|high|xhigh`)
+- `text_verbosity` (`low|medium|high`)
+- `background` (boolean)
+
+### `chat/continue`
+
+Required JSON fields:
+
+- `conversation_id` (string)
+- `anchor_node_id` (string)
+- `prompt` (string)
+
+Optional JSON fields:
+
+- `model` (string)
+- `reasoning_effort` (`none|low|medium|high|xhigh`)
+- `text_verbosity` (`low|medium|high`)
+- `background` (boolean)
+
+### Background flow
+
+- Submit `chat/new` or `chat/continue` with `background: true`.
+- Poll `.../chat/background/<response_id>` until `done=true`.
+- Optional cancel via `.../chat/background/<response_id>/cancel`.
+- Viewer UI polling interval: 10 seconds.
+
+## End-to-End Workflows
+
+### Build and serve static viewer
+
+```bash
+python3 scripts/build_chatgpt_viewer.py chatgpt_conversation_history_2026-01-27
 cd chatgpt_viewer_sites/chatgpt_conversation_history_2026-01-27
 python3 -m http.server 8000
+# open http://localhost:8000/viewer.html
 ```
 
-Then open:
-
-```text
-http://localhost:8000/viewer.html
-```
-
-## Live chat authoring (new + continue turns)
-
-Use the dedicated viewer server (not `python -m http.server`) when you want to:
-- create a new conversation inside the built archive
-- optionally provide a short title for a new conversation (max 80 chars)
-- create new turns in an existing archive conversation from the selected tree node
-
-The server writes updates to `viewer_data/` in the selected viewer site folder.
-Those updates persist across browser reloads and server restarts because they are written to disk.
-
-Model call policy for live authoring:
-- `POST /api/archive/chat/new` and `POST /api/archive/chat/continue` always enable the web search tool.
-- Search context size is always `high` (`search_context_size: "high"`).
-
-Background polling policy in the viewer UI:
-- Background response polling runs every 10 seconds.
-
-## Live API behavior
-
-`POST /api/archive/chat/new`
-- Required:
-  - `prompt` (string)
-- Optional:
-  - `title` (string, max 80 chars). If omitted/blank, title is derived from the prompt.
-  - `model`, `reasoning_effort`, `text_verbosity`, `background`
-
-`POST /api/archive/chat/continue`
-- Required:
-  - `conversation_id` (string)
-  - `anchor_node_id` (string)
-  - `prompt` (string)
-- Optional:
-  - `model`, `reasoning_effort`, `text_verbosity`, `background`
-
-Background flow:
-- Start with `background: true` on `chat/new` or `chat/continue`.
-- Poll `GET /api/archive/chat/background/<response_id>` until `done=true`.
-- Cancel via `POST /api/archive/chat/background/<response_id>/cancel`.
-
-Example:
+### Build and serve live single archive
 
 ```bash
+python3 scripts/build_chatgpt_viewer.py chatgpt_conversation_history_2026-01-27
 python3 scripts/chatgpt_viewer_server.py --viewer-dir chatgpt_viewer_sites/chatgpt_conversation_history_2026-01-27 --port 8000
+# open http://localhost:8000/viewer.html
 ```
 
-Then open:
+### Run multi-archive hub and create blank archives
 
-```text
-http://localhost:8000/viewer.html
+```bash
+python3 scripts/chatgpt_viewer_server.py --sites-root chatgpt_viewer_sites --port 8000
+# open http://localhost:8000/
 ```
 
-Requirements:
-- `OPENAI_API_KEY` must be set
-- install dependencies from `requirements.txt`
+Optional API create example:
 
-## Persistence + rebuild behavior
+```bash
+curl -sS -X POST http://127.0.0.1:8000/api/archives \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"my new archive"}'
+```
 
-- Live authoring writes to:
+## Requirements
+
+- `OPENAI_API_KEY` set in environment for live chat calls.
+- Python dependencies installed from `requirements.txt`.
+
+## Persistence and Rebuild Semantics
+
+- Live authoring updates:
   - `viewer_data/index.json`
   - `viewer_data/conversations/<id>.json`
-- Default rebuild behavior is safe for live additions:
-  - `python3 scripts/build_chatgpt_viewer.py <export_dir>` preserves existing `viewer_data/` if present.
-- To intentionally discard live additions and regenerate `viewer_data/` from raw export:
-  - `python3 scripts/build_chatgpt_viewer.py <export_dir> --no-preserve-viewer-data`
+- Default rebuild preserves existing `viewer_data/`.
+- Use `--no-preserve-viewer-data` to fully regenerate `viewer_data/` from export.
 
-If you do not see changes after rebuilding, cache-bust:
+## Git Notes
 
-```text
-http://localhost:8000/viewer.html?ts=1
-```
-
-The rendering test page is also generated:
-
-```text
-http://localhost:8000/render_test.html?ts=1
-```
-
-## Rebuild + reload sequence
-
-```bash
-python3 scripts/build_chatgpt_viewer.py chatgpt_conversation_history_2026-01-27
-cd chatgpt_viewer_sites/chatgpt_conversation_history_2026-01-27
-python3 -m http.server 8000
-```
-
-Then reload with:
-
-```text
-http://localhost:8000/viewer.html?ts=1
-```
-
-## Git note
-
-- Raw exports like `chatgpt_conversation_history_YYYY-MM-DD/` are gitignored.
-- Build output in `chatgpt_viewer_sites/` can be committed.
-- Live-authored conversation updates in `viewer_data/` are committable, so you can push
-  new conversations/turns and continue from another machine.
-- Temporary files are gitignored:
+- Raw exports (`chatgpt_conversation_history_YYYY-MM-DD/`) are gitignored.
+- Build output in `chatgpt_viewer_sites/` is committable.
+- Live-authored `viewer_data/*.json` can be committed for cross-device continuity.
+- Temporary files are ignored:
   - `viewer_data/*.tmp`
   - `viewer_data/conversations/*.tmp`
-- Different raw export folders build to different default output folders, so
-  builds can coexist without overwriting each other.
-- Legacy `chatgpt_viewer_site/` is deprecated and gitignored.
 
-## UI notes
+## Troubleshooting
 
-- Tree nodes are left-aligned (no hierarchy indentation).
-- System/tool content is hidden by default; toggle it on as needed.
-- Dark mode is available and persists in local storage.
-- The transcript auto-scrolls to the selected node.
-- Enable "Rendered view" for Markdown + LaTeX rendering (works offline once
-  `viewer_assets/` is present).
-- Use the math renderer dropdown to switch between KaTeX (HTML) and MathJax (SVG).
+- If rendered mode is unavailable, run:
+
+```bash
+python3 scripts/viewer_asset_utils.py --verify
+```
+
+- If the canonical archive was intentionally changed, run:
+
+```bash
+python3 scripts/viewer_asset_utils.py --write-manifest --verify
+```
+
+- If browser shows stale viewer content, cache-bust:
+
+```text
+http://localhost:8000/viewer.html?ts=1
+```

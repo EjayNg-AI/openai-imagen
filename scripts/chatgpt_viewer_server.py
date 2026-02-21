@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
-"""Local server for ChatGPT archive viewer with live chat authoring support."""
+"""Local server for ChatGPT archive viewer with single-archive and hub modes."""
 
 import argparse
 import json
 import os
+import re
+import shutil
 import threading
 import time
 import uuid
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+from urllib.parse import quote
 
 try:
     from flask import Flask, jsonify, request, send_from_directory
@@ -27,13 +30,21 @@ except ImportError as exc:  # pragma: no cover
 try:
     from dotenv import load_dotenv
 except ImportError:  # pragma: no cover
+
     def load_dotenv(*args, **kwargs):
         return False
+
+try:
+    from viewer_asset_utils import ASSET_ARCHIVE_DIR, copy_archive_to
+except ImportError:  # pragma: no cover
+    from scripts.viewer_asset_utils import ASSET_ARCHIVE_DIR, copy_archive_to
 
 
 VALID_REASONING = {"none", "low", "medium", "high", "xhigh"}
 VALID_VERBOSITY = {"low", "medium", "high"}
 MAX_CONVERSATION_TITLE_CHARS = 80
+MAX_ARCHIVE_INPUT_CHARS = 80
+ARCHIVE_DIR_NAME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 
 
 def default_web_search_tool() -> Dict[str, object]:
@@ -126,6 +137,19 @@ def normalize_optional_title(value: object) -> Optional[str]:
     return text
 
 
+def normalize_optional_archive_input(value: object, field_name: str) -> Optional[str]:
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise ValueError(f"{field_name} must be a string.")
+    text = " ".join(value.strip().split())
+    if not text:
+        return None
+    if len(text) > MAX_ARCHIVE_INPUT_CHARS:
+        raise ValueError(f"{field_name} must be {MAX_ARCHIVE_INPUT_CHARS} characters or fewer.")
+    return text
+
+
 def parse_bool(value: object, default: bool = False) -> bool:
     if value is None:
         return default
@@ -179,7 +203,9 @@ def normalize_turns(turns: List[Dict[str, str]]) -> List[Dict[str, str]]:
     filtered = [
         {"role": t["role"], "text": t["text"].strip()}
         for t in turns
-        if t.get("role") in {"user", "assistant"} and isinstance(t.get("text"), str) and t["text"].strip()
+        if t.get("role") in {"user", "assistant"}
+        and isinstance(t.get("text"), str)
+        and t["text"].strip()
     ]
 
     while filtered and filtered[0]["role"] != "user":
@@ -201,7 +227,9 @@ def normalize_turns(turns: List[Dict[str, str]]) -> List[Dict[str, str]]:
     return collapsed
 
 
-def build_api_messages_from_turns(turns: List[Dict[str, str]], prompt: str) -> List[Dict[str, object]]:
+def build_api_messages_from_turns(
+    turns: List[Dict[str, str]], prompt: str
+) -> List[Dict[str, object]]:
     normalized = normalize_turns(turns)
 
     # Ensure history ends at assistant so appending a new user keeps strict alternation.
@@ -210,7 +238,11 @@ def build_api_messages_from_turns(turns: List[Dict[str, str]], prompt: str) -> L
 
     normalized.append({"role": "user", "text": prompt})
 
-    if not normalized or normalized[0]["role"] != "user" or normalized[-1]["role"] != "user":
+    if (
+        not normalized
+        or normalized[0]["role"] != "user"
+        or normalized[-1]["role"] != "user"
+    ):
         raise ValueError("Conversation input must start and end with user.")
 
     for idx in range(1, len(normalized)):
@@ -299,7 +331,9 @@ class ArchiveStore:
         if not isinstance(mapping, dict):
             mapping = {}
         node_count = len(mapping)
-        message_count = sum(1 for node in mapping.values() if isinstance(node, dict) and node.get("message"))
+        message_count = sum(
+            1 for node in mapping.values() if isinstance(node, dict) and node.get("message")
+        )
         return {
             "id": conv.get("id"),
             "title": conv.get("title") or "(untitled)",
@@ -471,7 +505,13 @@ class ChatService:
                 anchor_node["children"] = children
             children.append(user_id)
 
-            mapping[user_id] = make_message_node(user_id, "user", prompt, anchor_node_id, timestamp)
+            mapping[user_id] = make_message_node(
+                user_id,
+                "user",
+                prompt,
+                anchor_node_id,
+                timestamp,
+            )
             mapping[assistant_id] = make_message_node(
                 assistant_id,
                 "assistant",
@@ -512,7 +552,425 @@ def title_from_prompt(prompt: str) -> str:
     return text[: MAX_CONVERSATION_TITLE_CHARS - 3].rstrip() + "..."
 
 
-def make_app(viewer_dir: Path) -> Flask:
+def slugify_archive_name(raw: str) -> str:
+    lowered = raw.strip().lower()
+    slug = re.sub(r"[^a-z0-9]+", "-", lowered)
+    slug = re.sub(r"-{2,}", "-", slug).strip("-")
+    if not slug:
+        slug = "blank-archive"
+    if len(slug) > 64:
+        slug = slug[:64].rstrip("-")
+    return slug or "blank-archive"
+
+
+def validate_archive_dir_name(value: str) -> str:
+    if not isinstance(value, str) or not value:
+        raise ValueError("archive id is required.")
+    if not ARCHIVE_DIR_NAME_PATTERN.fullmatch(value):
+        raise ValueError("archive id is invalid.")
+    return value
+
+
+def archive_title_from_slug(slug: str) -> str:
+    title = slug.replace("_", " ").replace("-", " ").strip()
+    return title or slug
+
+
+class ArchiveHub:
+    def __init__(
+        self,
+        sites_root: Path,
+        viewer_template_path: Path,
+        hub_template_path: Path,
+        *,
+        asset_archive_dir: Path = ASSET_ARCHIVE_DIR,
+    ):
+        self.sites_root = sites_root
+        self.viewer_template_path = viewer_template_path
+        self.hub_template_path = hub_template_path
+        self.asset_archive_dir = asset_archive_dir
+        self.lock = threading.Lock()
+        self._service_cache: Dict[str, Tuple[Path, ArchiveStore, ChatService]] = {}
+        self.sites_root.mkdir(parents=True, exist_ok=True)
+
+    @staticmethod
+    def _looks_like_archive_dir(viewer_dir: Path) -> bool:
+        data_dir = viewer_dir / "viewer_data"
+        return (
+            viewer_dir.is_dir()
+            and (viewer_dir / "viewer.html").is_file()
+            and data_dir.is_dir()
+            and (data_dir / "index.json").is_file()
+            and (data_dir / "conversations").is_dir()
+        )
+
+    def _archive_dir_for_slug(self, slug: str) -> Path:
+        safe_slug = validate_archive_dir_name(slug)
+        archive_dir = (self.sites_root / safe_slug).resolve()
+        if archive_dir.parent != self.sites_root.resolve():
+            raise ValueError("archive id resolves outside of sites root.")
+        return archive_dir
+
+    def _describe_archive(self, slug: str, archive_dir: Path) -> Dict[str, object]:
+        index_path = archive_dir / "viewer_data" / "index.json"
+        conversation_count = 0
+        max_update = 0.0
+
+        try:
+            payload = json.loads(index_path.read_text(encoding="utf-8"))
+            if isinstance(payload, list):
+                conversation_count = len(payload)
+                for row in payload:
+                    if not isinstance(row, dict):
+                        continue
+                    update_time = row.get("update_time")
+                    if isinstance(update_time, (int, float)):
+                        max_update = max(max_update, float(update_time))
+        except Exception:
+            conversation_count = 0
+
+        try:
+            max_update = max(max_update, archive_dir.stat().st_mtime)
+        except OSError:
+            pass
+
+        return {
+            "slug": slug,
+            "title": archive_title_from_slug(slug),
+            "conversation_count": conversation_count,
+            "updated_at": max_update,
+            "is_blank": conversation_count == 0,
+        }
+
+    def list_archives(self) -> List[Dict[str, object]]:
+        rows: List[Dict[str, object]] = []
+        if not self.sites_root.exists():
+            return rows
+        for child in self.sites_root.iterdir():
+            if not child.is_dir():
+                continue
+            slug = child.name
+            if not ARCHIVE_DIR_NAME_PATTERN.fullmatch(slug):
+                continue
+            if not self._looks_like_archive_dir(child):
+                continue
+            rows.append(self._describe_archive(slug, child))
+        rows.sort(key=lambda row: (row.get("updated_at") or 0, row.get("slug") or ""), reverse=True)
+        return rows
+
+    def _next_unique_slug(self, base_slug: str) -> str:
+        slug = base_slug
+        counter = 2
+        while (self.sites_root / slug).exists():
+            slug = f"{base_slug}-{counter}"
+            counter += 1
+        return slug
+
+    def create_blank_archive(self, *, name: Optional[str], slug: Optional[str]) -> Dict[str, object]:
+        with self.lock:
+            seed = slug or name or "blank-archive"
+            base_slug = slugify_archive_name(seed)
+            unique_slug = self._next_unique_slug(base_slug)
+            archive_dir = self.sites_root / unique_slug
+
+            try:
+                archive_dir.mkdir(parents=True, exist_ok=False)
+                viewer_html = archive_dir / "viewer.html"
+                viewer_html.write_text(
+                    self.viewer_template_path.read_text(encoding="utf-8"),
+                    encoding="utf-8",
+                )
+
+                data_dir = archive_dir / "viewer_data"
+                conv_dir = data_dir / "conversations"
+                conv_dir.mkdir(parents=True, exist_ok=True)
+                atomic_write_json(data_dir / "index.json", [])
+                atomic_write_json(data_dir / "assets.json", {})
+
+                copy_archive_to(archive_dir / "viewer_assets", archive_dir=self.asset_archive_dir)
+            except Exception:
+                shutil.rmtree(archive_dir, ignore_errors=True)
+                raise
+
+            self._service_cache.pop(unique_slug, None)
+            return self._describe_archive(unique_slug, archive_dir)
+
+    def get_archive(self, slug: str) -> Tuple[Path, ArchiveStore, ChatService]:
+        safe_slug = validate_archive_dir_name(slug)
+        archive_dir = self._archive_dir_for_slug(safe_slug)
+        if not self._looks_like_archive_dir(archive_dir):
+            raise FileNotFoundError(f"Archive not found: {safe_slug}")
+
+        with self.lock:
+            cached = self._service_cache.get(safe_slug)
+            if cached and cached[0] == archive_dir:
+                return cached
+
+            store = ArchiveStore(archive_dir)
+            store.require_ready()
+            service = ChatService(store)
+            cached = (archive_dir, store, service)
+            self._service_cache[safe_slug] = cached
+            return cached
+
+
+def process_chat_new(app: Flask, chat: ChatService, payload: Dict[str, object]) -> Tuple[Dict[str, object], int]:
+    try:
+        prompt = normalize_prompt(payload.get("prompt"))
+        custom_title = normalize_optional_title(payload.get("title"))
+        model = payload.get("model") if isinstance(payload.get("model"), str) else "gpt-5.1"
+        model = model.strip() or "gpt-5.1"
+        reasoning_effort = normalize_choice(payload.get("reasoning_effort"), VALID_REASONING, "high")
+        text_verbosity = normalize_choice(payload.get("text_verbosity"), VALID_VERBOSITY, "medium")
+        background = parse_bool(payload.get("background"), False)
+    except ValueError as exc:
+        return {"ok": False, "error": str(exc)}, 400
+
+    conv_title = custom_title or title_from_prompt(prompt)
+    messages = build_api_messages_from_turns([], prompt)
+
+    try:
+        response = chat.call_model(
+            messages,
+            model=model,
+            reasoning_effort=reasoning_effort,
+            text_verbosity=text_verbosity,
+            background=background,
+        )
+    except Exception as exc:  # noqa: BLE001
+        app.logger.exception("Failed to create model response for new conversation")
+        return {"ok": False, "error": str(exc)}, 500
+
+    if background:
+        response_id = getattr(response, "id", None)
+        if not isinstance(response_id, str) or not response_id:
+            return {"ok": False, "error": "No response_id returned for background request."}, 500
+        chat.start_background_job(
+            response_id,
+            {
+                "mode": "new",
+                "prompt": prompt,
+                "model": model,
+                "title": conv_title,
+                "persisted": False,
+            },
+        )
+        return {
+            "ok": True,
+            "background": True,
+            "response_id": response_id,
+            "status": getattr(response, "status", "queued"),
+            "done": False,
+        }, 200
+
+    assistant_text = extract_output_text(response)
+    try:
+        conv, index_entry, selected_node_id = chat.persist_new_conversation(
+            prompt,
+            assistant_text,
+            model=model,
+            title=conv_title,
+        )
+    except Exception as exc:  # noqa: BLE001
+        app.logger.exception("Failed to persist new conversation")
+        return {"ok": False, "error": str(exc)}, 500
+
+    return {
+        "ok": True,
+        "background": False,
+        "done": True,
+        "conversation": conv,
+        "index_entry": index_entry,
+        "selected_node_id": selected_node_id,
+        "output_text": assistant_text,
+    }, 200
+
+
+def process_chat_continue(
+    app: Flask,
+    store: ArchiveStore,
+    chat: ChatService,
+    payload: Dict[str, object],
+) -> Tuple[Dict[str, object], int]:
+    try:
+        conv_id = payload.get("conversation_id")
+        anchor_node_id = payload.get("anchor_node_id")
+        if not isinstance(conv_id, str) or not conv_id.strip():
+            raise ValueError("conversation_id is required.")
+        if not isinstance(anchor_node_id, str) or not anchor_node_id.strip():
+            raise ValueError("anchor_node_id is required.")
+        conv_id = conv_id.strip()
+        anchor_node_id = anchor_node_id.strip()
+
+        prompt = normalize_prompt(payload.get("prompt"))
+        model = payload.get("model") if isinstance(payload.get("model"), str) else "gpt-5.1"
+        model = model.strip() or "gpt-5.1"
+        reasoning_effort = normalize_choice(payload.get("reasoning_effort"), VALID_REASONING, "high")
+        text_verbosity = normalize_choice(payload.get("text_verbosity"), VALID_VERBOSITY, "medium")
+        background = parse_bool(payload.get("background"), False)
+    except ValueError as exc:
+        return {"ok": False, "error": str(exc)}, 400
+
+    try:
+        conv = store.load_conversation(conv_id)
+        turns = chat.build_turns_from_path(conv, anchor_node_id)
+        messages = build_api_messages_from_turns(turns, prompt)
+    except FileNotFoundError as exc:
+        return {"ok": False, "error": str(exc)}, 404
+    except ValueError as exc:
+        return {"ok": False, "error": str(exc)}, 400
+    except Exception as exc:  # noqa: BLE001
+        app.logger.exception("Failed to prepare continuation context")
+        return {"ok": False, "error": str(exc)}, 500
+
+    try:
+        response = chat.call_model(
+            messages,
+            model=model,
+            reasoning_effort=reasoning_effort,
+            text_verbosity=text_verbosity,
+            background=background,
+        )
+    except Exception as exc:  # noqa: BLE001
+        app.logger.exception("Failed to create model response for continuation")
+        return {"ok": False, "error": str(exc)}, 500
+
+    if background:
+        response_id = getattr(response, "id", None)
+        if not isinstance(response_id, str) or not response_id:
+            return {"ok": False, "error": "No response_id returned for background request."}, 500
+        chat.start_background_job(
+            response_id,
+            {
+                "mode": "continue",
+                "conversation_id": conv_id,
+                "anchor_node_id": anchor_node_id,
+                "prompt": prompt,
+                "model": model,
+                "persisted": False,
+            },
+        )
+        return {
+            "ok": True,
+            "background": True,
+            "response_id": response_id,
+            "status": getattr(response, "status", "queued"),
+            "done": False,
+        }, 200
+
+    assistant_text = extract_output_text(response)
+    try:
+        conv, index_entry, selected_node_id = chat.persist_continuation(
+            conv_id,
+            anchor_node_id,
+            prompt,
+            assistant_text,
+            model=model,
+        )
+    except FileNotFoundError as exc:
+        return {"ok": False, "error": str(exc)}, 404
+    except ValueError as exc:
+        return {"ok": False, "error": str(exc)}, 400
+    except Exception as exc:  # noqa: BLE001
+        app.logger.exception("Failed to persist continuation")
+        return {"ok": False, "error": str(exc)}, 500
+
+    return {
+        "ok": True,
+        "background": False,
+        "done": True,
+        "conversation": conv,
+        "index_entry": index_entry,
+        "selected_node_id": selected_node_id,
+        "output_text": assistant_text,
+    }, 200
+
+
+def process_background_poll(app: Flask, chat: ChatService, response_id: str) -> Tuple[Dict[str, object], int]:
+    if not response_id:
+        return {"ok": False, "error": "response_id is required."}, 400
+
+    job = chat.get_background_job(response_id)
+    if job is None:
+        return {"ok": False, "error": "Unknown background response_id."}, 404
+
+    try:
+        response = chat.get_client().responses.retrieve(response_id)
+    except Exception as exc:  # noqa: BLE001
+        app.logger.exception("Background poll failed")
+        return {"ok": False, "error": str(exc)}, 500
+
+    status = getattr(response, "status", "")
+    done = status in {"completed", "failed", "cancelled"}
+
+    if done and status == "completed":
+        persisted = bool(job.get("persisted"))
+        if not persisted:
+            assistant_text = extract_output_text(response)
+            try:
+                if job.get("mode") == "new":
+                    conv, index_entry, selected_node_id = chat.persist_new_conversation(
+                        job.get("prompt", ""),
+                        assistant_text,
+                        model=job.get("model", "gpt-5.1"),
+                        title=job.get("title", "(untitled)"),
+                    )
+                else:
+                    conv, index_entry, selected_node_id = chat.persist_continuation(
+                        job.get("conversation_id", ""),
+                        job.get("anchor_node_id", ""),
+                        job.get("prompt", ""),
+                        assistant_text,
+                        model=job.get("model", "gpt-5.1"),
+                    )
+                job["persisted"] = True
+                job["result"] = {
+                    "conversation": conv,
+                    "index_entry": index_entry,
+                    "selected_node_id": selected_node_id,
+                    "output_text": assistant_text,
+                }
+                chat.set_background_job(response_id, job)
+            except Exception as exc:  # noqa: BLE001
+                app.logger.exception("Failed to persist completed background job")
+                return {"ok": False, "error": str(exc), "status": status, "done": True}, 500
+
+        result = job.get("result") or {}
+        return {
+            "ok": True,
+            "status": status,
+            "done": True,
+            "conversation": result.get("conversation"),
+            "index_entry": result.get("index_entry"),
+            "selected_node_id": result.get("selected_node_id"),
+            "output_text": result.get("output_text", ""),
+        }, 200
+
+    return {
+        "ok": True,
+        "status": status,
+        "done": done,
+        "output_text": extract_output_text(response) if done and status == "completed" else "",
+    }, 200
+
+
+def process_background_cancel(app: Flask, chat: ChatService, response_id: str) -> Tuple[Dict[str, object], int]:
+    if not response_id:
+        return {"ok": False, "error": "response_id is required."}, 400
+    job = chat.get_background_job(response_id)
+    if job is None:
+        return {"ok": False, "error": "Unknown background response_id."}, 404
+    try:
+        response = chat.get_client().responses.cancel(response_id)
+    except Exception as exc:  # noqa: BLE001
+        app.logger.exception("Background cancellation failed")
+        return {"ok": False, "error": str(exc)}, 500
+    status = getattr(response, "status", "")
+    done = status in {"completed", "failed", "cancelled"}
+    return {"ok": True, "status": status, "done": done}, 200
+
+
+def make_single_archive_app(viewer_dir: Path) -> Flask:
     load_dotenv()
 
     app = Flask(__name__, static_folder=None)
@@ -527,266 +985,24 @@ def make_app(viewer_dir: Path) -> Flask:
     @app.post("/api/archive/chat/new")
     def create_new_conversation():
         payload = request.get_json(silent=True) or {}
-
-        try:
-            prompt = normalize_prompt(payload.get("prompt"))
-            custom_title = normalize_optional_title(payload.get("title"))
-            model = payload.get("model") if isinstance(payload.get("model"), str) else "gpt-5.1"
-            model = model.strip() or "gpt-5.1"
-            reasoning_effort = normalize_choice(
-                payload.get("reasoning_effort"), VALID_REASONING, "high"
-            )
-            text_verbosity = normalize_choice(
-                payload.get("text_verbosity"), VALID_VERBOSITY, "medium"
-            )
-            background = parse_bool(payload.get("background"), False)
-        except ValueError as exc:
-            return jsonify(ok=False, error=str(exc)), 400
-
-        conv_title = custom_title or title_from_prompt(prompt)
-        messages = build_api_messages_from_turns([], prompt)
-
-        try:
-            response = chat.call_model(
-                messages,
-                model=model,
-                reasoning_effort=reasoning_effort,
-                text_verbosity=text_verbosity,
-                background=background,
-            )
-        except Exception as exc:  # noqa: BLE001
-            app.logger.exception("Failed to create model response for new conversation")
-            return jsonify(ok=False, error=str(exc)), 500
-
-        if background:
-            response_id = getattr(response, "id", None)
-            if not isinstance(response_id, str) or not response_id:
-                return jsonify(ok=False, error="No response_id returned for background request."), 500
-            chat.start_background_job(
-                response_id,
-                {
-                    "mode": "new",
-                    "prompt": prompt,
-                    "model": model,
-                    "title": conv_title,
-                    "persisted": False,
-                },
-            )
-            return jsonify(
-                ok=True,
-                background=True,
-                response_id=response_id,
-                status=getattr(response, "status", "queued"),
-                done=False,
-            )
-
-        assistant_text = extract_output_text(response)
-        try:
-            conv, index_entry, selected_node_id = chat.persist_new_conversation(
-                prompt,
-                assistant_text,
-                model=model,
-                title=conv_title,
-            )
-        except Exception as exc:  # noqa: BLE001
-            app.logger.exception("Failed to persist new conversation")
-            return jsonify(ok=False, error=str(exc)), 500
-
-        return jsonify(
-            ok=True,
-            background=False,
-            done=True,
-            conversation=conv,
-            index_entry=index_entry,
-            selected_node_id=selected_node_id,
-            output_text=assistant_text,
-        )
+        result, status = process_chat_new(app, chat, payload)
+        return jsonify(result), status
 
     @app.post("/api/archive/chat/continue")
     def continue_conversation():
         payload = request.get_json(silent=True) or {}
-
-        try:
-            conv_id = payload.get("conversation_id")
-            anchor_node_id = payload.get("anchor_node_id")
-            if not isinstance(conv_id, str) or not conv_id.strip():
-                raise ValueError("conversation_id is required.")
-            if not isinstance(anchor_node_id, str) or not anchor_node_id.strip():
-                raise ValueError("anchor_node_id is required.")
-            conv_id = conv_id.strip()
-            anchor_node_id = anchor_node_id.strip()
-
-            prompt = normalize_prompt(payload.get("prompt"))
-            model = payload.get("model") if isinstance(payload.get("model"), str) else "gpt-5.1"
-            model = model.strip() or "gpt-5.1"
-            reasoning_effort = normalize_choice(
-                payload.get("reasoning_effort"), VALID_REASONING, "high"
-            )
-            text_verbosity = normalize_choice(
-                payload.get("text_verbosity"), VALID_VERBOSITY, "medium"
-            )
-            background = parse_bool(payload.get("background"), False)
-        except ValueError as exc:
-            return jsonify(ok=False, error=str(exc)), 400
-
-        try:
-            conv = store.load_conversation(conv_id)
-            turns = chat.build_turns_from_path(conv, anchor_node_id)
-            messages = build_api_messages_from_turns(turns, prompt)
-        except FileNotFoundError as exc:
-            return jsonify(ok=False, error=str(exc)), 404
-        except ValueError as exc:
-            return jsonify(ok=False, error=str(exc)), 400
-        except Exception as exc:  # noqa: BLE001
-            app.logger.exception("Failed to prepare continuation context")
-            return jsonify(ok=False, error=str(exc)), 500
-
-        try:
-            response = chat.call_model(
-                messages,
-                model=model,
-                reasoning_effort=reasoning_effort,
-                text_verbosity=text_verbosity,
-                background=background,
-            )
-        except Exception as exc:  # noqa: BLE001
-            app.logger.exception("Failed to create model response for continuation")
-            return jsonify(ok=False, error=str(exc)), 500
-
-        if background:
-            response_id = getattr(response, "id", None)
-            if not isinstance(response_id, str) or not response_id:
-                return jsonify(ok=False, error="No response_id returned for background request."), 500
-            chat.start_background_job(
-                response_id,
-                {
-                    "mode": "continue",
-                    "conversation_id": conv_id,
-                    "anchor_node_id": anchor_node_id,
-                    "prompt": prompt,
-                    "model": model,
-                    "persisted": False,
-                },
-            )
-            return jsonify(
-                ok=True,
-                background=True,
-                response_id=response_id,
-                status=getattr(response, "status", "queued"),
-                done=False,
-            )
-
-        assistant_text = extract_output_text(response)
-        try:
-            conv, index_entry, selected_node_id = chat.persist_continuation(
-                conv_id,
-                anchor_node_id,
-                prompt,
-                assistant_text,
-                model=model,
-            )
-        except FileNotFoundError as exc:
-            return jsonify(ok=False, error=str(exc)), 404
-        except ValueError as exc:
-            return jsonify(ok=False, error=str(exc)), 400
-        except Exception as exc:  # noqa: BLE001
-            app.logger.exception("Failed to persist continuation")
-            return jsonify(ok=False, error=str(exc)), 500
-
-        return jsonify(
-            ok=True,
-            background=False,
-            done=True,
-            conversation=conv,
-            index_entry=index_entry,
-            selected_node_id=selected_node_id,
-            output_text=assistant_text,
-        )
+        result, status = process_chat_continue(app, store, chat, payload)
+        return jsonify(result), status
 
     @app.get("/api/archive/chat/background/<response_id>")
     def poll_background(response_id: str):
-        if not response_id:
-            return jsonify(ok=False, error="response_id is required."), 400
-
-        job = chat.get_background_job(response_id)
-        if job is None:
-            return jsonify(ok=False, error="Unknown background response_id."), 404
-
-        try:
-            response = chat.get_client().responses.retrieve(response_id)
-        except Exception as exc:  # noqa: BLE001
-            app.logger.exception("Background poll failed")
-            return jsonify(ok=False, error=str(exc)), 500
-
-        status = getattr(response, "status", "")
-        done = status in {"completed", "failed", "cancelled"}
-
-        if done and status == "completed":
-            persisted = bool(job.get("persisted"))
-            if not persisted:
-                assistant_text = extract_output_text(response)
-                try:
-                    if job.get("mode") == "new":
-                        conv, index_entry, selected_node_id = chat.persist_new_conversation(
-                            job.get("prompt", ""),
-                            assistant_text,
-                            model=job.get("model", "gpt-5.1"),
-                            title=job.get("title", "(untitled)"),
-                        )
-                    else:
-                        conv, index_entry, selected_node_id = chat.persist_continuation(
-                            job.get("conversation_id", ""),
-                            job.get("anchor_node_id", ""),
-                            job.get("prompt", ""),
-                            assistant_text,
-                            model=job.get("model", "gpt-5.1"),
-                        )
-                    job["persisted"] = True
-                    job["result"] = {
-                        "conversation": conv,
-                        "index_entry": index_entry,
-                        "selected_node_id": selected_node_id,
-                        "output_text": assistant_text,
-                    }
-                    chat.set_background_job(response_id, job)
-                except Exception as exc:  # noqa: BLE001
-                    app.logger.exception("Failed to persist completed background job")
-                    return jsonify(ok=False, error=str(exc), status=status, done=True), 500
-
-            result = job.get("result") or {}
-            return jsonify(
-                ok=True,
-                status=status,
-                done=True,
-                conversation=result.get("conversation"),
-                index_entry=result.get("index_entry"),
-                selected_node_id=result.get("selected_node_id"),
-                output_text=result.get("output_text", ""),
-            )
-
-        payload = {
-            "ok": True,
-            "status": status,
-            "done": done,
-            "output_text": extract_output_text(response) if done and status == "completed" else "",
-        }
-        return jsonify(payload)
+        result, status = process_background_poll(app, chat, response_id)
+        return jsonify(result), status
 
     @app.post("/api/archive/chat/background/<response_id>/cancel")
     def cancel_background(response_id: str):
-        if not response_id:
-            return jsonify(ok=False, error="response_id is required."), 400
-        job = chat.get_background_job(response_id)
-        if job is None:
-            return jsonify(ok=False, error="Unknown background response_id."), 404
-        try:
-            response = chat.get_client().responses.cancel(response_id)
-        except Exception as exc:  # noqa: BLE001
-            app.logger.exception("Background cancellation failed")
-            return jsonify(ok=False, error=str(exc)), 500
-        status = getattr(response, "status", "")
-        done = status in {"completed", "failed", "cancelled"}
-        return jsonify(ok=True, status=status, done=done)
+        result, status = process_background_cancel(app, chat, response_id)
+        return jsonify(result), status
 
     @app.get("/")
     def serve_root():
@@ -801,27 +1017,186 @@ def make_app(viewer_dir: Path) -> Flask:
     return app
 
 
+def make_multi_archive_app(sites_root: Path, *, asset_archive_dir: Path = ASSET_ARCHIVE_DIR) -> Flask:
+    load_dotenv()
+
+    script_dir = Path(__file__).resolve().parent
+    viewer_template_path = script_dir / "chatgpt_viewer_template.html"
+    hub_template_path = script_dir / "chatgpt_archive_hub_template.html"
+    if not viewer_template_path.exists():
+        raise SystemExit(f"viewer template missing: {viewer_template_path}")
+    if not hub_template_path.exists():
+        raise SystemExit(f"hub template missing: {hub_template_path}")
+
+    hub = ArchiveHub(
+        sites_root=sites_root,
+        viewer_template_path=viewer_template_path,
+        hub_template_path=hub_template_path,
+        asset_archive_dir=asset_archive_dir,
+    )
+
+    app = Flask(__name__, static_folder=None)
+
+    def resolve_archive_or_response(archive_slug: str):
+        try:
+            archive_dir, store, chat = hub.get_archive(archive_slug)
+        except ValueError as exc:
+            return None, jsonify(ok=False, error=str(exc)), 400
+        except FileNotFoundError as exc:
+            return None, jsonify(ok=False, error=str(exc)), 404
+        except Exception as exc:  # noqa: BLE001
+            app.logger.exception("Failed to resolve archive")
+            return None, jsonify(ok=False, error=str(exc)), 500
+        return (archive_dir, store, chat), None, None
+
+    @app.get("/")
+    def serve_hub_root():
+        return send_from_directory(script_dir, hub_template_path.name)
+
+    @app.get("/api/archives")
+    def list_archives():
+        try:
+            archives = hub.list_archives()
+            return jsonify(ok=True, archives=archives, sites_root=str(sites_root))
+        except Exception as exc:  # noqa: BLE001
+            app.logger.exception("Failed to list archives")
+            return jsonify(ok=False, error=str(exc)), 500
+
+    @app.post("/api/archives")
+    def create_archive():
+        payload = request.get_json(silent=True) or {}
+        try:
+            name = normalize_optional_archive_input(payload.get("name"), "name")
+            slug = normalize_optional_archive_input(payload.get("slug"), "slug")
+            archive = hub.create_blank_archive(name=name, slug=slug)
+            open_url = f"/archives/{quote(archive['slug'])}/viewer.html"
+            return jsonify(ok=True, archive=archive, open_url=open_url)
+        except ValueError as exc:
+            return jsonify(ok=False, error=str(exc)), 400
+        except Exception as exc:  # noqa: BLE001
+            app.logger.exception("Failed to create blank archive")
+            return jsonify(ok=False, error=str(exc)), 500
+
+    @app.get("/archives/<archive_slug>/")
+    def serve_archive_root(archive_slug: str):
+        ctx, err_resp, status = resolve_archive_or_response(archive_slug)
+        if ctx is None:
+            return err_resp, status
+        archive_dir, _, _ = ctx
+        return send_from_directory(archive_dir, "viewer.html")
+
+    @app.get("/archives/<archive_slug>/viewer.html")
+    def serve_archive_viewer(archive_slug: str):
+        ctx, err_resp, status = resolve_archive_or_response(archive_slug)
+        if ctx is None:
+            return err_resp, status
+        archive_dir, _, _ = ctx
+        return send_from_directory(archive_dir, "viewer.html")
+
+    @app.get("/archives/<archive_slug>/<path:asset_path>")
+    def serve_archive_assets(archive_slug: str, asset_path: str):
+        if asset_path.startswith("api/"):
+            return jsonify(ok=False, error="Not found."), 404
+        ctx, err_resp, status = resolve_archive_or_response(archive_slug)
+        if ctx is None:
+            return err_resp, status
+        archive_dir, _, _ = ctx
+        return send_from_directory(archive_dir, asset_path)
+
+    @app.get("/api/archives/<archive_slug>/health")
+    def archive_health(archive_slug: str):
+        ctx, err_resp, status = resolve_archive_or_response(archive_slug)
+        if ctx is None:
+            return err_resp, status
+        archive_dir, _, _ = ctx
+        return jsonify(ok=True, viewer_dir=str(archive_dir), archive_slug=archive_slug)
+
+    @app.post("/api/archives/<archive_slug>/chat/new")
+    def archive_chat_new(archive_slug: str):
+        ctx, err_resp, status = resolve_archive_or_response(archive_slug)
+        if ctx is None:
+            return err_resp, status
+        _, _, chat = ctx
+        payload = request.get_json(silent=True) or {}
+        result, code = process_chat_new(app, chat, payload)
+        return jsonify(result), code
+
+    @app.post("/api/archives/<archive_slug>/chat/continue")
+    def archive_chat_continue(archive_slug: str):
+        ctx, err_resp, status = resolve_archive_or_response(archive_slug)
+        if ctx is None:
+            return err_resp, status
+        _, store, chat = ctx
+        payload = request.get_json(silent=True) or {}
+        result, code = process_chat_continue(app, store, chat, payload)
+        return jsonify(result), code
+
+    @app.get("/api/archives/<archive_slug>/chat/background/<response_id>")
+    def archive_chat_background_poll(archive_slug: str, response_id: str):
+        ctx, err_resp, status = resolve_archive_or_response(archive_slug)
+        if ctx is None:
+            return err_resp, status
+        _, _, chat = ctx
+        result, code = process_background_poll(app, chat, response_id)
+        return jsonify(result), code
+
+    @app.post("/api/archives/<archive_slug>/chat/background/<response_id>/cancel")
+    def archive_chat_background_cancel(archive_slug: str, response_id: str):
+        ctx, err_resp, status = resolve_archive_or_response(archive_slug)
+        if ctx is None:
+            return err_resp, status
+        _, _, chat = ctx
+        result, code = process_background_cancel(app, chat, response_id)
+        return jsonify(result), code
+
+    return app
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Serve a ChatGPT viewer site with live chat authoring support."
+        description=(
+            "Serve ChatGPT viewer(s) with live chat authoring support. "
+            "Use --viewer-dir for single-archive mode or --sites-root for multi-archive hub mode."
+        )
     )
-    parser.add_argument(
+
+    mode_group = parser.add_mutually_exclusive_group(required=True)
+    mode_group.add_argument(
         "--viewer-dir",
         "-d",
-        required=True,
-        help="Path to built viewer site folder (contains viewer.html and viewer_data).",
+        help="Path to a single built viewer site folder (contains viewer.html and viewer_data).",
+    )
+    mode_group.add_argument(
+        "--sites-root",
+        help=(
+            "Path to root folder containing many viewer site folders. "
+            "Hub mode serves archive list at /."
+        ),
+    )
+    parser.add_argument(
+        "--asset-archive-dir",
+        default=str(ASSET_ARCHIVE_DIR),
+        help=(
+            "Path to canonical offline renderer asset archive for blank archive creation "
+            f"(default: {ASSET_ARCHIVE_DIR})."
+        ),
     )
     parser.add_argument("--host", default="127.0.0.1", help="Bind host (default: 127.0.0.1).")
     parser.add_argument("--port", type=int, default=8000, help="Bind port (default: 8000).")
     args = parser.parse_args()
 
-    viewer_dir = Path(args.viewer_dir).expanduser().resolve()
-    if not viewer_dir.exists():
-        raise SystemExit(f"Viewer directory not found: {viewer_dir}")
-    if not (viewer_dir / "viewer.html").exists():
-        raise SystemExit(f"viewer.html missing in {viewer_dir}")
+    if args.viewer_dir:
+        viewer_dir = Path(args.viewer_dir).expanduser().resolve()
+        if not viewer_dir.exists():
+            raise SystemExit(f"Viewer directory not found: {viewer_dir}")
+        if not (viewer_dir / "viewer.html").exists():
+            raise SystemExit(f"viewer.html missing in {viewer_dir}")
+        app = make_single_archive_app(viewer_dir)
+    else:
+        sites_root = Path(args.sites_root).expanduser().resolve()
+        asset_archive_dir = Path(args.asset_archive_dir).expanduser().resolve()
+        app = make_multi_archive_app(sites_root, asset_archive_dir=asset_archive_dir)
 
-    app = make_app(viewer_dir)
     app.run(host=args.host, port=args.port, debug=os.getenv("FLASK_DEBUG") == "1")
 
 
