@@ -1,0 +1,1219 @@
+{
+  "id": "resp_0a0a4c396810fa3700699ad6ba17a881979d9086d495137cb2",
+  "created_at": 1771755194.0,
+  "error": null,
+  "incomplete_details": null,
+  "instructions": null,
+  "metadata": {},
+  "model": "gpt-5.2-2025-12-11",
+  "object": "response",
+  "output": [
+    {
+      "id": "rs_0a0a4c396810fa3700699ad6be970c8197b2befc0bc9e21be1",
+      "summary": [],
+      "type": "reasoning",
+      "content": null,
+      "encrypted_content": null,
+      "status": null
+    },
+    {
+      "id": "ws_0a0a4c396810fa3700699ad6e238ac8197b5ce53e6948d40f7",
+      "action": {
+        "query": "openclaw.ai install Node.js 22 requirement openclaw onboard --install-daemon",
+        "type": "search",
+        "queries": [
+          "openclaw.ai install Node.js 22 requirement openclaw onboard --install-daemon",
+          "clawd.bot Moltbot OpenClaw rename February 2026",
+          "OpenAI partnership OpenClaw Peter Steinberger foundation Feb 2026",
+          "Google Gemini Developer API model id gemini-3-flash-preview"
+        ],
+        "sources": null
+      },
+      "status": "completed",
+      "type": "web_search_call"
+    },
+    {
+      "id": "rs_0a0a4c396810fa3700699ad6e7097c8197bf65fff2c55ac4a7",
+      "summary": [],
+      "type": "reasoning",
+      "content": null,
+      "encrypted_content": null,
+      "status": null
+    },
+    {
+      "id": "ws_0a0a4c396810fa3700699ad6ea7cdc8197be04df46f2dacd73",
+      "action": {
+        "query": "site:openclaw.ai install.sh openclaw onboard --install-daemon",
+        "type": "search",
+        "queries": [
+          "site:openclaw.ai install.sh openclaw onboard --install-daemon",
+          "site:developers.google.com gemini-3-flash-preview model id",
+          "site:docs.aws.amazon.com AWS-StartPortForwardingSession parameters portNumber localPortNumber",
+          "vLLM api-key only protects /v1 endpoints unauthenticated endpoints"
+        ],
+        "sources": null
+      },
+      "status": "completed",
+      "type": "web_search_call"
+    },
+    {
+      "id": "rs_0a0a4c396810fa3700699ad6ece42c81978365fd60b088aa56",
+      "summary": [],
+      "type": "reasoning",
+      "content": null,
+      "encrypted_content": null,
+      "status": null
+    },
+    {
+      "id": "ws_0a0a4c396810fa3700699ad6eda73081978c77569f10a7c710",
+      "action": {
+        "query": "site:cloud.google.com gemini-3-flash-preview",
+        "type": "search",
+        "queries": [
+          "site:cloud.google.com gemini-3-flash-preview",
+          "site:ai.google.dev \"gemini-3-flash-preview\"",
+          "site:docs.aws.amazon.com AWS-StartPortForwardingSession \"portNumber\" \"localPortNumber\"",
+          "gpt-oss-20b context window 131072"
+        ],
+        "sources": null
+      },
+      "status": "completed",
+      "type": "web_search_call"
+    },
+    {
+      "id": "rs_0a0a4c396810fa3700699ad6f03ec48197a3a6b9dcaa91fefb",
+      "summary": [],
+      "type": "reasoning",
+      "content": null,
+      "encrypted_content": null,
+      "status": null
+    },
+    {
+      "id": "ws_0a0a4c396810fa3700699ad6f13de88197a13d644d0c2418bc",
+      "action": {
+        "query": "site:ai.google.dev models gemini-3-flash-preview",
+        "type": "search",
+        "queries": [
+          "site:ai.google.dev models gemini-3-flash-preview",
+          "site:ai.google.dev pricing gemini-2.5-flash 0.30 1M tokens",
+          "site:ai.google.dev \"Used to improve our products\" free tier",
+          "Gemini Developer API zero data retention paid services prompts responses not used to improve products"
+        ],
+        "sources": null
+      },
+      "status": "completed",
+      "type": "web_search_call"
+    },
+    {
+      "id": "rs_0a0a4c396810fa3700699ad6f736d081978d6091cbd21c5115",
+      "summary": [],
+      "type": "reasoning",
+      "content": null,
+      "encrypted_content": null,
+      "status": null
+    },
+    {
+      "id": "ws_0a0a4c396810fa3700699ad6f7e6508197bb7d96bd4d277c97",
+      "action": {
+        "query": "site:ai.google.dev \"gemini-3-flash-preview\"",
+        "type": "search",
+        "queries": [
+          "site:ai.google.dev \"gemini-3-flash-preview\"",
+          "site:ai.google.dev gemini 3 flash preview",
+          "site:ai.google.dev/gemini-api/docs/models gemini-3",
+          "gemini-3-flash-preview ai.google.dev models"
+        ],
+        "sources": null
+      },
+      "status": "completed",
+      "type": "web_search_call"
+    },
+    {
+      "id": "rs_0a0a4c396810fa3700699ad6fcca948197b86893ff8978653f",
+      "summary": [],
+      "type": "reasoning",
+      "content": null,
+      "encrypted_content": null,
+      "status": null
+    },
+    {
+      "id": "ws_0a0a4c396810fa3700699ad70059108197abb5fb3353fafe64",
+      "action": {
+        "query": "site:docs.openclaw.ai telegram dmPolicy pairing allowlist open",
+        "type": "search",
+        "queries": [
+          "site:docs.openclaw.ai telegram dmPolicy pairing allowlist open",
+          "site:docs.openclaw.ai dmScope per-channel-peer session",
+          "site:docs.openclaw.ai vllm provider baseUrl /v1 openai-completions",
+          "site:docs.openclaw.ai pairing code expires"
+        ],
+        "sources": null
+      },
+      "status": "completed",
+      "type": "web_search_call"
+    },
+    {
+      "id": "rs_0a0a4c396810fa3700699ad70309d88197a005847481e8c2cb",
+      "summary": [],
+      "type": "reasoning",
+      "content": null,
+      "encrypted_content": null,
+      "status": null
+    },
+    {
+      "id": "ws_0a0a4c396810fa3700699ad703d1448197ac2df194701ff24b",
+      "action": {
+        "query": "site:docs.openclaw.ai \"security audit\" openclaw",
+        "type": "search",
+        "queries": [
+          "site:docs.openclaw.ai \"security audit\" openclaw",
+          "site:docs.openclaw.ai skills plugins run in-process npm install scripts",
+          "ClawHub malicious skills OpenClaw 400",
+          "MoltBook OpenClaw AI agent social network infiltrated by humans"
+        ],
+        "sources": null
+      },
+      "status": "completed",
+      "type": "web_search_call"
+    },
+    {
+      "id": "rs_0a0a4c396810fa3700699ad70e3a38819789244c6ce6c75228",
+      "summary": [],
+      "type": "reasoning",
+      "content": null,
+      "encrypted_content": null,
+      "status": null
+    },
+    {
+      "id": "ws_0a0a4c396810fa3700699ad71de28881978339851fb21381c7",
+      "action": {
+        "query": "site:docs.openclaw.ai skills security npm install scripts",
+        "type": "search",
+        "queries": [
+          "site:docs.openclaw.ai skills security npm install scripts",
+          "site:docs.openclaw.ai plugins run in-process",
+          "site:docs.openclaw.ai skills registry ClawHub",
+          "site:docs.openclaw.ai \"curl | sh\" installer internals sha-256"
+        ],
+        "sources": null
+      },
+      "status": "completed",
+      "type": "web_search_call"
+    },
+    {
+      "id": "rs_0a0a4c396810fa3700699ad723c40c81978d60f3c9c415c63b",
+      "summary": [],
+      "type": "reasoning",
+      "content": null,
+      "encrypted_content": null,
+      "status": null
+    },
+    {
+      "id": "ws_0a0a4c396810fa3700699ad72ab2a48197b82b81e9bffa6f84",
+      "action": {
+        "query": "Gemini API available in Singapore region ai.google.dev",
+        "type": "search",
+        "queries": [
+          "Gemini API available in Singapore region ai.google.dev",
+          "ai.google.dev Gemini API regions Singapore",
+          "Vertex AI Gemini regions Singapore",
+          "Google AI Studio Gemini API supported countries Singapore"
+        ],
+        "sources": null
+      },
+      "status": "completed",
+      "type": "web_search_call"
+    },
+    {
+      "id": "rs_0a0a4c396810fa3700699ad7304a1881978e5ebfc57571b3a8",
+      "summary": [],
+      "type": "reasoning",
+      "content": null,
+      "encrypted_content": null,
+      "status": null
+    },
+    {
+      "id": "ws_0a0a4c396810fa3700699ad737d7a08197b3813d19269b39c5",
+      "action": {
+        "query": "Moltbook OpenClaw skill API post via curl command",
+        "type": "search",
+        "queries": [
+          "Moltbook OpenClaw skill API post via curl command",
+          "Wired infiltrated Moltbook AI-only social network curl command prompt",
+          "NBC News Moltbook front page of agent internet curl command",
+          "moltbook.com API posting skill OpenClaw"
+        ],
+        "sources": null
+      },
+      "status": "completed",
+      "type": "web_search_call"
+    },
+    {
+      "id": "rs_0a0a4c396810fa3700699ad73bd2dc8197851be3698c937edd",
+      "summary": [],
+      "type": "reasoning",
+      "content": null,
+      "encrypted_content": null,
+      "status": null
+    },
+    {
+      "id": "ws_0a0a4c396810fa3700699ad73d6ad08197bbb6a5c3ad35d1ac",
+      "action": {
+        "query": "fake Moltbot VS Code extension malware",
+        "type": "search",
+        "queries": [
+          "fake Moltbot VS Code extension malware",
+          "OpenClaw fake VS Code extension malware",
+          "Moltbot malware fake package extension",
+          "OpenClaw Atomic Stealer malicious skills campaign ClawHavoc"
+        ],
+        "sources": null
+      },
+      "status": "completed",
+      "type": "web_search_call"
+    },
+    {
+      "id": "rs_0a0a4c396810fa3700699ad743b12c8197aca893f1d04ba978",
+      "summary": [],
+      "type": "reasoning",
+      "content": null,
+      "encrypted_content": null,
+      "status": null
+    },
+    {
+      "id": "ws_0a0a4c396810fa3700699ad74520e481978ad60a90eb44e027",
+      "action": {
+        "query": "fake Moltbot VS Code extension ScreenConnect",
+        "type": "search",
+        "queries": [
+          "fake Moltbot VS Code extension ScreenConnect",
+          "\"clawdbot.clawdbot-agent\" VS Code extension malware",
+          "BleepingComputer Moltbot VS Code extension malware",
+          "Hudson Rock infostealer OpenClaw config extracted"
+        ],
+        "sources": null
+      },
+      "status": "completed",
+      "type": "web_search_call"
+    },
+    {
+      "id": "rs_0a0a4c396810fa3700699ad749d6608197b82f5a51e2c65df3",
+      "summary": [],
+      "type": "reasoning",
+      "content": null,
+      "encrypted_content": null,
+      "status": null
+    },
+    {
+      "id": "ws_0a0a4c396810fa3700699ad74e291881979c921c23815ea719",
+      "action": {
+        "query": "WSL systemd support version 0.67.6",
+        "type": "search",
+        "queries": [
+          "WSL systemd support version 0.67.6",
+          "Microsoft WSL systemd=true /etc/wsl.conf",
+          "wsl --shutdown systemd enable /etc/wsl.conf [boot] systemd=true",
+          "OpenClaw WSL2 systemd user unit openclaw-gateway"
+        ],
+        "sources": null
+      },
+      "status": "completed",
+      "type": "web_search_call"
+    },
+    {
+      "id": "rs_0a0a4c396810fa3700699ad7531ccc81978ab815565c94e35b",
+      "summary": [],
+      "type": "reasoning",
+      "content": null,
+      "encrypted_content": null,
+      "status": null
+    },
+    {
+      "id": "ws_0a0a4c396810fa3700699ad761e160819783f44c5ef8f82d3e",
+      "action": {
+        "query": "CVE-2026-22778 vLLM",
+        "type": "search",
+        "queries": [
+          "CVE-2026-22778 vLLM",
+          "vLLM CVE-2026-22778",
+          "site:nvd.nist.gov vLLM CVE 2026",
+          "vLLM security advisory 2026"
+        ],
+        "sources": null
+      },
+      "status": "completed",
+      "type": "web_search_call"
+    },
+    {
+      "id": "rs_0a0a4c396810fa3700699ad7668be08197841d0a2fcc486117",
+      "summary": [],
+      "type": "reasoning",
+      "content": null,
+      "encrypted_content": null,
+      "status": null
+    },
+    {
+      "id": "ws_0a0a4c396810fa3700699ad77e75808197bf23f6924638f992",
+      "action": {
+        "query": "site:docs.openclaw.ai NO_REPLY token",
+        "type": "search",
+        "queries": [
+          "site:docs.openclaw.ai NO_REPLY token",
+          "site:docs.openclaw.ai whatsapp message send E.164",
+          "site:docs.openclaw.ai message send --target",
+          "OpenClaw \"NO_REPLY\" suppress reply"
+        ],
+        "sources": null
+      },
+      "status": "completed",
+      "type": "web_search_call"
+    },
+    {
+      "id": "rs_0a0a4c396810fa3700699ad7828f4c8197a90bba10d89a0a52",
+      "summary": [],
+      "type": "reasoning",
+      "content": null,
+      "encrypted_content": null,
+      "status": null
+    },
+    {
+      "id": "ws_0a0a4c396810fa3700699ad784351c81979a3b52ad14f6511c",
+      "action": {
+        "query": "site:docs.openclaw.ai channels whatsapp accounts accountId",
+        "type": "search",
+        "queries": [
+          "site:docs.openclaw.ai channels whatsapp accounts accountId",
+          "site:docs.openclaw.ai --account whatsapp accounts",
+          "site:docs.openclaw.ai channels login --account",
+          "site:docs.openclaw.ai multi-account whatsapp"
+        ],
+        "sources": null
+      },
+      "status": "completed",
+      "type": "web_search_call"
+    },
+    {
+      "id": "rs_0a0a4c396810fa3700699ad78855b4819788d40603d1e734e7",
+      "summary": [],
+      "type": "reasoning",
+      "content": null,
+      "encrypted_content": null,
+      "status": null
+    },
+    {
+      "id": "ws_0a0a4c396810fa3700699ad789dc388197998cef001a5ccdfa",
+      "action": {
+        "query": "site:docs.openclaw.ai Gmail Pub/Sub gog",
+        "type": "search",
+        "queries": [
+          "site:docs.openclaw.ai Gmail Pub/Sub gog",
+          "site:docs.openclaw.ai webhooks gmail setup run",
+          "gog gmail watch serve OpenClaw webhook",
+          "gogcli gmail search newer_than:7d --json"
+        ],
+        "sources": null
+      },
+      "status": "completed",
+      "type": "web_search_call"
+    },
+    {
+      "id": "rs_0a0a4c396810fa3700699ad78f3ce081979030d3fb07e3a8e6",
+      "summary": [],
+      "type": "reasoning",
+      "content": null,
+      "encrypted_content": null,
+      "status": null
+    },
+    {
+      "id": "ws_0a0a4c396810fa3700699ad7905e5881979d461ffe905078d5",
+      "action": {
+        "query": "site:docs.openclaw.ai Ollama OLLAMA_API_KEY",
+        "type": "search",
+        "queries": [
+          "site:docs.openclaw.ai Ollama OLLAMA_API_KEY",
+          "site:docs.openclaw.ai provider ollama apiKey",
+          "site:docs.openclaw.ai models providers ollama baseUrl 11434",
+          "OpenClaw Ollama provider openai-completions baseUrl 11434"
+        ],
+        "sources": null
+      },
+      "status": "completed",
+      "type": "web_search_call"
+    },
+    {
+      "id": "rs_0a0a4c396810fa3700699ad79532508197a2e856526c6241eb",
+      "summary": [],
+      "type": "reasoning",
+      "content": null,
+      "encrypted_content": null,
+      "status": null
+    },
+    {
+      "id": "ws_0a0a4c396810fa3700699ad7962ff881979fe630391478e1d4",
+      "action": {
+        "query": "site:docs.openclaw.ai providers ollama",
+        "type": "search",
+        "queries": [
+          "site:docs.openclaw.ai providers ollama",
+          "site:docs.openclaw.ai OLLAMA_API_KEY",
+          "site:docs.openclaw.ai \"Ollama\" \"11434\"",
+          "site:docs.openclaw.ai model providers hub ollama"
+        ],
+        "sources": null
+      },
+      "status": "completed",
+      "type": "web_search_call"
+    },
+    {
+      "id": "rs_0a0a4c396810fa3700699ad79ae0188197bf2f732fabd1e4ef",
+      "summary": [],
+      "type": "reasoning",
+      "content": null,
+      "encrypted_content": null,
+      "status": null
+    },
+    {
+      "id": "ws_0a0a4c396810fa3700699ad79d91548197a51b9bdb802cc1a3",
+      "action": {
+        "query": "AWS EC2 G5 instance A10G 24 GB",
+        "type": "search",
+        "queries": [
+          "AWS EC2 G5 instance A10G 24 GB",
+          "AWS EC2 P5.4xlarge H100 80GB",
+          "Amazon EC2 G5 instance specifications A10G memory 24 GiB",
+          "Amazon EC2 P5 instance specifications NVIDIA H100 80 GB"
+        ],
+        "sources": null
+      },
+      "status": "completed",
+      "type": "web_search_call"
+    },
+    {
+      "id": "rs_0a0a4c396810fa3700699ad7a5a5608197bb75e971ca0cbbf5",
+      "summary": [],
+      "type": "reasoning",
+      "content": null,
+      "encrypted_content": null,
+      "status": null
+    },
+    {
+      "id": "ws_0a0a4c396810fa3700699ad7a727e48197a2ed3107e8058d12",
+      "action": {
+        "query": "OpenAI gpt-oss MXFP4 quantization single 80GB GPU",
+        "type": "search",
+        "queries": [
+          "OpenAI gpt-oss MXFP4 quantization single 80GB GPU",
+          "site:openai.com gpt-oss MXFP4",
+          "vLLM gpt-oss MXFP4",
+          "o200k_harmony tokenizer gpt-oss"
+        ],
+        "sources": null
+      },
+      "status": "completed",
+      "type": "web_search_call"
+    },
+    {
+      "id": "rs_0a0a4c396810fa3700699ad7ae880c8197b64367c8ba5fec6b",
+      "summary": [],
+      "type": "reasoning",
+      "content": null,
+      "encrypted_content": null,
+      "status": null
+    },
+    {
+      "id": "ws_0a0a4c396810fa3700699ad7afd998819790cce4facb67380b",
+      "action": {
+        "query": "site:docs.openclaw.ai providers google GEMINI_API_KEY",
+        "type": "search",
+        "queries": [
+          "site:docs.openclaw.ai providers google GEMINI_API_KEY",
+          "site:docs.openclaw.ai google-vertex Application Default Credentials",
+          "site:docs.openclaw.ai onboard --auth-choice gemini-api-key",
+          "site:docs.openclaw.ai providers google model google/gemini-3-flash-preview"
+        ],
+        "sources": null
+      },
+      "status": "completed",
+      "type": "web_search_call"
+    },
+    {
+      "id": "rs_0a0a4c396810fa3700699ad7b81d10819796b16f69faf0c513",
+      "summary": [],
+      "type": "reasoning",
+      "content": null,
+      "encrypted_content": null,
+      "status": null
+    },
+    {
+      "id": "msg_0a0a4c396810fa3700699ad7cfeeac819795fd1386ec5c3c00",
+      "content": [
+        {
+          "annotations": [
+            {
+              "end_index": 3664,
+              "start_index": 3586,
+              "title": "Install - OpenClaw",
+              "type": "url_citation",
+              "url": "https://docs.openclaw.ai/install/index?utm_source=openai"
+            },
+            {
+              "end_index": 3823,
+              "start_index": 3745,
+              "title": "Introducing gpt-oss | OpenAI",
+              "type": "url_citation",
+              "url": "https://openai.com/index/introducing-gpt-oss?utm_source=openai"
+            },
+            {
+              "end_index": 3980,
+              "start_index": 3897,
+              "title": "Security - vLLM",
+              "type": "url_citation",
+              "url": "https://docs.vllm.ai/en/v0.13.0/usage/security/?utm_source=openai"
+            },
+            {
+              "end_index": 4201,
+              "start_index": 4046,
+              "title": "Start a session with a document by specifying the session documents in IAM policies - AWS Systems Manager",
+              "type": "url_citation",
+              "url": "https://docs.aws.amazon.com/en_en/systems-manager/latest/userguide/getting-started-specify-session-document.html?utm_source=openai"
+            },
+            {
+              "end_index": 4345,
+              "start_index": 4273,
+              "title": "Gemini models  |  Gemini API  |  Google AI for Developers",
+              "type": "url_citation",
+              "url": "https://ai.google.dev/models/gemini?utm_source=openai"
+            },
+            {
+              "end_index": 4570,
+              "start_index": 4428,
+              "title": "OpenClaw founder Peter Steinberger is joining OpenAI",
+              "type": "url_citation",
+              "url": "https://www.theverge.com/ai-artificial-intelligence/879623/openclaw-founder-peter-steinberger-joins-openai?utm_source=openai"
+            },
+            {
+              "end_index": 4704,
+              "start_index": 4621,
+              "title": "NVD - CVE-2026-22778",
+              "type": "url_citation",
+              "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-22778?utm_source=openai"
+            },
+            {
+              "end_index": 5687,
+              "start_index": 5556,
+              "title": "Clawdbot creator says Anthropic 'forced' him to rename the viral AI agent: 'Wasn't my decision'",
+              "type": "url_citation",
+              "url": "https://www.businessinsider.com/clawdbot-changes-name-moltbot-anthropic-trademark-2026-1?utm_source=openai"
+            },
+            {
+              "end_index": 6108,
+              "start_index": 5977,
+              "title": "Clawdbot creator says Anthropic 'forced' him to rename the viral AI agent: 'Wasn't my decision'",
+              "type": "url_citation",
+              "url": "https://www.businessinsider.com/clawdbot-changes-name-moltbot-anthropic-trademark-2026-1?utm_source=openai"
+            },
+            {
+              "end_index": 7183,
+              "start_index": 7105,
+              "title": "Install - OpenClaw",
+              "type": "url_citation",
+              "url": "https://docs.openclaw.ai/install/index?utm_source=openai"
+            },
+            {
+              "end_index": 8197,
+              "start_index": 8118,
+              "title": "vLLM - OpenClaw",
+              "type": "url_citation",
+              "url": "https://docs.openclaw.ai/providers/vllm?utm_source=openai"
+            },
+            {
+              "end_index": 8842,
+              "start_index": 8753,
+              "title": "Model Providers - OpenClaw",
+              "type": "url_citation",
+              "url": "https://docs.openclaw.ai/concepts/model-providers?utm_source=openai"
+            },
+            {
+              "end_index": 9437,
+              "start_index": 9356,
+              "title": "Ollama - OpenClaw",
+              "type": "url_citation",
+              "url": "https://docs.openclaw.ai/providers/ollama?utm_source=openai"
+            },
+            {
+              "end_index": 10771,
+              "start_index": 10698,
+              "title": "Telegram - OpenClaw",
+              "type": "url_citation",
+              "url": "https://docs.openclaw.ai/telegram?utm_source=openai"
+            },
+            {
+              "end_index": 10894,
+              "start_index": 10822,
+              "title": "Session Management - OpenClaw",
+              "type": "url_citation",
+              "url": "https://docs.openclaw.ai/session?utm_source=openai"
+            },
+            {
+              "end_index": 11050,
+              "start_index": 10967,
+              "title": "Security - vLLM",
+              "type": "url_citation",
+              "url": "https://docs.vllm.ai/en/v0.13.0/usage/security/?utm_source=openai"
+            },
+            {
+              "end_index": 11160,
+              "start_index": 11088,
+              "title": "Plugins - OpenClaw",
+              "type": "url_citation",
+              "url": "https://docs.openclaw.ai/plugins?utm_source=openai"
+            },
+            {
+              "end_index": 11316,
+              "start_index": 11244,
+              "title": "ClawHub - OpenClaw",
+              "type": "url_citation",
+              "url": "https://docs.openclaw.ai/clawhub?utm_source=openai"
+            },
+            {
+              "end_index": 12236,
+              "start_index": 12108,
+              "title": "OpenClaw's AI 'skill' extensions are a security nightmare",
+              "type": "url_citation",
+              "url": "https://www.theverge.com/news/874011/openclaw-ai-skill-clawhub-extensions-security-nightmare?utm_source=openai"
+            },
+            {
+              "end_index": 12668,
+              "start_index": 12590,
+              "title": "Introducing gpt-oss | OpenAI",
+              "type": "url_citation",
+              "url": "https://openai.com/index/introducing-gpt-oss?utm_source=openai"
+            },
+            {
+              "end_index": 14042,
+              "start_index": 13911,
+              "title": "Clawdbot creator says Anthropic 'forced' him to rename the viral AI agent: 'Wasn't my decision'",
+              "type": "url_citation",
+              "url": "https://www.businessinsider.com/clawdbot-changes-name-moltbot-anthropic-trademark-2026-1?utm_source=openai"
+            },
+            {
+              "end_index": 14406,
+              "start_index": 14264,
+              "title": "OpenClaw founder Peter Steinberger is joining OpenAI",
+              "type": "url_citation",
+              "url": "https://www.theverge.com/ai-artificial-intelligence/879623/openclaw-founder-peter-steinberger-joins-openai?utm_source=openai"
+            },
+            {
+              "end_index": 15705,
+              "start_index": 15563,
+              "title": "OpenClaw founder Peter Steinberger is joining OpenAI",
+              "type": "url_citation",
+              "url": "https://www.theverge.com/ai-artificial-intelligence/879623/openclaw-founder-peter-steinberger-joins-openai?utm_source=openai"
+            },
+            {
+              "end_index": 16899,
+              "start_index": 16827,
+              "title": "Gemini models  |  Gemini API  |  Google AI for Developers",
+              "type": "url_citation",
+              "url": "https://ai.google.dev/models/gemini?utm_source=openai"
+            },
+            {
+              "end_index": 17280,
+              "start_index": 17152,
+              "title": "OpenClaw's AI 'skill' extensions are a security nightmare",
+              "type": "url_citation",
+              "url": "https://www.theverge.com/news/874011/openclaw-ai-skill-clawhub-extensions-security-nightmare?utm_source=openai"
+            },
+            {
+              "end_index": 17580,
+              "start_index": 17427,
+              "title": "Fake Moltbot AI assistant just spreads malware - so AI fans, watch out for scams",
+              "type": "url_citation",
+              "url": "https://www.techradar.com/pro/security/fake-moltbot-ai-assistant-just-spreads-malware-so-ai-fans-watch-out-for-scams?utm_source=openai"
+            },
+            {
+              "end_index": 18179,
+              "start_index": 18101,
+              "title": "Install - OpenClaw",
+              "type": "url_citation",
+              "url": "https://docs.openclaw.ai/install/index?utm_source=openai"
+            },
+            {
+              "end_index": 18397,
+              "start_index": 18298,
+              "title": "Advanced settings configuration in WSL | Microsoft Learn",
+              "type": "url_citation",
+              "url": "https://learn.microsoft.com/en-us/windows/wsl/wsl-config?utm_source=openai"
+            },
+            {
+              "end_index": 19147,
+              "start_index": 19074,
+              "title": "Telegram - OpenClaw",
+              "type": "url_citation",
+              "url": "https://docs.openclaw.ai/telegram?utm_source=openai"
+            },
+            {
+              "end_index": 19648,
+              "start_index": 19576,
+              "title": "Session Management - OpenClaw",
+              "type": "url_citation",
+              "url": "https://docs.openclaw.ai/session?utm_source=openai"
+            },
+            {
+              "end_index": 20149,
+              "start_index": 20070,
+              "title": "vLLM - OpenClaw",
+              "type": "url_citation",
+              "url": "https://docs.openclaw.ai/providers/vllm?utm_source=openai"
+            },
+            {
+              "end_index": 20338,
+              "start_index": 20249,
+              "title": "Model Providers - OpenClaw",
+              "type": "url_citation",
+              "url": "https://docs.openclaw.ai/concepts/model-providers?utm_source=openai"
+            },
+            {
+              "end_index": 21070,
+              "start_index": 20987,
+              "title": "Security - vLLM",
+              "type": "url_citation",
+              "url": "https://docs.vllm.ai/en/v0.13.0/usage/security/?utm_source=openai"
+            },
+            {
+              "end_index": 21762,
+              "start_index": 21607,
+              "title": "Start a session with a document by specifying the session documents in IAM policies - AWS Systems Manager",
+              "type": "url_citation",
+              "url": "https://docs.aws.amazon.com/en_en/systems-manager/latest/userguide/getting-started-specify-session-document.html?utm_source=openai"
+            },
+            {
+              "end_index": 22402,
+              "start_index": 22324,
+              "title": "Introducing gpt-oss | OpenAI",
+              "type": "url_citation",
+              "url": "https://openai.com/index/introducing-gpt-oss?utm_source=openai"
+            },
+            {
+              "end_index": 22641,
+              "start_index": 22561,
+              "title": "vLLM Now Supports gpt-oss | vLLM Blog",
+              "type": "url_citation",
+              "url": "https://blog.vllm.ai/2025/08/05/gpt-oss.html?utm_source=openai"
+            },
+            {
+              "end_index": 23188,
+              "start_index": 23116,
+              "title": "ClawHub - OpenClaw",
+              "type": "url_citation",
+              "url": "https://docs.openclaw.ai/clawhub?utm_source=openai"
+            },
+            {
+              "end_index": 23384,
+              "start_index": 23313,
+              "title": "Skills - OpenClaw",
+              "type": "url_citation",
+              "url": "https://docs.openclaw.ai/skills?utm_source=openai"
+            },
+            {
+              "end_index": 23589,
+              "start_index": 23517,
+              "title": "Plugins - OpenClaw",
+              "type": "url_citation",
+              "url": "https://docs.openclaw.ai/plugins?utm_source=openai"
+            },
+            {
+              "end_index": 24129,
+              "start_index": 24051,
+              "title": "Install - OpenClaw",
+              "type": "url_citation",
+              "url": "https://docs.openclaw.ai/install/index?utm_source=openai"
+            },
+            {
+              "end_index": 24675,
+              "start_index": 24597,
+              "title": "Introducing gpt-oss | OpenAI",
+              "type": "url_citation",
+              "url": "https://openai.com/index/introducing-gpt-oss?utm_source=openai"
+            },
+            {
+              "end_index": 25452,
+              "start_index": 25346,
+              "title": "I Infiltrated Moltbook, the AI-Only Social Network Where Humans Aren't Allowed",
+              "type": "url_citation",
+              "url": "https://www.wired.com/story/i-infiltrated-moltbook-ai-only-social-network?utm_source=openai"
+            },
+            {
+              "end_index": 26176,
+              "start_index": 26034,
+              "title": "OpenClaw founder Peter Steinberger is joining OpenAI",
+              "type": "url_citation",
+              "url": "https://www.theverge.com/ai-artificial-intelligence/879623/openclaw-founder-peter-steinberger-joins-openai?utm_source=openai"
+            },
+            {
+              "end_index": 26931,
+              "start_index": 26803,
+              "title": "OpenClaw's AI 'skill' extensions are a security nightmare",
+              "type": "url_citation",
+              "url": "https://www.theverge.com/news/874011/openclaw-ai-skill-clawhub-extensions-security-nightmare?utm_source=openai"
+            },
+            {
+              "end_index": 27627,
+              "start_index": 27485,
+              "title": "OpenClaw founder Peter Steinberger is joining OpenAI",
+              "type": "url_citation",
+              "url": "https://www.theverge.com/ai-artificial-intelligence/879623/openclaw-founder-peter-steinberger-joins-openai?utm_source=openai"
+            },
+            {
+              "end_index": 27808,
+              "start_index": 27687,
+              "title": "Meta and Other Tech Companies Ban OpenClaw Over Cybersecurity Concerns",
+              "type": "url_citation",
+              "url": "https://www.wired.com/story/openclaw-banned-by-tech-companies-as-security-concerns-mount?utm_source=openai"
+            },
+            {
+              "end_index": 27931,
+              "start_index": 27853,
+              "title": "Install - OpenClaw",
+              "type": "url_citation",
+              "url": "https://docs.openclaw.ai/install/index?utm_source=openai"
+            },
+            {
+              "end_index": 28413,
+              "start_index": 28335,
+              "title": "Install - OpenClaw",
+              "type": "url_citation",
+              "url": "https://docs.openclaw.ai/install/index?utm_source=openai"
+            },
+            {
+              "end_index": 28583,
+              "start_index": 28486,
+              "title": "System Requirements | OpenClaw",
+              "type": "url_citation",
+              "url": "https://openclawdoc.com/docs/getting-started/requirements/?utm_source=openai"
+            },
+            {
+              "end_index": 28758,
+              "start_index": 28659,
+              "title": "Advanced settings configuration in WSL | Microsoft Learn",
+              "type": "url_citation",
+              "url": "https://learn.microsoft.com/en-us/windows/wsl/wsl-config?utm_source=openai"
+            },
+            {
+              "end_index": 29476,
+              "start_index": 29393,
+              "title": "Security - vLLM",
+              "type": "url_citation",
+              "url": "https://docs.vllm.ai/en/v0.13.0/usage/security/?utm_source=openai"
+            },
+            {
+              "end_index": 30072,
+              "start_index": 29966,
+              "title": "I Infiltrated Moltbook, the AI-Only Social Network Where Humans Aren't Allowed",
+              "type": "url_citation",
+              "url": "https://www.wired.com/story/i-infiltrated-moltbook-ai-only-social-network?utm_source=openai"
+            },
+            {
+              "end_index": 30576,
+              "start_index": 30498,
+              "title": "Install - OpenClaw",
+              "type": "url_citation",
+              "url": "https://docs.openclaw.ai/install/index?utm_source=openai"
+            },
+            {
+              "end_index": 30756,
+              "start_index": 30673,
+              "title": "Security - vLLM",
+              "type": "url_citation",
+              "url": "https://docs.vllm.ai/en/v0.13.0/usage/security/?utm_source=openai"
+            },
+            {
+              "end_index": 31066,
+              "start_index": 30908,
+              "title": "Start a session - AWS Systems Manager",
+              "type": "url_citation",
+              "url": "https://docs.aws.amazon.com/en_us/systems-manager/latest/userguide/session-manager-working-with-sessions-start.html?utm_source=openai"
+            },
+            {
+              "end_index": 31228,
+              "start_index": 31150,
+              "title": "Introducing gpt-oss | OpenAI",
+              "type": "url_citation",
+              "url": "https://openai.com/index/introducing-gpt-oss?utm_source=openai"
+            },
+            {
+              "end_index": 31391,
+              "start_index": 31319,
+              "title": "Gemini models  |  Gemini API  |  Google AI for Developers",
+              "type": "url_citation",
+              "url": "https://ai.google.dev/models/gemini?utm_source=openai"
+            },
+            {
+              "end_index": 31683,
+              "start_index": 31541,
+              "title": "OpenClaw founder Peter Steinberger is joining OpenAI",
+              "type": "url_citation",
+              "url": "https://www.theverge.com/ai-artificial-intelligence/879623/openclaw-founder-peter-steinberger-joins-openai?utm_source=openai"
+            },
+            {
+              "end_index": 31901,
+              "start_index": 31795,
+              "title": "I Infiltrated Moltbook, the AI-Only Social Network Where Humans Aren't Allowed",
+              "type": "url_citation",
+              "url": "https://www.wired.com/story/i-infiltrated-moltbook-ai-only-social-network?utm_source=openai"
+            },
+            {
+              "end_index": 32089,
+              "start_index": 32006,
+              "title": "NVD - CVE-2026-22778",
+              "type": "url_citation",
+              "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-22778?utm_source=openai"
+            },
+            {
+              "end_index": 32773,
+              "start_index": 32702,
+              "title": "Skills - OpenClaw",
+              "type": "url_citation",
+              "url": "https://docs.openclaw.ai/skills?utm_source=openai"
+            },
+            {
+              "end_index": 33164,
+              "start_index": 33081,
+              "title": "Security - vLLM",
+              "type": "url_citation",
+              "url": "https://docs.vllm.ai/en/v0.13.0/usage/security/?utm_source=openai"
+            },
+            {
+              "end_index": 33918,
+              "start_index": 33773,
+              "title": "OpenClaw AI agents targeted by infostealer malware for the first time",
+              "type": "url_citation",
+              "url": "https://www.techradar.com/pro/security/openclaw-ai-agents-targeted-by-infostealer-malware-for-the-first-time?utm_source=openai"
+            },
+            {
+              "end_index": 34866,
+              "start_index": 34738,
+              "title": "OpenClaw's AI 'skill' extensions are a security nightmare",
+              "type": "url_citation",
+              "url": "https://www.theverge.com/news/874011/openclaw-ai-skill-clawhub-extensions-security-nightmare?utm_source=openai"
+            },
+            {
+              "end_index": 35133,
+              "start_index": 35061,
+              "title": "ClawHub - OpenClaw",
+              "type": "url_citation",
+              "url": "https://docs.openclaw.ai/clawhub?utm_source=openai"
+            },
+            {
+              "end_index": 35526,
+              "start_index": 35454,
+              "title": "Plugins - OpenClaw",
+              "type": "url_citation",
+              "url": "https://docs.openclaw.ai/plugins?utm_source=openai"
+            },
+            {
+              "end_index": 36054,
+              "start_index": 35971,
+              "title": "NVD - CVE-2026-22778",
+              "type": "url_citation",
+              "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-22778?utm_source=openai"
+            },
+            {
+              "end_index": 36767,
+              "start_index": 36661,
+              "title": "I Infiltrated Moltbook, the AI-Only Social Network Where Humans Aren't Allowed",
+              "type": "url_citation",
+              "url": "https://www.wired.com/story/i-infiltrated-moltbook-ai-only-social-network?utm_source=openai"
+            },
+            {
+              "end_index": 37611,
+              "start_index": 37469,
+              "title": "OpenClaw founder Peter Steinberger is joining OpenAI",
+              "type": "url_citation",
+              "url": "https://www.theverge.com/ai-artificial-intelligence/879623/openclaw-founder-peter-steinberger-joins-openai?utm_source=openai"
+            },
+            {
+              "end_index": 37999,
+              "start_index": 37926,
+              "title": "Telegram - OpenClaw",
+              "type": "url_citation",
+              "url": "https://docs.openclaw.ai/telegram?utm_source=openai"
+            },
+            {
+              "end_index": 38248,
+              "start_index": 38165,
+              "title": "Security - vLLM",
+              "type": "url_citation",
+              "url": "https://docs.vllm.ai/en/v0.13.0/usage/security/?utm_source=openai"
+            },
+            {
+              "end_index": 38404,
+              "start_index": 38331,
+              "title": "Telegram - OpenClaw",
+              "type": "url_citation",
+              "url": "https://docs.openclaw.ai/telegram?utm_source=openai"
+            },
+            {
+              "end_index": 38543,
+              "start_index": 38471,
+              "title": "Plugins - OpenClaw",
+              "type": "url_citation",
+              "url": "https://docs.openclaw.ai/plugins?utm_source=openai"
+            },
+            {
+              "end_index": 38934,
+              "start_index": 38806,
+              "title": "OpenClaw's AI 'skill' extensions are a security nightmare",
+              "type": "url_citation",
+              "url": "https://www.theverge.com/news/874011/openclaw-ai-skill-clawhub-extensions-security-nightmare?utm_source=openai"
+            },
+            {
+              "end_index": 39267,
+              "start_index": 39161,
+              "title": "I Infiltrated Moltbook, the AI-Only Social Network Where Humans Aren't Allowed",
+              "type": "url_citation",
+              "url": "https://www.wired.com/story/i-infiltrated-moltbook-ai-only-social-network?utm_source=openai"
+            },
+            {
+              "end_index": 39759,
+              "start_index": 39617,
+              "title": "OpenClaw founder Peter Steinberger is joining OpenAI",
+              "type": "url_citation",
+              "url": "https://www.theverge.com/ai-artificial-intelligence/879623/openclaw-founder-peter-steinberger-joins-openai?utm_source=openai"
+            },
+            {
+              "end_index": 40123,
+              "start_index": 39995,
+              "title": "OpenClaw's AI 'skill' extensions are a security nightmare",
+              "type": "url_citation",
+              "url": "https://www.theverge.com/news/874011/openclaw-ai-skill-clawhub-extensions-security-nightmare?utm_source=openai"
+            },
+            {
+              "end_index": 40886,
+              "start_index": 40780,
+              "title": "I Infiltrated Moltbook, the AI-Only Social Network Where Humans Aren't Allowed",
+              "type": "url_citation",
+              "url": "https://www.wired.com/story/i-infiltrated-moltbook-ai-only-social-network?utm_source=openai"
+            },
+            {
+              "end_index": 45512,
+              "start_index": 45434,
+              "title": "Install - OpenClaw",
+              "type": "url_citation",
+              "url": "https://docs.openclaw.ai/install/index?utm_source=openai"
+            },
+            {
+              "end_index": 45642,
+              "start_index": 45564,
+              "title": "Introducing gpt-oss | OpenAI",
+              "type": "url_citation",
+              "url": "https://openai.com/index/introducing-gpt-oss?utm_source=openai"
+            },
+            {
+              "end_index": 45774,
+              "start_index": 45691,
+              "title": "Security - vLLM",
+              "type": "url_citation",
+              "url": "https://docs.vllm.ai/en/v0.13.0/usage/security/?utm_source=openai"
+            },
+            {
+              "end_index": 45972,
+              "start_index": 45817,
+              "title": "Start a session with a document by specifying the session documents in IAM policies - AWS Systems Manager",
+              "type": "url_citation",
+              "url": "https://docs.aws.amazon.com/en_en/systems-manager/latest/userguide/getting-started-specify-session-document.html?utm_source=openai"
+            },
+            {
+              "end_index": 46107,
+              "start_index": 46035,
+              "title": "Gemini models  |  Gemini API  |  Google AI for Developers",
+              "type": "url_citation",
+              "url": "https://ai.google.dev/models/gemini?utm_source=openai"
+            },
+            {
+              "end_index": 46347,
+              "start_index": 46205,
+              "title": "OpenClaw founder Peter Steinberger is joining OpenAI",
+              "type": "url_citation",
+              "url": "https://www.theverge.com/ai-artificial-intelligence/879623/openclaw-founder-peter-steinberger-joins-openai?utm_source=openai"
+            },
+            {
+              "end_index": 46479,
+              "start_index": 46396,
+              "title": "NVD - CVE-2026-22778",
+              "type": "url_citation",
+              "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-22778?utm_source=openai"
+            }
+          ],
+          "text": "# OpenClaw (formerly *Clawdbot* / *Moltbot*) and the Moltbook Ecosystem: Consolidated Technical, Operational, and Security Analysis (as of 2026‑02‑22)\n\n## Abstract\n\nThis report consolidates a provided research collection of nine conversation threads (six direct-topic threads and three incidental mentions) concerning **OpenClaw**, its predecessor names (**Clawdbot**, **Moltbot**), and the adjacent “agent social network” **Moltbook**. The provided records span **2026‑01‑26 to 2026‑02‑20**, and include: (i) installation and deployment specifications (WSL2, Telegram, AWS, vLLM, and open‑weight models), (ii) a security critique and subsequent hardening recommendations, (iii) feasibility analysis for substituting cloud model providers (notably Google Gemini), (iv) ecosystem risk analysis (skills/plugins supply chain, Moltbook prompt‑injection surface), and (v) contextual commentary on “agency” narratives.\n\nConclusions herein are based on: **(a)** the provided research outputs, and **(b)** *targeted external web search* used only where internal reconciliation left contradictions/ambiguities or missing context. Key reconciliations using external sources include: (1) **naming chronology** (Clawdbot → Moltbot → OpenClaw), (2) **official installation requirements** (Node 22+; WSL2 recommendation), (3) **Telegram pairing semantics** (including pairing code expiry), (4) **vLLM exposure risks** (API key scope limited to `/v1/*` plus additional unauthenticated endpoints), and (5) **current security landscape** (ClawHub malware reporting; vLLM CVE‑2026‑22778; “fake VS Code extension” scams).\n\n---\n\n## Scope and Methodology\n\n### Scope\n\nCovered entities and interfaces:\n\n* **OpenClaw** (current name; open-source agent “gateway” / runtime)  \n* **Clawdbot / Moltbot** (earlier names used in the provided records; treated as the same lineage unless evidence indicates otherwise)  \n* **Moltbook** (AI-agent-themed social platform discussed as an integration surface and security risk)  \n* **Connectivity patterns**: Telegram, WhatsApp, AWS EC2, AWS SSM Session Manager port forwarding, SSH tunnels  \n* **Model backends**: self-hosted vLLM serving **OpenAI gpt‑oss** open‑weight models; hosted providers (notably Google Gemini Developer API and Vertex AI)  \n* **Extension surfaces**: skills (including ClawHub), plugins/extensions, and model-provider gateways (e.g., LiteLLM).\n\n### Internal evidence consolidation (primary)\n\n1. Parsed all direct-topic conversations and extracted **unique claims** (facts, recommendations, and operational procedures).\n2. **Deduplicated** repeated assertions across threads (e.g., “bind vLLM to localhost” appears multiple times).\n3. Identified **contradictions** (e.g., Node.js minimum vs recommended versions; naming; model IDs; context length representation).\n4. Classified assertions into:\n   * **Descriptive** (what OpenClaw is / supports),\n   * **Prescriptive** (recommended security posture / deployment steps),\n   * **Speculative / planning notes** (unverified items appearing in “tool/planning” messages).\n\n### Targeted external web search (secondary)\n\nExternal search was performed only after internal reconciliation left unresolved ambiguity. Searches were targeted toward **primary/official documentation** (OpenClaw docs, OpenAI, AWS, Google, vLLM) and **high-quality journalism** for time-sensitive ecosystem events (e.g., OpenAI hiring / partnership narrative; ClawHub malware incidents).\n\nKey external anchors used include:\n\n* OpenClaw official documentation (installation, channels, session isolation, providers, ClawHub, plugins) ([docs.openclaw.ai](https://docs.openclaw.ai/install/index?utm_source=openai))  \n* OpenAI gpt‑oss announcement (model architecture, context length, tokenizer) ([openai.com](https://openai.com/index/introducing-gpt-oss?utm_source=openai))  \n* vLLM security documentation (API-key limitations; endpoint exposure) ([docs.vllm.ai](https://docs.vllm.ai/en/v0.13.0/usage/security/?utm_source=openai))  \n* AWS Systems Manager Session Manager port forwarding examples ([docs.aws.amazon.com](https://docs.aws.amazon.com/en_en/systems-manager/latest/userguide/getting-started-specify-session-document.html?utm_source=openai))  \n* Google Gemini official model IDs, pricing, quota, and availability ([ai.google.dev](https://ai.google.dev/models/gemini?utm_source=openai))  \n* Time-sensitive ecosystem reporting on OpenClaw + security/supply chain topics ([theverge.com](https://www.theverge.com/ai-artificial-intelligence/879623/openclaw-founder-peter-steinberger-joins-openai?utm_source=openai))  \n* vLLM CVE‑2026‑22778 (NVD and vendor analyses) ([nvd.nist.gov](https://nvd.nist.gov/vuln/detail/CVE-2026-22778?utm_source=openai))  \n\n---\n\n## Consolidated Findings\n\n### 1) Identity, naming, and what “OpenClaw” refers to\n\n**Internal consolidation.** The provided records repeatedly treat **Clawdbot**, **Moltbot**, and **OpenClaw** as a single evolving project name rather than distinct software systems, with “OpenClaw” ultimately used as the stable referent. This appears explicitly in: (i) a “rename” answer stating Clawdbot became Moltbot due to trademark concerns, with inconsistent propagation across docs and repo surfaces, and (ii) later threads where “OpenClaw” is the primary name used for the same gateway/channel/skills architecture. (**Internal evidence:** INT20, INT13, INT1, INT9)\n\n**External reconciliation.** Credible reporting and official documentation support the naming sequence **Clawdbot → Moltbot → OpenClaw**, and that OpenClaw is the current official name. ([businessinsider.com](https://www.businessinsider.com/clawdbot-changes-name-moltbot-anthropic-trademark-2026-1?utm_source=openai))  \n\n**Consolidated interpretation.** In this report, “OpenClaw” denotes the current project; “Clawdbot/Moltbot” are treated as historical names for the same lineage unless explicitly scoped to the historical context of a specific record. (**Internal evidence:** INT20, INT13; **External:** ([businessinsider.com](https://www.businessinsider.com/clawdbot-changes-name-moltbot-anthropic-trademark-2026-1?utm_source=openai)))\n\n---\n\n### 2) Core architectural model (Gateway + channels + providers + skills/plugins)\n\nAcross the provided records, OpenClaw is consistently described as an **agent gateway/runtime** that:\n\n* runs persistently as a background service (not merely an interactive chat UI),  \n* integrates with **chat “channels”** (notably Telegram; also WhatsApp in older Clawdbot-named threads),  \n* delegates inference to configurable **model providers** (self-hosted vLLM; hosted providers such as Google Gemini), and  \n* can be extended via **skills** (instruction bundles) and **plugins** (in-process extensions).  \n\nThis architecture is explicit in the AWS+Telegram build specifications and the “fuss-free” experimentation flow. (**Internal evidence:** INT1, INT2, INT5, INT11, INT16)\n\nExternal documentation aligns with this conceptual decomposition: OpenClaw runs a Gateway, connects channels, supports multiple providers, and loads skills/plugins with explicit safety cautions (plugins run in-process). ([docs.openclaw.ai](https://docs.openclaw.ai/install/index?utm_source=openai))  \n\n---\n\n### 3) Primary deployment patterns found in the records\n\n#### 3.1 Self-hosted open-weight models via vLLM (AWS GPU)\n\nThe provided collection includes a full end-to-end pattern:\n\n* vLLM serves **gpt‑oss‑20b** or **gpt‑oss‑120b** on an AWS GPU instance,\n* vLLM binds to `127.0.0.1` (defense-in-depth),\n* OpenClaw connects to the vLLM server through a **local tunnel endpoint** (local `http://127.0.0.1:8000/v1`),\n* Telegram bot acts as the user-facing interface (pairing-controlled DMs),\n* security best practice is “do not expose port 8000 publicly.”  \n\nThis is given both as an initial “works-first” guide and then as a hardened spec using AWS SSM port forwarding as a preferred approach. (**Internal evidence:** INT1, INT2, INT4, INT5)\n\nExternally, OpenClaw’s vLLM provider documentation confirms the expected base URL (`/v1` endpoints), the `openai-completions` API mode, and optional model autodiscovery from `/v1/models`. ([docs.openclaw.ai](https://docs.openclaw.ai/providers/vllm?utm_source=openai))  \n\n#### 3.2 Hosted provider substitution (Google Gemini)\n\nThe provided records assert OpenClaw supports Gemini through:\n\n* **Gemini Developer API** (`GEMINI_API_KEY`, provider `google`), and\n* **Vertex AI** (`google-vertex`, authenticated via Google ADC / `gcloud auth application-default login`).  \n\nThey also provide a low-friction WSL2+Telegram setup using `google/gemini-3-flash-preview`. (**Internal evidence:** INT6, INT7, INT19)\n\nExternal OpenClaw docs confirm the onboarding flow for Gemini, and the provider mapping for Google Gemini and Vertex. ([docs.openclaw.ai](https://docs.openclaw.ai/concepts/model-providers?utm_source=openai))  \n\n#### 3.3 Fully local inference (avoid OpenAI/Anthropic/Gemini keys)\n\nThe records include a “no vendor API keys” goal achieved via **local models** (in the records, primarily via Ollama), with emphasis on starting in a “chat-only” mode and disabling dangerous tools and background automation. (**Internal evidence:** INT13, INT11)\n\nExternally, OpenClaw documents an Ollama provider with opt-in model discovery keyed off `OLLAMA_API_KEY` (any value), and supports both Ollama-native and OpenAI-compatible modes. ([docs.openclaw.ai](https://docs.openclaw.ai/providers/ollama?utm_source=openai))  \n\n---\n\n### 4) Security posture emphasized by the collection\n\nThe research collection strongly converges on a set of recurring high-salience security controls:\n\n1. **Network minimization for inference servers**: bind vLLM to loopback, and tunnel (SSH or SSM) rather than exposing ports. (**Internal evidence:** INT1, INT2, INT3, INT4, INT5)\n2. **Channel access control**: Telegram DMs should use `dmPolicy: \"pairing\"` (and later allowlisting), with explicit mention of pairing approval flows. (**Internal evidence:** INT1, INT2, INT5, INT7, INT11)\n3. **Session isolation**: enable secure DM isolation (`session.dmScope: \"per-channel-peer\"`) to prevent cross-user context leakage. (**Internal evidence:** INT1, INT2, INT4, INT5, INT7)\n4. **Supply-chain skepticism**: skills/plugins are treated as equivalent to untrusted code, with explicit warnings about malicious skills and install-time trust. (**Internal evidence:** INT1, INT3, INT4, INT11, INT12)\n5. **Operational guardrails**: cost controls (billing alerts), patching strategy, logging/monitoring, and controlled updates. (**Internal evidence:** INT3, INT4, INT5)\n\nExternal documentation provides direct support for several of these, notably:\n\n* Telegram pairing options and pairing code expiry behavior ([docs.openclaw.ai](https://docs.openclaw.ai/telegram?utm_source=openai))  \n* Secure DM isolation modes and their rationale ([docs.openclaw.ai](https://docs.openclaw.ai/session?utm_source=openai))  \n* vLLM endpoint exposure limitations even when `--api-key` is enabled ([docs.vllm.ai](https://docs.vllm.ai/en/v0.13.0/usage/security/?utm_source=openai))  \n* Plugin in-process trust boundary ([docs.openclaw.ai](https://docs.openclaw.ai/plugins?utm_source=openai))  \n* ClawHub being open-by-default and moderated via reporting/auto-hide mechanisms ([docs.openclaw.ai](https://docs.openclaw.ai/clawhub?utm_source=openai))  \n\n---\n\n### 5) “Agency” narratives vs operational reality (contextual analysis)\n\nOne thread provides a critical analysis of a popular narrative: “agency is just a system prompt,” using OpenClaw as a contemporary example where **architecture + permissions + supply chain** are the practical determinants of real-world risk, not “values” in a prompt. The analysis explicitly frames malicious skills as a counterexample to the “system prompt = agency” claim. (**Internal evidence:** INT21)\n\nThis report treats that argument as **interpretive commentary** rather than a direct empirical claim about OpenClaw internals; nevertheless, its framing is operationally consistent with OpenClaw’s documented extension surfaces (skills/plugins) and with external reporting on skills-marketplace malware. ([theverge.com](https://www.theverge.com/news/874011/openclaw-ai-skill-clawhub-extensions-security-nightmare?utm_source=openai))  \n\n---\n\n## Chronology and Evolution\n\n### 2025‑08‑05: gpt‑oss open-weight release (external anchor)\n\nOpenAI announced **gpt‑oss‑120b** and **gpt‑oss‑20b** as open-weight MoE models with **128k context** (often expressed as 131,072 tokens), and published architectural details including active parameters per token and tokenizer family (`o200k_harmony`). ([openai.com](https://openai.com/index/introducing-gpt-oss?utm_source=openai))  \n\nThis matters because later OpenClaw deployment specs in the provided records assume vLLM serving of gpt‑oss and OpenAI-compatible endpoints. (**Internal evidence:** INT1, INT2, INT5, INT14, INT15)\n\n### 2026‑01‑26: “Clawdbot” deep-dive + operational use cases (internal)\n\nA detailed investigation thread describes a “Clawdbot” system that:\n\n* integrates with multiple chat channels (WhatsApp, Telegram, Slack, etc.),\n* provides a Gateway + dashboard UI,\n* supports tooling, skills/plugins, automation hooks,\n* supports Gmail workflows (search, Pub/Sub watch → webhook),\n* provides security mechanisms (pairing, tool allow/deny, security audit). (**Internal evidence:** INT16)\n\nThe same thread includes a WhatsApp monitoring/alerting workflow and a “relay command” pattern (`/send +E.164 ...`) designed to forward messages verbatim while controlling replies. (**Internal evidence:** INT17, INT18)\n\n### 2026‑01‑27: rename event (Clawdbot → Moltbot) (internal + external reconciliation)\n\nAn internal record asserts a recent rebrand to “Moltbot,” attributed to a trademark request. (**Internal evidence:** INT20)\n\nExternal reporting corroborates that **Anthropic requested the rename** and that “Moltbot” became the short-lived successor name. ([businessinsider.com](https://www.businessinsider.com/clawdbot-changes-name-moltbot-anthropic-trademark-2026-1?utm_source=openai))  \n\n### 2026‑01‑30 (approx.): stabilization under “OpenClaw” (external reconciliation)\n\nExternal sources (including high-quality reporting) describe the project as now **OpenClaw**, with “Clawdbot/Moltbot” as prior names. ([theverge.com](https://www.theverge.com/ai-artificial-intelligence/879623/openclaw-founder-peter-steinberger-joins-openai?utm_source=openai))  \n\n### 2026‑01‑31 to 2026‑02‑01: Moltbook attention and “AI safety again” framing (internal)\n\nA thread frames Moltbook/OpenClaw as “sci‑fi aesthetics, software-supply-chain realities,” emphasizing:\n\n* operational autonomy via scheduled runs (“heartbeats”) is real,\n* motivational autonomy (“self-originating goals”) is not demonstrated,\n* the risk triangle is capability × automation × supply chain. (**Internal evidence:** INT12)\n\nIt also recommends a “safest practical” setup: chat-only, pairing, no heartbeats, no tools, and local models to avoid cloud API keys. (**Internal evidence:** INT13)\n\n### 2026‑02‑16: OpenAI “partnership” / hiring narrative enters (internal + external)\n\nAn internal thread analyzes an “OpenAI partnership” announcement, characterizing it as: OpenClaw’s creator joining OpenAI, OpenClaw continuing as open source under a foundation, and a likely focus on “personal agents,” skills governance, and security hardening. (**Internal evidence:** INT9)\n\nExternal reporting corroborates that **Peter Steinberger** (described as OpenClaw’s founder) is joining OpenAI, and that OpenClaw will remain open source with foundation support. ([theverge.com](https://www.theverge.com/ai-artificial-intelligence/879623/openclaw-founder-peter-steinberger-joins-openai?utm_source=openai))  \n\n### 2026‑02‑17: AWS+Telegram+OpenClaw deployment specs and hardening iteration (internal)\n\nA multi-step spec is produced and then critiqued:\n\n* initial AWS+SSH tunnel spec (bind vLLM to loopback; tunnel; Telegram pairing) (**Internal evidence:** INT1, INT2)\n* user critique identifies missing hardening: secrets hygiene, EC2 hardening, install trust, WSL2 boundary risks, monitoring/cost controls (**Internal evidence:** INT3)\n* hardened version proposes SSM port forwarding, encrypted EBS, unattended upgrades, host firewall, systemd services, strict permissions, budgets/alerts (**Internal evidence:** INT4, INT5)\n\n### 2026‑02‑19: Gemini substitution as “lowest friction” (internal + external)\n\nAn internal feasibility analysis proposes switching from AWS/vLLM to Google Gemini API to remove GPU hosting and tunneling, while noting quota, privacy, and retention tradeoffs. (**Internal evidence:** INT6, INT7)\n\nExternal Google docs confirm Gemini 3 preview model IDs and token limits (e.g., `gemini-3-flash-preview`), pricing and “used to improve products” distinctions between free vs paid tiers, and quota tiering. ([ai.google.dev](https://ai.google.dev/models/gemini?utm_source=openai))  \n\n### 2026‑02 (ongoing): skills/plugin supply chain and malware targeting (external context)\n\nExternal reporting describes malware found among OpenClaw “skills” hosted via ClawHub and highlights risk from untrusted markdown-based instruction bundles. ([theverge.com](https://www.theverge.com/news/874011/openclaw-ai-skill-clawhub-extensions-security-nightmare?utm_source=openai))  \n\nSeparately, reporting indicates scams targeting OpenClaw/Moltbot popularity (e.g., a fake VS Code extension delivering remote access tooling). ([techradar.com](https://www.techradar.com/pro/security/fake-moltbot-ai-assistant-just-spreads-malware-so-ai-fans-watch-out-for-scams?utm_source=openai))  \n\n---\n\n## Capabilities, Components, and Relationships\n\n### 1) Gateway runtime and service model\n\n**Internal view.** The records repeatedly assume OpenClaw runs as a background “gateway” service, with commands such as:\n\n* `openclaw gateway status`\n* `openclaw dashboard`\n* foreground run for debugging (`openclaw gateway`). (**Internal evidence:** INT1, INT2, INT5, INT7)\n\n**External confirmation.** OpenClaw’s official install docs describe onboarding, post-install verification commands, and Gateway/Control UI usage. ([docs.openclaw.ai](https://docs.openclaw.ai/install/index?utm_source=openai))  \n\nWSL2 deployments are explicitly structured around **systemd** user services (user session) and service management. ([learn.microsoft.com](https://learn.microsoft.com/en-us/windows/wsl/wsl-config?utm_source=openai))  \n\n### 2) Channels: Telegram as primary human interface (and its access controls)\n\n**Internal procedure (Telegram).** The provided records specify:\n\n* create a bot token via `@BotFather`,\n* set `channels.telegram.botToken`,\n* keep DMs in `dmPolicy: \"pairing\"`,\n* approve pairing via `openclaw pairing approve telegram <CODE>`,\n* pairing codes expire after ~1 hour. (**Internal evidence:** INT1, INT2, INT5, INT7, INT11)\n\n**External confirmation.** Official Telegram channel documentation enumerates `dmPolicy` options (`pairing|allowlist|open|disabled`), describes `allowFrom` semantics (including `\"*\"` for open), and explicitly states **pairing codes expire after 1 hour**. ([docs.openclaw.ai](https://docs.openclaw.ai/telegram?utm_source=openai))  \n\n### 3) Session isolation (`session.dmScope`) as a privacy boundary\n\n**Internal emphasis.** Multiple threads prioritize `session.dmScope: \"per-channel-peer\"` to prevent context leakage between Telegram users. (**Internal evidence:** INT1, INT2, INT4, INT5, INT7)\n\n**External confirmation.** OpenClaw’s session documentation explains `dmScope` options and strongly recommends per-user isolation for multi-user DM environments. ([docs.openclaw.ai](https://docs.openclaw.ai/session?utm_source=openai))  \n\n### 4) Model backends and provider addressing scheme\n\nOpenClaw model references follow a `provider/model` format (e.g., `vllm/openai/gpt-oss-20b`, `google/gemini-3-flash-preview`). This is consistently used across the internal records. (**Internal evidence:** INT1, INT2, INT6, INT7, INT19)\n\nExternal provider docs confirm this:\n\n* vLLM provider uses OpenAI-compatible `/v1` endpoints and `api: \"openai-completions\"`. ([docs.openclaw.ai](https://docs.openclaw.ai/providers/vllm?utm_source=openai))  \n* Google Gemini provider uses `GEMINI_API_KEY` and model IDs like `google/gemini-3-pro-preview`. ([docs.openclaw.ai](https://docs.openclaw.ai/concepts/model-providers?utm_source=openai))  \n\n### 5) Self-hosted inference with vLLM: API surface and security implications\n\n**Internal claims.** The records emphasize:\n\n* bind vLLM to localhost (`--host 127.0.0.1`) and tunnel traffic,\n* vLLM `--api-key` is insufficient because non-`/v1` routes may remain unprotected. (**Internal evidence:** INT1, INT2, INT3, INT4, INT5)\n\n**External confirmation (high-load-bearing).** vLLM’s official security documentation states `--api-key` protects only `/v1/*`, while many other endpoints (including inference endpoints such as `/invocations`) remain unauthenticated; it recommends additional perimeter controls such as a reverse proxy allowlisting. ([docs.vllm.ai](https://docs.vllm.ai/en/v0.13.0/usage/security/?utm_source=openai))  \n\n### 6) AWS connectivity: SSH tunnels vs SSM Session Manager port forwarding\n\n**Internal posture.** The collection begins with SSH tunneling as a safe “works-first” posture (model port not exposed). It then moves to preferring **SSM Session Manager port forwarding** to eliminate inbound SSH, keys, and host-key TOFU risk. (**Internal evidence:** INT1, INT3, INT4, INT5)\n\n**External confirmation.** AWS documentation provides canonical `aws ssm start-session --document-name AWS-StartPortForwardingSession --parameters ...` examples. ([docs.aws.amazon.com](https://docs.aws.amazon.com/en_en/systems-manager/latest/userguide/getting-started-specify-session-document.html?utm_source=openai))  \n\n### 7) gpt‑oss model properties relevant to OpenClaw deployments\n\n**Internal claims.** The records assert:\n\n* gpt‑oss‑20b targets ~16GB memory class; gpt‑oss‑120b targets single 80GB GPU class,\n* both support ~128k / 131,072 token context,\n* models are MoE with active parameter routing properties,\n* OpenClaw can connect to vLLM serving gpt‑oss via OpenAI-compatible endpoints. (**Internal evidence:** INT1, INT2, INT14, INT15)\n\n**External confirmation.** OpenAI’s gpt‑oss post lists the MoE architecture (total vs active params) and context length (128k). ([openai.com](https://openai.com/index/introducing-gpt-oss?utm_source=openai))  \nvLLM’s gpt‑oss support post documents MXFP4 MoE weight quantization enabling smaller memory footprints and provides canonical container/pip install routes. ([blog.vllm.ai](https://blog.vllm.ai/2025/08/05/gpt-oss.html?utm_source=openai))  \n\n### 8) Skills, plugins, and ClawHub (extension mechanisms)\n\n**Internal view.** The records repeatedly warn that skills/plugins are a primary risk surface and should be treated as untrusted unless audited. (**Internal evidence:** INT1, INT3, INT4, INT11, INT12, INT21)\n\n**External specification.**\n\n* **ClawHub** is documented as a public skills registry; it is open by default with abuse throttles (e.g., GitHub account age requirement) and reporting/auto-hide behavior. ([docs.openclaw.ai](https://docs.openclaw.ai/clawhub?utm_source=openai))  \n* **Skills** are directory bundles anchored by `SKILL.md`, with precedence rules across bundled/managed/workspace scopes. ([docs.openclaw.ai](https://docs.openclaw.ai/skills?utm_source=openai))  \n* **Plugins** run **in-process** with the Gateway; the docs explicitly advise treating them as trusted code and using allowlists. ([docs.openclaw.ai](https://docs.openclaw.ai/plugins?utm_source=openai))  \n\n---\n\n## Contradictions and Ambiguities\n\n### C1) Node.js requirement: “Node 20+” vs “Node 22+”\n\n*Internal conflict.* One “fuss-free” setup states Node.js 20+ as prerequisite, while later OpenClaw setup threads state Node.js 22+. (**Internal evidence:** INT10 vs INT1/INT2/INT5)\n\n*External resolution.* Official install docs list **Node 22+** as a system requirement, while a system requirements page distinguishes minimum Node 20 and recommended Node 22 LTS. ([docs.openclaw.ai](https://docs.openclaw.ai/install/index?utm_source=openai))  \n\n**Interpretation.** “Node 20+” is best treated as a minimum compatibility floor, while “Node 22+” is the effective supported baseline for “current OpenClaw” in February 2026.\n\n---\n\n### C2) Context length representation: “128k” vs “131,072 tokens”\n\n*Internal ambiguity.* The gpt‑oss context length is expressed as both “128k” and “131,072 tokens.” (**Internal evidence:** INT15, INT14)\n\n*External resolution.* OpenAI lists “128k” context length for gpt‑oss models. ([openai.com](https://openai.com/index/introducing-gpt-oss?utm_source=openai)) 131,072 is a common exact-token representation of 128×1024.\n\n**Interpretation.** These are consistent representations; no substantive contradiction remains.\n\n---\n\n### C3) Whether Moltbook is “AI-only” vs “human-infiltrable”\n\n*Internal claim cluster.* The records emphasize that “agents plotting” narratives are likely roleplay, and that motivational autonomy is not demonstrated; they also treat Moltbook as an untrusted-content environment and a prompt-injection surface. (**Internal evidence:** INT12, INT13)\n\n*External corroboration and nuance.* A Wired infiltration account explicitly reports human ability to infiltrate and doubts authenticity of “AI-only” claims. ([wired.com](https://www.wired.com/story/i-infiltrated-moltbook-ai-only-social-network?utm_source=openai))  \n\n**Residual ambiguity.** The platform’s *branding* as “AI-only” is not equivalent to enforceable verification; thus, any operational integration should assume mixed human/agent content unless proven otherwise.\n\n---\n\n### C4) “Partnership” semantics: partnership vs hiring + foundation support\n\n*Internal framing.* “OpenAI partnership” is interpreted as: creator joining OpenAI; project continues open source under a foundation; OpenAI supports. (**Internal evidence:** INT9)\n\n*External corroboration.* Reporting supports the “creator joining OpenAI + foundation support” reading. ([theverge.com](https://www.theverge.com/ai-artificial-intelligence/879623/openclaw-founder-peter-steinberger-joins-openai?utm_source=openai))  \n\n**Residual ambiguity.** The precise legal/financial structure of the foundation (governance, charter, funding levels) is not fully specified in the provided records and remains outside the evidence scope here.\n\n---\n\n### C5) Security incident quantification (malicious skills counts)\n\n*Internal references.* The collection contains general warnings about malicious skills and supply-chain attacks, but does not provide stable numeric counts. (**Internal evidence:** INT1, INT12, INT21)\n\n*External reporting.* Journalistic sources describe “hundreds” of malicious skills, but exact numbers vary across sources and over time. ([theverge.com](https://www.theverge.com/news/874011/openclaw-ai-skill-clawhub-extensions-security-nightmare?utm_source=openai))  \n\n**Interpretation.** For security posture, the precise count is less important than the validated qualitative conclusion: ClawHub skills have been used as a malware delivery vector, and skills should be treated as untrusted.\n\n---\n\n## Reconciliation Decisions\n\n### R1) Canonical project name in February 2026\n\n**Conflict.** Internal records alternately refer to Clawdbot, Moltbot, and OpenClaw. (**Internal evidence:** INT16, INT20, INT1, INT9)\n\n**External sources consulted.**  \n* The Verge (published ~2026‑02‑16) describing OpenClaw as current name ([theverge.com](https://www.theverge.com/ai-artificial-intelligence/879623/openclaw-founder-peter-steinberger-joins-openai?utm_source=openai))  \n* Wired (published ~2026‑02‑18) similarly using OpenClaw ([wired.com](https://www.wired.com/story/openclaw-banned-by-tech-companies-as-security-concerns-mount?utm_source=openai))  \n* OpenClaw official install documentation ([docs.openclaw.ai](https://docs.openclaw.ai/install/index?utm_source=openai))  \n\n**Decision.** Use **OpenClaw** as canonical; treat Clawdbot/Moltbot as historical aliases.\n\n---\n\n### R2) Installation prerequisites (Node / WSL2 / systemd)\n\n**Conflict.** Node version ambiguity (20 vs 22); unclear whether systemd in WSL2 is required for daemonization. (**Internal evidence:** INT10, INT2, INT5)\n\n**External sources consulted.**  \n* OpenClaw install docs (Node 22+; WSL2 recommended) ([docs.openclaw.ai](https://docs.openclaw.ai/install/index?utm_source=openai))  \n* OpenClaw system requirements (minimum Node 20; recommended Node 22) ([openclawdoc.com](https://openclawdoc.com/docs/getting-started/requirements/?utm_source=openai))  \n* Microsoft Learn: WSL systemd support and version requirement (0.67.6+) ([learn.microsoft.com](https://learn.microsoft.com/en-us/windows/wsl/wsl-config?utm_source=openai))  \n\n**Decision.** Treat Node 22 as the supported baseline; treat WSL2+systemd as the Windows-recommended operational posture for running the OpenClaw gateway as a service.\n\n---\n\n### R3) vLLM perimeter security (“API key is insufficient”)\n\n**Conflict.** Internal records claim `--api-key` is insufficient because non-`/v1` endpoints can remain unprotected; this is high-stakes if users expose ports. (**Internal evidence:** INT1, INT2, INT3, INT4)\n\n**External sources consulted.** vLLM security documentation explicitly confirms `/v1` is protected while other endpoints remain unauthenticated, and recommends a reverse proxy allowlist. ([docs.vllm.ai](https://docs.vllm.ai/en/v0.13.0/usage/security/?utm_source=openai))  \n\n**Decision.** Adopt the external documentation as authoritative; treat “bind to loopback + tunnel” as necessary but not sufficient if misconfiguration could expose the server.\n\n---\n\n### R4) Moltbook authenticity and “AI-only” claims\n\n**Conflict.** “AI-only” branding vs internal skepticism. (**Internal evidence:** INT12)\n\n**External sources consulted.** Wired infiltration report indicating humans can pose as agents and that engagement quality resembles human roleplay/scam patterns. ([wired.com](https://www.wired.com/story/i-infiltrated-moltbook-ai-only-social-network?utm_source=openai))  \n\n**Decision.** Treat Moltbook as a **mixed-author** platform for threat modeling unless robust verification is demonstrated.\n\n---\n\n### External source disclosure (URLs, publishers, dates)\n\nFor transparency, the following external sources were consulted in reconciliation. URLs are provided in code formatting per output constraints:\n\n* `https://docs.openclaw.ai/install/index` — OpenClaw documentation (crawled 2026‑02‑18) ([docs.openclaw.ai](https://docs.openclaw.ai/install/index?utm_source=openai))  \n* `https://docs.vllm.ai/en/v0.13.0/usage/security/` — vLLM documentation (published ~2025‑12) ([docs.vllm.ai](https://docs.vllm.ai/en/v0.13.0/usage/security/?utm_source=openai))  \n* `https://docs.aws.amazon.com/en_us/systems-manager/latest/userguide/session-manager-working-with-sessions-start.html` — AWS docs (crawled 2026‑01) ([docs.aws.amazon.com](https://docs.aws.amazon.com/en_us/systems-manager/latest/userguide/session-manager-working-with-sessions-start.html?utm_source=openai))  \n* `https://openai.com/index/introducing-gpt-oss` — OpenAI (published 2025‑08‑05) ([openai.com](https://openai.com/index/introducing-gpt-oss?utm_source=openai))  \n* `https://ai.google.dev/models/gemini` — Google AI for Developers (published ~2026‑01) ([ai.google.dev](https://ai.google.dev/models/gemini?utm_source=openai))  \n* `https://www.theverge.com/ai-artificial-intelligence/879623/openclaw-founder-peter-steinberger-joins-openai` — The Verge (published ~2026‑02‑16) ([theverge.com](https://www.theverge.com/ai-artificial-intelligence/879623/openclaw-founder-peter-steinberger-joins-openai?utm_source=openai))  \n* `https://www.wired.com/story/i-infiltrated-moltbook-ai-only-social-network` — Wired (published 2026‑02‑03) ([wired.com](https://www.wired.com/story/i-infiltrated-moltbook-ai-only-social-network?utm_source=openai))  \n* `https://nvd.nist.gov/vuln/detail/CVE-2026-22778` — NVD (published 2026‑02‑02; undergoing analysis) ([nvd.nist.gov](https://nvd.nist.gov/vuln/detail/CVE-2026-22778?utm_source=openai))  \n\n---\n\n## Security and Risk Implications\n\n### 1) The “agent risk triangle”: capability × automation × supply chain\n\nThe internal research explicitly frames OpenClaw-like systems as risky because they combine:\n\n* capability (tools; filesystem; messaging; browser automation),\n* automation (heartbeats; scheduled loops; webhooks), and\n* supply chain exposure (skills/plugins, external content). (**Internal evidence:** INT12, INT13, INT21)\n\nThis aligns with external documentation showing rich extensibility surfaces (skills, ClawHub, plugins) and channel connectivity, which necessarily enlarges attack surface. ([docs.openclaw.ai](https://docs.openclaw.ai/skills?utm_source=openai))  \n\n---\n\n### 2) Network perimeter: vLLM exposure is particularly hazardous\n\nThe internal guidance (“bind to 127.0.0.1; tunnel; do not expose port 8000”) is not merely conservative—it is supported by vLLM’s explicit warning that API key auth covers only `/v1/*`, while other endpoints remain unauthenticated. ([docs.vllm.ai](https://docs.vllm.ai/en/v0.13.0/usage/security/?utm_source=openai))  \n\nPractical implication: even “API-key protected” public vLLM endpoints should be considered insecure unless placed behind an explicit endpoint allowlist proxy and additional auth/rate limits.\n\n---\n\n### 3) Secrets management: plaintext config + infostealer threat model\n\nThe internal critique highlights that plaintext secrets (Telegram bot token; vLLM API key) in config files and shell history can become the dominant compromise path. (**Internal evidence:** INT3, INT4, INT5)\n\nExternal reporting indicates OpenClaw configurations have been targeted or opportunistically harvested by infostealer malware. ([techradar.com](https://www.techradar.com/pro/security/openclaw-ai-agents-targeted-by-infostealer-malware-for-the-first-time?utm_source=openai))  \n\nPractical implication: treat `~/.openclaw` and related credential stores as **high-value**; enforce strict permissions and avoid storing secrets on shared filesystems (notably `/mnt/c` in WSL2 scenarios). (This is consistent with internal recommendations.) (**Internal evidence:** INT4, INT5)\n\n---\n\n### 4) Skills marketplace malware and social engineering via “instructions”\n\nA central internal warning is that “skills” can act as a malware vector because they can instruct users (or agents) to run commands, fetch binaries, or exfiltrate data. (**Internal evidence:** INT1, INT3, INT12, INT21)\n\nExternal reporting supports that malicious skills distributed through ClawHub have contained malware delivery mechanisms and that OpenClaw’s skills model (markdown instruction bundles) amplifies social engineering risk. ([theverge.com](https://www.theverge.com/news/874011/openclaw-ai-skill-clawhub-extensions-security-nightmare?utm_source=openai))  \n\nOpenClaw’s own ClawHub documentation indicates the registry is open by default and relies on moderation/reporting mechanisms, implying that users must maintain a default posture of distrust. ([docs.openclaw.ai](https://docs.openclaw.ai/clawhub?utm_source=openai))  \n\n---\n\n### 5) Plugins are a hard trust boundary (in-process execution)\n\nThe internal guidance treats plugins as “full trust.” (**Internal evidence:** INT1, INT3, INT4)\n\nOfficial documentation explicitly states plugins run **in-process** with the Gateway and should be treated as trusted code; it recommends allowlists. ([docs.openclaw.ai](https://docs.openclaw.ai/plugins?utm_source=openai))  \n\n---\n\n### 6) Vulnerability management for vLLM (CVE‑2026‑22778)\n\nA planning note in the provided records references a vLLM CVE and recommends patching. While this appears initially as an internal planning assertion, external sources confirm:\n\n* **CVE‑2026‑22778** affects vLLM **0.8.3 to <0.14.1** and is fixed in **0.14.1**,\n* it involves a heap address leak from PIL error handling and can be chained to achieve RCE in multimodal contexts. ([nvd.nist.gov](https://nvd.nist.gov/vuln/detail/CVE-2026-22778?utm_source=openai))  \n\nImplication for OpenClaw deployments: even if OpenClaw itself is well-configured, a self-hosted vLLM backend can be a critical remote-compromise target if exposed or if internal adversaries can reach it.\n\n---\n\n### 7) Moltbook as prompt-injection “goldmine”\n\nInternally, Moltbook is treated as “untrusted-input land,” recommending a read-only “spectator agent” with no tools and no secrets. (**Internal evidence:** INT13)\n\nExternal reporting supports human infiltration and low-quality/scam-like content, reinforcing the assessment that Moltbook should be treated as hostile content for agent ingestion. ([wired.com](https://www.wired.com/story/i-infiltrated-moltbook-ai-only-social-network?utm_source=openai))  \n\n---\n\n### 8) Cost-risk as a security-adjacent failure mode (AWS GPUs)\n\nThe internal critique identifies billing alerts as “most likely financial harm” for cloud GPU setups. (**Internal evidence:** INT3, INT4, INT5)\n\nThis is a risk-control dimension rather than an exploit path, but operationally significant: unattended GPU runtime can create immediate and severe cost exposure even without adversarial action.\n\n---\n\n## Final Synthesis\n\n1. **OpenClaw is the stabilized name** for a project previously referred to as Clawdbot and Moltbot; the provided records consistently treat these as one lineage, and external sources corroborate the naming chronology. (**Internal evidence:** INT20, INT1, INT9; ([theverge.com](https://www.theverge.com/ai-artificial-intelligence/879623/openclaw-founder-peter-steinberger-joins-openai?utm_source=openai)))\n\n2. The provided collection converges on a robust reference architecture for “agent over chat” deployments:  \n   **Telegram ↔ OpenClaw Gateway (often WSL2) ↔ model provider (vLLM self-hosted or hosted Gemini)**, with strict DM access control and session isolation. (**Internal evidence:** INT1, INT2, INT5, INT7; ([docs.openclaw.ai](https://docs.openclaw.ai/telegram?utm_source=openai)))\n\n3. The “security-first” posture in the records is strongly validated by primary documentation:  \n   * vLLM’s API key is not a perimeter; do not expose it publicly ([docs.vllm.ai](https://docs.vllm.ai/en/v0.13.0/usage/security/?utm_source=openai))  \n   * Telegram pairing and `dmScope` isolation are explicit first-class controls ([docs.openclaw.ai](https://docs.openclaw.ai/telegram?utm_source=openai))  \n   * plugins run in-process and must be treated as trusted code ([docs.openclaw.ai](https://docs.openclaw.ai/plugins?utm_source=openai))  \n\n4. Ecosystem reality: OpenClaw’s extensibility (skills/plugins) is also its dominant risk surface; external reporting on malicious skills and related scams substantively supports the internal supply-chain threat framing. (**Internal evidence:** INT12, INT21; ([theverge.com](https://www.theverge.com/news/874011/openclaw-ai-skill-clawhub-extensions-security-nightmare?utm_source=openai)))\n\n5. Moltbook is best treated as a hostile-content environment for agents: internal skepticism of “AI-only autonomy” narratives is externally corroborated by human infiltration reporting. (**Internal evidence:** INT12, INT13; ([wired.com](https://www.wired.com/story/i-infiltrated-moltbook-ai-only-social-network?utm_source=openai)))\n\n---\n\n## Open Questions and Residual Uncertainty\n\n1. **Foundation governance details.** While external reporting supports “foundation-backed open source,” the governance mechanics (maintainers, funding levels, IP stewardship) are not established in the provided records and were not fully resolved by targeted search. (**Internal evidence:** INT9; ([theverge.com](https://www.theverge.com/ai-artificial-intelligence/879623/openclaw-founder-peter-steinberger-joins-openai?utm_source=openai)))\n\n2. **Quantitative prevalence of malicious skills over time.** External reporting supports “hundreds,” but counts appear time-varying and methodology-dependent; the actionable conclusion (treat skills as untrusted) stands regardless. ([theverge.com](https://www.theverge.com/news/874011/openclaw-ai-skill-clawhub-extensions-security-nightmare?utm_source=openai))  \n\n3. **Operational boundaries for WSL2 exposure.** The internal hardening notes assert WSL2 localhost exposure to Windows host and potential LAN reach depending on firewall; this is plausible but configuration-specific. Formal threat modeling would require explicit user environment details (WSL networking mode; Windows firewall; portproxy usage). (**Internal evidence:** INT3, INT4)\n\n4. **Moltbook verification and API mechanics.** Some web sources describe skill-based/API-based onboarding; however, the report treats this as a security input risk rather than endorsing operational claims about Moltbook’s internal enforcement, which remains unstable. ([wired.com](https://www.wired.com/story/i-infiltrated-moltbook-ai-only-social-network?utm_source=openai))  \n\n---\n\n## Source Appendix\n\n### A) Internal evidence map (provided research outputs)\n\n* **INT1** — OpenClaw AWS+vLLM+SSH tunnel setup guide (OpenClaw config, Telegram pairing, vLLM localhost binding).  \n  Conversation `6993f8ed-1570-8398-84e7-0f5f279b8b6c`, message `1d32eb7f-de43-4092-ae80-9a898bb65837`.\n\n* **INT2** — WSL2-first AWS+SSH tunnel guide (systemd in WSL2, autossh persistence, vLLM localhost binding).  \n  Same conversation, message `e6e0f346-4787-40de-8bd8-0dbf004f281f`.\n\n* **INT3** — User critique identifying missing hardening (secrets sprawl, EC2 hardening, install trust, WSL2 boundary risks, billing alerts).  \n  Same conversation, message `9ae5541b-71bc-439b-890e-6d5ef723b0f5`.\n\n* **INT4** — Hardened “run it for weeks” version (SSM port forwarding, encrypted EBS, ufw, unattended-upgrades, systemd env files, secret isolation).  \n  Same conversation, message `a0e6f42d-c420-43fa-aaf8-f21835d83d2a`.\n\n* **INT5** — End-to-end spec (OpenClaw ↔ Telegram ↔ AWS, SSM-first, secrets via EnvironmentFile, cost controls).  \n  Same conversation, message `dfa640e3-7bad-42c2-be6e-6166f7779664`.\n\n* **INT6** — Gemini feasibility analysis (Developer API vs Vertex, data retention, quotas/pricing, architecture simplification).  \n  Same conversation, message `3be8f2d4-2922-4102-9a3b-2afcadc566b5`.\n\n* **INT7** — Lowest-friction OpenClaw ↔ Telegram ↔ Gemini 3 Flash (model ID correction; WSL2 secret storage).  \n  Same conversation, message `2429e755-1bce-4161-b1f9-15b350c4cad5`.\n\n* **INT8** — Model selection framework (small default + large fallback; tool-use reliability prioritized).  \n  Same conversation, message `8da02c89-52bc-4a00-92b9-fb4d1845bb42`.\n\n* **INT9** — OpenAI “partnership” analysis and forward-looking spinoffs (skills governance, personal agent runtime).  \n  Conversation `69929f24-af0c-839a-aeca-a59c28fb8101`, message `daebc507-c1f1-4ec4-bc22-8da731d31670`.\n\n* **INT10** — Fuss-free Windows setup (earlier Node 20+ reference; Telegram bot; basic setup).  \n  Same conversation, message `ae0306c6-4ace-466c-8b12-f30c7923dc15`.\n\n* **INT11** — Windows/WSL2 + Ollama + OpenClaw setup, plus warnings about malicious skills.  \n  Same conversation, message `94fc65e0-c514-4400-9720-dbb8aaf238ec`.\n\n* **INT12** — AI safety framing for OpenClaw/Moltbook (operational vs motivational autonomy; supply chain framing).  \n  Conversation `697e188d-cb80-839b-afa2-966d435ad71f`, message `d86f44a2-d621-437d-b4f8-5df25876ea25`.\n\n* **INT13** — “Safest practical” setup for Moltbot/OpenClaw + Telegram + local model; disable tools/heartbeats; Moltbook warning.  \n  Same conversation, message `850af348-3cd5-4980-954d-578d9fbc0131`.\n\n* **INT14** — gpt‑oss‑20b cloud feasibility analysis (MoE, license, managed vs self-host).  \n  Same conversation, message `67ee7470-6b48-4d46-a7ac-476ce7188a63`.\n\n* **INT15** — “Max context window” self-hosting guidance (KV cache constraints; vLLM flags).  \n  Same conversation, message `64f12f14-7373-4ae1-b282-9f3ea1c1460d`.\n\n* **INT16** — Clawdbot investigation report (channels, skills/plugins, Gmail via gog, security audit).  \n  Conversation `697744f2-ab48-8322-a3fc-3faa3ad0b4db`, message `c3b23c94-a93d-4460-9c39-87ffc964a75c`.\n\n* **INT17** — WhatsApp monitoring: number A → alert number B; multi-account sending; NO_REPLY concept.  \n  Same conversation, message `bc7d92ea-0f8c-4ddd-b6a6-c2d007b99e27`.\n\n* **INT18** — Relay command workflow (`/send`), `dmScope` discussion, and session routing considerations.  \n  Same conversation, message `f2289c75-972c-451e-a98a-d49fb2af0ed8`.\n\n* **INT19** — Gemini Flash support (provider `google`, aliasing, Vertex/CLI alternatives).  \n  Same conversation, message `1c18bc7d-df54-4521-918f-c2a8016a1c33`.\n\n* **INT20** — Rename claim (Clawdbot → Moltbot; trademark framing; partial propagation).  \n  Same conversation, message `b4ada4f0-ebcc-4def-8651-719ac1870381`.\n\n* **INT21** — Critical analysis of “agency” narratives; OpenClaw used as real-world security counterexample.  \n  Conversation `698582fd-89f8-83a0-8add-f9f1554dfd01`, message `117b2af7-772f-486b-ba8d-d58e07c8e81e`.\n\n* **INT22** — Image text edit request (“Change ‘Something else’ to OpenClaw Integration”).  \n  Conversation `69929dd1-23ec-8398-922a-f18c0658e14b`, message `17cc28e9-5f34-4be0-b4be-373048ba433b`.\n\n### B) External citations (web.run sources)\n\nAll external claims are supported inline by citations of the form  throughout the report. Key authoritative clusters include:\n\n* OpenClaw official documentation: install, Telegram channel, sessions, providers, ClawHub, plugins ([docs.openclaw.ai](https://docs.openclaw.ai/install/index?utm_source=openai))  \n* OpenAI gpt‑oss announcement and context length ([openai.com](https://openai.com/index/introducing-gpt-oss?utm_source=openai))  \n* vLLM security posture and endpoint exposure ([docs.vllm.ai](https://docs.vllm.ai/en/v0.13.0/usage/security/?utm_source=openai))  \n* AWS SSM port forwarding documentation ([docs.aws.amazon.com](https://docs.aws.amazon.com/en_en/systems-manager/latest/userguide/getting-started-specify-session-document.html?utm_source=openai))  \n* Google Gemini model IDs, pricing, quota, and availability ([ai.google.dev](https://ai.google.dev/models/gemini?utm_source=openai))  \n* Time-sensitive reporting on OpenClaw creator joining OpenAI and ecosystem security incidents ([theverge.com](https://www.theverge.com/ai-artificial-intelligence/879623/openclaw-founder-peter-steinberger-joins-openai?utm_source=openai))  \n* vLLM CVE‑2026‑22778 (NVD + vendor analysis) ([nvd.nist.gov](https://nvd.nist.gov/vuln/detail/CVE-2026-22778?utm_source=openai))",
+          "type": "output_text",
+          "logprobs": []
+        }
+      ],
+      "role": "assistant",
+      "status": "completed",
+      "type": "message"
+    }
+  ],
+  "parallel_tool_calls": true,
+  "temperature": 1.0,
+  "tool_choice": "auto",
+  "tools": [
+    {
+      "type": "web_search",
+      "filters": null,
+      "search_context_size": "high",
+      "user_location": {
+        "city": null,
+        "country": null,
+        "region": null,
+        "timezone": null,
+        "type": "approximate"
+      }
+    }
+  ],
+  "top_p": 0.98,
+  "background": true,
+  "completed_at": 1771755639.0,
+  "conversation": null,
+  "max_output_tokens": null,
+  "max_tool_calls": null,
+  "previous_response_id": null,
+  "prompt": null,
+  "prompt_cache_key": null,
+  "prompt_cache_retention": null,
+  "reasoning": {
+    "effort": "high",
+    "generate_summary": null,
+    "summary": null
+  },
+  "safety_identifier": null,
+  "service_tier": "default",
+  "status": "completed",
+  "text": {
+    "format": {
+      "type": "text"
+    },
+    "verbosity": "high"
+  },
+  "top_logprobs": 0,
+  "truncation": "disabled",
+  "usage": {
+    "input_tokens": 213224,
+    "input_tokens_details": {
+      "cached_tokens": 0
+    },
+    "output_tokens": 22372,
+    "output_tokens_details": {
+      "reasoning_tokens": 11476
+    },
+    "total_tokens": 235596
+  },
+  "user": null,
+  "billing": {
+    "payer": "openai"
+  },
+  "frequency_penalty": 0.0,
+  "presence_penalty": 0.0,
+  "store": true
+}

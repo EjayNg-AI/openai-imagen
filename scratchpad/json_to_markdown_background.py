@@ -27,16 +27,16 @@ from openai import OpenAI
 
 TERMINAL_STATUSES = {"completed", "failed", "cancelled", "expired", "incomplete"}
 DEFAULT_DEVELOPER_INSTRUCTIONS = (
-    "You are a careful analyst. Given a JSON dataset from the user, produce a complete, "
-    "well-structured Markdown report. Deduplicate repetition without losing unique details. "
-    "Call out ambiguities and contradictions, reconcile when possible, and cite web findings "
-    "when you use web search."
+    "You are a careful research analyst. Given JSON records from the user, treat them as a "
+    "provided collection of research outputs and produce a complete, well-structured Markdown "
+    "report. Deduplicate repetition without losing unique details. Call out ambiguities and "
+    "contradictions, reconcile when possible, and cite web findings when you use web search."
 )
 DEFAULT_USER_TASK = (
-    "Analyze the following JSON dataset and return Markdown only.\n\n"
+    "Analyze the following provided research collection (JSON records) and return Markdown only.\n\n"
     "The report must be comprehensive and include all details, including minor points.\n"
     "When there are contradictions or ambiguities, explicitly reconcile them.\n"
-    "If the dataset is insufficient, use web search and explain how external evidence was used."
+    "If the provided records are insufficient, use web search and explain how external evidence was used."
 )
 
 

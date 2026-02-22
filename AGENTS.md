@@ -19,7 +19,7 @@
   Repository-local skill implementations and helper scripts used by Codex.
 
 - .agents/skills/chatgpt-archive-topic-background-report/scripts/run_topic_report.py
-  End-to-end topic workflow: archive thread search, JSON assembly, background API run, and saved report artifacts.
+  End-to-end topic workflow: archive thread search, research-collection JSON assembly, background API run, and saved report artifacts.
 
 - scratchpad/experiment.py and scratchpad/experiment.html
   General playground for experimenting before touching production code.

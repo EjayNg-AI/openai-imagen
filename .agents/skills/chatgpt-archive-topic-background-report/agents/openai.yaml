@@ -1,4 +1,4 @@
 interface:
   display_name: "Archive Topic Reporter"
   short_description: "Assemble topic threads and run background consolidation"
-  default_prompt: "Use $chatgpt-archive-topic-background-report to search latest/all archive threads by topic, assemble JSON, run a background Responses API report with web search, and save markdown output with quiet polling."
+  default_prompt: "Use $chatgpt-archive-topic-background-report to search latest/all archive threads by topic, assemble a JSON research collection, run a background Responses API report with web search, and save markdown output with quiet polling."

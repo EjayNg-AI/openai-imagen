@@ -21,7 +21,7 @@ from openai import OpenAI
 TERMINAL_STATUSES = {"completed", "failed", "cancelled", "expired", "incomplete"}
 ARCHIVE_NAME_RE = re.compile(r"^chatgpt_conversation_history_(\d{4}-\d{2}-\d{2})$")
 DEFAULT_USER_TASK = (
-    "Analyze the provided JSON dataset about {{TOPIC}} and produce a comprehensive markdown report. "
+    "Analyze the provided research collection (JSON records) about {{TOPIC}} and produce a comprehensive markdown report. "
     "Follow developer instructions exactly. Return markdown only."
 )
 
