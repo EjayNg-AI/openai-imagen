@@ -193,3 +193,5 @@ NOTE: This is for my reference after each coding session. The descriptions enter
 - Added repository-local renderer asset archive management (`scripts/viewer_asset_archive/` + `manifest.json` + `scripts/viewer_asset_utils.py`) and removed CDN fallback/download behavior from viewer runtime and build flow.
 - Rewrote `scripts/README.md` into a comprehensive CLI/API reference covering all command-line arguments for build/server/asset tooling, server modes/routes, payload schemas, workflows, and troubleshooting; aligned top-level `README.md` viewer section with complete argument summaries.
 - Added `docs/chatgpt_viewer_cli_cheat_sheet.md` as a single-page CLI command matrix and linked it from both `README.md` and `scripts/README.md`.
+- Fixed a MathJax regression in viewer script loading by preventing `global` short-circuit when a `readyCheck` is present, and applied the patch to `scripts/chatgpt_viewer_template.html` plus both tracked built viewer outputs.
+- Fixed MathJax TeX delimiter config to use single-backslash `\\(\\)` and `\\[\\]` delimiters (instead of over-escaped variants), and synced this in viewer + render-test template/build artifacts.

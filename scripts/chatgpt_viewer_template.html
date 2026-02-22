@@ -833,7 +833,7 @@
 
         function loadScriptAsset(item) {
           if (item.readyCheck && item.readyCheck()) return Promise.resolve(true);
-          if (item.global && window[item.global]) return Promise.resolve(true);
+          if (!item.readyCheck && item.global && window[item.global]) return Promise.resolve(true);
           return new Promise((resolve) => {
             const script = document.createElement("script");
             script.src = item.local;
@@ -881,11 +881,11 @@
               tex: {
                 inlineMath: [
                   ["$", "$"],
-                  ["\\\\(", "\\\\)"],
+                  ["\\(", "\\)"],
                 ],
                 displayMath: [
                   ["$$", "$$"],
-                  ["\\\\[", "\\\\]"],
+                  ["\\[", "\\]"],
                 ],
                 processEscapes: true,
               },
