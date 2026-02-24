@@ -307,6 +307,34 @@
         border-bottom: 1px solid var(--border);
       }
 
+      .transcript-header-main {
+        min-width: 0;
+        flex: 1;
+      }
+
+      .transcript-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+
+      .panel-copy-btn {
+        border: 1px solid var(--border);
+        background: var(--surface);
+        border-radius: 10px;
+        padding: 6px 10px;
+        font-family: var(--font-sans);
+        font-size: 11px;
+        color: var(--muted);
+        cursor: pointer;
+      }
+
+      .panel-copy-btn:disabled {
+        opacity: 0.45;
+        cursor: default;
+      }
+
       .panel-title {
         font-family: var(--font-sans);
         font-size: 14px;
@@ -422,6 +450,18 @@
         background: var(--surface);
       }
 
+      .message-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+
+      .message-header .author {
+        margin-bottom: 0;
+      }
+
       .author {
         font-family: var(--font-sans);
         font-size: 12px;
@@ -530,6 +570,24 @@
         z-index: 2;
       }
 
+      .message-copy-btn {
+        border: 1px solid var(--border);
+        background: var(--surface);
+        border-radius: 8px;
+        padding: 4px 8px;
+        font-family: var(--font-sans);
+        font-size: 11px;
+        color: var(--muted);
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+
+      body.unsafe-wrap-on .copy-btn,
+      body.unsafe-wrap-on .message-copy-btn,
+      body.unsafe-wrap-on .panel-copy-btn {
+        display: none !important;
+      }
+
       .rendered-content blockquote {
         margin: 8px 0;
         border-left: 3px solid var(--accent-2);
@@ -633,6 +691,9 @@
         .top-controls {
           width: 100%;
           justify-content: flex-start;
+        }
+        .message-header {
+          align-items: center;
         }
       }
 
@@ -746,9 +807,12 @@
 
       <section id="transcriptPanel" class="panel">
         <div class="panel-header">
-          <div>
+          <div class="transcript-header-main">
             <div id="convTitle" class="panel-title">Select a conversation</div>
             <div id="convMeta" class="meta"></div>
+          </div>
+          <div class="transcript-header-actions">
+            <button id="copyThreadBtn" class="panel-copy-btn" type="button" disabled>Copy thread</button>
           </div>
         </div>
         <div id="transcript" class="panel-body"></div>
@@ -759,6 +823,9 @@
           <div>
             <div class="panel-title">Rendered</div>
             <div class="meta">Markdown + LaTeX</div>
+          </div>
+          <div class="transcript-header-actions">
+            <button id="copyThreadBtnRendered" class="panel-copy-btn" type="button" disabled>Copy thread</button>
           </div>
         </div>
         <div id="rendered" class="panel-body"></div>
@@ -957,6 +1024,9 @@
       const transcriptEl = document.getElementById("transcript");
       const convTitleEl = document.getElementById("convTitle");
       const convMetaEl = document.getElementById("convMeta");
+      const copyThreadBtnEl = document.getElementById("copyThreadBtn");
+      const copyThreadBtnRenderedEl = document.getElementById("copyThreadBtnRendered");
+      const threadCopyButtons = [copyThreadBtnEl, copyThreadBtnRenderedEl].filter(Boolean);
       const msgSearchEl = document.getElementById("msgSearch");
       const matchCountEl = document.getElementById("matchCount");
       const showInternalEl = document.getElementById("showInternal");
@@ -1011,6 +1081,127 @@
         if (conv && conv.create_time) meta.push("Created: " + formatTime(conv.create_time));
         if (conv && conv.update_time) meta.push("Updated: " + formatTime(conv.update_time));
         convMetaEl.textContent = meta.join(" | ");
+        updateThreadCopyButton();
+      }
+
+      function shouldShowCopyUi() {
+        return !state.wrapCodeUnsafe;
+      }
+
+      function getConversationTitleForCopy() {
+        const rawTitle = state.conv && state.conv.title ? String(state.conv.title) : "(untitled)";
+        const normalized = rawTitle.replace(/\s+/g, " ").trim();
+        return normalized || "(untitled)";
+      }
+
+      function copyRoleLabel(msg) {
+        const role = msg && msg.author && msg.author.role ? msg.author.role : "unknown";
+        return role.toUpperCase();
+      }
+
+      function formatTurnNumber(index) {
+        return String(index + 1).padStart(2, "0");
+      }
+
+      function getVisiblePathNodeIds() {
+        if (!state.selected) return [];
+        const path = [];
+        let current = state.selected;
+        while (current && state.nodes[current]) {
+          path.push(current);
+          current = state.nodes[current].parent;
+        }
+        path.reverse();
+
+        return path.filter((nodeId) => {
+          const node = state.nodes[nodeId];
+          if (!node || !isNodeVisible(node)) return false;
+          const msg = node.message;
+          const parts = extractMessageParts(msg);
+          return parts.length > 0;
+        });
+      }
+
+      function serializeTurnMarkdown(nodeId, turnIndex) {
+        const node = state.nodes[nodeId];
+        if (!node || !node.message) return "";
+        const msg = node.message;
+        const parts = extractMessageParts(msg);
+        if (parts.length === 0) return "";
+        const heading = "## TURN " + formatTurnNumber(turnIndex) + " | " + copyRoleLabel(msg);
+        const body = partsToMarkdown(parts).trim();
+        if (!body) {
+          return heading + "\n\n_(no content)_";
+        }
+        return heading + "\n\n" + body;
+      }
+
+      function serializeThreadMarkdown() {
+        if (!state.conv) return "";
+        const visiblePath = getVisiblePathNodeIds();
+        const title = getConversationTitleForCopy();
+        if (visiblePath.length === 0) {
+          return "# CONVERSATION: " + title + "\n\n_(no visible turns)_";
+        }
+        const turns = visiblePath
+          .map((nodeId, index) => serializeTurnMarkdown(nodeId, index))
+          .filter(Boolean);
+        if (turns.length === 0) {
+          return "# CONVERSATION: " + title + "\n\n_(no visible turns)_";
+        }
+        return "# CONVERSATION: " + title + "\n\n" + turns.join("\n\n---\n\n");
+      }
+
+      function updateThreadCopyButton() {
+        if (threadCopyButtons.length === 0) return;
+        const copyEnabled = shouldShowCopyUi();
+        const hasConversation = Boolean(state.conv);
+        const hasTurns = hasConversation && getVisiblePathNodeIds().length > 0;
+        threadCopyButtons.forEach((button) => {
+          button.hidden = !copyEnabled;
+          button.disabled = !copyEnabled || !hasTurns;
+        });
+      }
+
+      function updateCopyUiMode() {
+        document.body.classList.toggle("unsafe-wrap-on", state.wrapCodeUnsafe);
+        updateThreadCopyButton();
+      }
+
+      function createMessageCopyButton(nodeId, turnIndex) {
+        if (!shouldShowCopyUi()) return null;
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "message-copy-btn";
+        button.textContent = "Copy turn";
+        button.addEventListener("click", (event) => {
+          event.stopPropagation();
+          if (!shouldShowCopyUi()) return;
+          const markdown = serializeTurnMarkdown(nodeId, turnIndex);
+          if (!markdown) {
+            flashButton(button, "Empty");
+            return;
+          }
+          copyTextWithFeedback(markdown, button);
+        });
+        return button;
+      }
+
+      function buildMessageHeader(msg, nodeId, turnIndex) {
+        const header = document.createElement("div");
+        header.className = "message-header";
+
+        const author = document.createElement("div");
+        author.className = "author " + (msg.author && msg.author.role ? msg.author.role : "");
+        author.textContent = roleLabel(msg);
+        header.appendChild(author);
+
+        const copyButton = createMessageCopyButton(nodeId, turnIndex);
+        if (copyButton) {
+          header.appendChild(copyButton);
+        }
+
+        return header;
       }
 
       function setChatStatus(text, tone) {
@@ -1627,23 +1818,29 @@
           empty.className = "empty-state";
           empty.textContent = "Select a node to render the conversation path.";
           transcriptEl.appendChild(empty);
+          updateThreadCopyButton();
+          updateChatControls();
           return;
         }
 
-        const path = [];
-        let current = state.selected;
-        while (current && state.nodes[current]) {
-          path.push(current);
-          current = state.nodes[current].parent;
+        const visiblePath = getVisiblePathNodeIds();
+        if (!state.conv || visiblePath.length === 0) {
+          const empty = document.createElement("div");
+          empty.className = "empty-state";
+          empty.textContent = "No visible messages with current filters.";
+          transcriptEl.appendChild(empty);
+          updateThreadCopyButton();
+          updateChatControls();
+          if (state.renderEnabled) {
+            renderRenderedTranscript();
+          }
+          return;
         }
-        path.reverse();
-
-        if (!state.conv) return;
 
         let targetEl = null;
-        path.forEach((nodeId) => {
+        visiblePath.forEach((nodeId, turnIndex) => {
           const node = state.nodes[nodeId];
-          if (!node || !isNodeVisible(node)) return;
+          if (!node || !node.message) return;
           const msg = node.message;
           const parts = extractMessageParts(msg);
           if (parts.length === 0) return;
@@ -1652,10 +1849,8 @@
           msgEl.className = "message";
           msgEl.dataset.nodeId = nodeId;
 
-          const author = document.createElement("div");
-          author.className = "author " + (msg.author && msg.author.role ? msg.author.role : "");
-          author.textContent = roleLabel(msg);
-          msgEl.appendChild(author);
+          const messageHeader = buildMessageHeader(msg, nodeId, turnIndex);
+          msgEl.appendChild(messageHeader);
 
           parts.forEach((part) => {
             if (part.kind === "asset") {
@@ -1711,6 +1906,7 @@
 
         applyCodeWrapMode();
         updateChatControls();
+        updateThreadCopyButton();
 
         if (state.renderEnabled) {
           renderRenderedTranscript();
@@ -2069,7 +2265,7 @@
 
       function setCopyButton(wrapper, block) {
         let button = wrapper.querySelector(".copy-btn");
-        if (state.wrapCodeUnsafe) {
+        if (!shouldShowCopyUi()) {
           if (button) button.remove();
           return;
         }
@@ -2085,14 +2281,23 @@
 
       function copyCodeBlock(block, button) {
         const raw = block.dataset.raw || block.textContent || "";
+        copyTextWithFeedback(raw, button);
+      }
+
+      function copyTextWithFeedback(text, button) {
+        if (!shouldShowCopyUi()) {
+          flashButton(button, "Disabled");
+          return;
+        }
+        const raw = typeof text === "string" ? text : String(text || "");
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(raw).then(
             () => flashButton(button, "Copied"),
             () => fallbackCopy(raw, button)
           );
-        } else {
-          fallbackCopy(raw, button);
+          return;
         }
+        fallbackCopy(raw, button);
       }
 
       function fallbackCopy(text, button) {
@@ -2226,18 +2431,19 @@
           return;
         }
 
-        const path = [];
-        let current = state.selected;
-        while (current && state.nodes[current]) {
-          path.push(current);
-          current = state.nodes[current].parent;
+        const visiblePath = getVisiblePathNodeIds();
+        if (visiblePath.length === 0) {
+          const empty = document.createElement("div");
+          empty.className = "empty-state";
+          empty.textContent = "No visible messages with current filters.";
+          renderedEl.appendChild(empty);
+          return;
         }
-        path.reverse();
 
         let targetEl = null;
-        path.forEach((nodeId) => {
+        visiblePath.forEach((nodeId, turnIndex) => {
           const node = state.nodes[nodeId];
-          if (!node || !isNodeVisible(node)) return;
+          if (!node || !node.message) return;
           const msg = node.message;
           const parts = extractMessageParts(msg);
           if (parts.length === 0) return;
@@ -2246,10 +2452,8 @@
           msgEl.className = "message";
           msgEl.dataset.nodeId = nodeId;
 
-          const author = document.createElement("div");
-          author.className = "author " + (msg.author && msg.author.role ? msg.author.role : "");
-          author.textContent = roleLabel(msg);
-          msgEl.appendChild(author);
+          const messageHeader = buildMessageHeader(msg, nodeId, turnIndex);
+          msgEl.appendChild(messageHeader);
 
           const content = document.createElement("div");
           content.className = "rendered-content";
@@ -2355,8 +2559,23 @@
         state.index = index.sort((a, b) => (b.update_time || 0) - (a.update_time || 0));
         state.assets = assets || {};
         renderConversationList();
+        updateThreadCopyButton();
         updateChatControls();
       }
+
+      function handleThreadCopy(button) {
+        if (!shouldShowCopyUi()) return;
+        const markdown = serializeThreadMarkdown();
+        if (!markdown) {
+          flashButton(button, "Empty");
+          return;
+        }
+        copyTextWithFeedback(markdown, button);
+      }
+
+      threadCopyButtons.forEach((button) => {
+        button.addEventListener("click", () => handleThreadCopy(button));
+      });
 
       convSearchEl.addEventListener("input", () => renderConversationList());
 
@@ -2436,7 +2655,12 @@
 
       unsafeCodeWrapEl.addEventListener("change", () => {
         state.wrapCodeUnsafe = unsafeCodeWrapEl.checked;
-        applyCodeWrapMode();
+        updateCopyUiMode();
+        if (state.conv) {
+          renderTranscript();
+        } else {
+          applyCodeWrapMode();
+        }
         try {
           localStorage.setItem("chatgpt_viewer_code_wrap", state.wrapCodeUnsafe ? "1" : "0");
         } catch (err) {
@@ -2575,6 +2799,8 @@
           // ignore storage errors
         }
       })();
+
+      updateCopyUiMode();
 
       (function restoreChatSettings() {
         try {
