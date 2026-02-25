@@ -2,6 +2,7 @@
 """Local server for ChatGPT archive viewer with single-archive and hub modes."""
 
 import argparse
+import copy
 import json
 import os
 import re
@@ -45,6 +46,28 @@ VALID_VERBOSITY = {"low", "medium", "high"}
 MAX_CONVERSATION_TITLE_CHARS = 80
 MAX_ARCHIVE_INPUT_CHARS = 80
 ARCHIVE_DIR_NAME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+IMAGE_EXTENSIONS = {
+    ".avif",
+    ".bmp",
+    ".gif",
+    ".heic",
+    ".heif",
+    ".ico",
+    ".jpeg",
+    ".jpg",
+    ".png",
+    ".svg",
+    ".tif",
+    ".tiff",
+    ".webp",
+}
+TERMINAL_RESPONSE_STATUSES = {
+    "cancelled",
+    "completed",
+    "expired",
+    "failed",
+    "incomplete",
+}
 
 
 def default_web_search_tool() -> Dict[str, object]:
@@ -162,6 +185,70 @@ def parse_bool(value: object, default: bool = False) -> bool:
         if lowered in {"0", "false", "no", "off"}:
             return False
     raise ValueError("background must be a boolean.")
+
+
+def sanitize_attachment_filename(value: object) -> str:
+    if not isinstance(value, str):
+        return ""
+    text = value.strip().replace("\\", "/")
+    if not text:
+        return ""
+    text = text.split("/")[-1].strip()
+    return text
+
+
+def attachment_is_image(filename: str, content_type: str) -> bool:
+    if isinstance(content_type, str) and content_type.strip().lower().startswith("image/"):
+        return True
+    suffix = Path(filename).suffix.lower()
+    return suffix in IMAGE_EXTENSIONS
+
+
+def normalize_request_attachments(files: List[object]) -> List[Dict[str, object]]:
+    normalized: List[Dict[str, object]] = []
+    for raw_file in files:
+        filename = sanitize_attachment_filename(getattr(raw_file, "filename", ""))
+        if not filename:
+            continue
+        content_type = getattr(raw_file, "mimetype", None) or getattr(raw_file, "content_type", None)
+        if not isinstance(content_type, str):
+            content_type = "application/octet-stream"
+        content_type = content_type.strip().lower() or "application/octet-stream"
+
+        is_image = attachment_is_image(filename, content_type)
+        normalized.append(
+            {
+                "file": raw_file,
+                "filename": filename,
+                "content_type": content_type,
+                "purpose": "vision" if is_image else "user_data",
+                "api_content_type": "input_image" if is_image else "input_file",
+            }
+        )
+    return normalized
+
+
+def parse_chat_request_payload(http_request) -> Tuple[Dict[str, object], List[Dict[str, object]]]:
+    content_type = (http_request.content_type or "").lower()
+    if "multipart/form-data" in content_type:
+        raw_payload = http_request.form.get("payload_json")
+        if raw_payload is None:
+            raise ValueError("payload_json is required for multipart requests.")
+        try:
+            payload = json.loads(raw_payload)
+        except json.JSONDecodeError as exc:
+            raise ValueError("payload_json must be valid JSON.") from exc
+        if not isinstance(payload, dict):
+            raise ValueError("payload_json must decode to a JSON object.")
+        attachments = normalize_request_attachments(http_request.files.getlist("attachments"))
+        return payload, attachments
+
+    payload = http_request.get_json(silent=True)
+    if payload is None:
+        payload = {}
+    if not isinstance(payload, dict):
+        raise ValueError("JSON body must be an object.")
+    return payload, []
 
 
 def extract_message_text(message: Dict[str, object]) -> str:
@@ -396,6 +483,89 @@ class ChatService:
             payload["store"] = True
         client = self.get_client()
         return client.responses.create(**payload)
+
+    def prepare_messages_with_attachments(
+        self,
+        messages: List[Dict[str, object]],
+        attachments: List[Dict[str, object]],
+    ) -> Tuple[List[Dict[str, object]], List[str]]:
+        if not attachments:
+            return messages, []
+
+        enriched_messages = copy.deepcopy(messages)
+        if not enriched_messages:
+            raise ValueError("Conversation input is empty.")
+
+        last_message = enriched_messages[-1]
+        if not isinstance(last_message, dict) or last_message.get("role") != "user":
+            raise ValueError("Conversation input must end with a user message.")
+
+        content = last_message.get("content")
+        if not isinstance(content, list):
+            raise ValueError("Conversation input is invalid.")
+        if not any(isinstance(block, dict) and block.get("type") == "input_text" for block in content):
+            raise ValueError("Final user message must include input_text.")
+
+        client = self.get_client()
+        uploaded_file_ids: List[str] = []
+        try:
+            for attachment in attachments:
+                file_storage = attachment.get("file")
+                stream = getattr(file_storage, "stream", None)
+                if stream is None:
+                    raise ValueError("Attachment stream is missing.")
+
+                filename = attachment.get("filename")
+                if not isinstance(filename, str) or not filename:
+                    raise ValueError("Attachment filename is missing.")
+
+                content_type = attachment.get("content_type")
+                if not isinstance(content_type, str) or not content_type:
+                    content_type = "application/octet-stream"
+
+                purpose = attachment.get("purpose")
+                if purpose not in {"vision", "user_data"}:
+                    purpose = "user_data"
+
+                try:
+                    stream.seek(0)
+                except Exception:  # noqa: BLE001
+                    pass
+
+                uploaded = client.files.create(
+                    file=(filename, stream, content_type),
+                    purpose=purpose,
+                )
+                uploaded_id = getattr(uploaded, "id", None)
+                if not isinstance(uploaded_id, str) or not uploaded_id:
+                    raise RuntimeError(f"Upload returned no file id for {filename}.")
+                uploaded_file_ids.append(uploaded_id)
+
+                api_content_type = attachment.get("api_content_type")
+                if api_content_type == "input_image":
+                    content.append({"type": "input_image", "image_file_id": uploaded_id})
+                else:
+                    content.append({"type": "input_file", "file_id": uploaded_id})
+        except Exception:
+            self.cleanup_uploaded_files(uploaded_file_ids)
+            raise
+        return enriched_messages, uploaded_file_ids
+
+    def cleanup_uploaded_files(self, uploaded_file_ids: List[str]) -> List[str]:
+        if not uploaded_file_ids:
+            return []
+        client = self.get_client()
+        errors: List[str] = []
+        seen = set()
+        for file_id in uploaded_file_ids:
+            if not isinstance(file_id, str) or not file_id or file_id in seen:
+                continue
+            seen.add(file_id)
+            try:
+                client.files.delete(file_id)
+            except Exception as exc:  # noqa: BLE001
+                errors.append(f"{file_id}: {exc}")
+        return errors
 
     def build_turns_from_path(self, conv: Dict[str, object], anchor_node_id: str) -> List[Dict[str, str]]:
         mapping = conv.get("mapping")
@@ -714,7 +884,36 @@ class ArchiveHub:
             return cached
 
 
-def process_chat_new(app: Flask, chat: ChatService, payload: Dict[str, object]) -> Tuple[Dict[str, object], int]:
+def log_attachment_cleanup_errors(app: Flask, errors: List[str], *, context: str) -> None:
+    for item in errors:
+        app.logger.warning("%s attachment cleanup failed: %s", context, item)
+
+
+def cleanup_background_job_attachments(
+    app: Flask,
+    chat: ChatService,
+    response_id: str,
+    job: Dict[str, object],
+) -> None:
+    if bool(job.get("attachments_cleaned")):
+        return
+    raw_ids = job.get("uploaded_file_ids")
+    uploaded_file_ids = [item for item in raw_ids if isinstance(item, str) and item] if isinstance(raw_ids, list) else []
+    errors = chat.cleanup_uploaded_files(uploaded_file_ids) if uploaded_file_ids else []
+    if errors:
+        job["attachment_cleanup_errors"] = errors
+        log_attachment_cleanup_errors(app, errors, context=f"Background response {response_id}")
+    job["attachments_cleaned"] = True
+    chat.set_background_job(response_id, job)
+
+
+def process_chat_new(
+    app: Flask,
+    chat: ChatService,
+    payload: Dict[str, object],
+    attachments: Optional[List[Dict[str, object]]] = None,
+) -> Tuple[Dict[str, object], int]:
+    attachments = attachments or []
     try:
         prompt = normalize_prompt(payload.get("prompt"))
         custom_title = normalize_optional_title(payload.get("title"))
@@ -728,22 +927,39 @@ def process_chat_new(app: Flask, chat: ChatService, payload: Dict[str, object]) 
 
     conv_title = custom_title or title_from_prompt(prompt)
     messages = build_api_messages_from_turns([], prompt)
+    uploaded_file_ids: List[str] = []
 
     try:
+        request_messages, uploaded_file_ids = chat.prepare_messages_with_attachments(messages, attachments)
         response = chat.call_model(
-            messages,
+            request_messages,
             model=model,
             reasoning_effort=reasoning_effort,
             text_verbosity=text_verbosity,
             background=background,
         )
     except Exception as exc:  # noqa: BLE001
+        if uploaded_file_ids:
+            cleanup_errors = chat.cleanup_uploaded_files(uploaded_file_ids)
+            if cleanup_errors:
+                log_attachment_cleanup_errors(
+                    app,
+                    cleanup_errors,
+                    context="New chat request",
+                )
         app.logger.exception("Failed to create model response for new conversation")
         return {"ok": False, "error": str(exc)}, 500
 
     if background:
         response_id = getattr(response, "id", None)
         if not isinstance(response_id, str) or not response_id:
+            cleanup_errors = chat.cleanup_uploaded_files(uploaded_file_ids)
+            if cleanup_errors:
+                log_attachment_cleanup_errors(
+                    app,
+                    cleanup_errors,
+                    context="New background chat request",
+                )
             return {"ok": False, "error": "No response_id returned for background request."}, 500
         chat.start_background_job(
             response_id,
@@ -753,6 +969,8 @@ def process_chat_new(app: Flask, chat: ChatService, payload: Dict[str, object]) 
                 "model": model,
                 "title": conv_title,
                 "persisted": False,
+                "uploaded_file_ids": uploaded_file_ids,
+                "attachments_cleaned": False,
             },
         )
         return {
@@ -774,6 +992,10 @@ def process_chat_new(app: Flask, chat: ChatService, payload: Dict[str, object]) 
     except Exception as exc:  # noqa: BLE001
         app.logger.exception("Failed to persist new conversation")
         return {"ok": False, "error": str(exc)}, 500
+    finally:
+        cleanup_errors = chat.cleanup_uploaded_files(uploaded_file_ids)
+        if cleanup_errors:
+            log_attachment_cleanup_errors(app, cleanup_errors, context="New chat request")
 
     return {
         "ok": True,
@@ -791,7 +1013,9 @@ def process_chat_continue(
     store: ArchiveStore,
     chat: ChatService,
     payload: Dict[str, object],
+    attachments: Optional[List[Dict[str, object]]] = None,
 ) -> Tuple[Dict[str, object], int]:
+    attachments = attachments or []
     try:
         conv_id = payload.get("conversation_id")
         anchor_node_id = payload.get("anchor_node_id")
@@ -823,21 +1047,38 @@ def process_chat_continue(
         app.logger.exception("Failed to prepare continuation context")
         return {"ok": False, "error": str(exc)}, 500
 
+    uploaded_file_ids: List[str] = []
     try:
+        request_messages, uploaded_file_ids = chat.prepare_messages_with_attachments(messages, attachments)
         response = chat.call_model(
-            messages,
+            request_messages,
             model=model,
             reasoning_effort=reasoning_effort,
             text_verbosity=text_verbosity,
             background=background,
         )
     except Exception as exc:  # noqa: BLE001
+        if uploaded_file_ids:
+            cleanup_errors = chat.cleanup_uploaded_files(uploaded_file_ids)
+            if cleanup_errors:
+                log_attachment_cleanup_errors(
+                    app,
+                    cleanup_errors,
+                    context="Continue chat request",
+                )
         app.logger.exception("Failed to create model response for continuation")
         return {"ok": False, "error": str(exc)}, 500
 
     if background:
         response_id = getattr(response, "id", None)
         if not isinstance(response_id, str) or not response_id:
+            cleanup_errors = chat.cleanup_uploaded_files(uploaded_file_ids)
+            if cleanup_errors:
+                log_attachment_cleanup_errors(
+                    app,
+                    cleanup_errors,
+                    context="Continue background chat request",
+                )
             return {"ok": False, "error": "No response_id returned for background request."}, 500
         chat.start_background_job(
             response_id,
@@ -848,6 +1089,8 @@ def process_chat_continue(
                 "prompt": prompt,
                 "model": model,
                 "persisted": False,
+                "uploaded_file_ids": uploaded_file_ids,
+                "attachments_cleaned": False,
             },
         )
         return {
@@ -874,6 +1117,10 @@ def process_chat_continue(
     except Exception as exc:  # noqa: BLE001
         app.logger.exception("Failed to persist continuation")
         return {"ok": False, "error": str(exc)}, 500
+    finally:
+        cleanup_errors = chat.cleanup_uploaded_files(uploaded_file_ids)
+        if cleanup_errors:
+            log_attachment_cleanup_errors(app, cleanup_errors, context="Continue chat request")
 
     return {
         "ok": True,
@@ -901,7 +1148,9 @@ def process_background_poll(app: Flask, chat: ChatService, response_id: str) -> 
         return {"ok": False, "error": str(exc)}, 500
 
     status = getattr(response, "status", "")
-    done = status in {"completed", "failed", "cancelled"}
+    done = status in TERMINAL_RESPONSE_STATUSES
+    if done:
+        cleanup_background_job_attachments(app, chat, response_id, job)
 
     if done and status == "completed":
         persisted = bool(job.get("persisted"))
@@ -966,7 +1215,9 @@ def process_background_cancel(app: Flask, chat: ChatService, response_id: str) -
         app.logger.exception("Background cancellation failed")
         return {"ok": False, "error": str(exc)}, 500
     status = getattr(response, "status", "")
-    done = status in {"completed", "failed", "cancelled"}
+    done = status in TERMINAL_RESPONSE_STATUSES
+    if done:
+        cleanup_background_job_attachments(app, chat, response_id, job)
     return {"ok": True, "status": status, "done": done}, 200
 
 
@@ -984,14 +1235,20 @@ def make_single_archive_app(viewer_dir: Path) -> Flask:
 
     @app.post("/api/archive/chat/new")
     def create_new_conversation():
-        payload = request.get_json(silent=True) or {}
-        result, status = process_chat_new(app, chat, payload)
+        try:
+            payload, attachments = parse_chat_request_payload(request)
+        except ValueError as exc:
+            return jsonify(ok=False, error=str(exc)), 400
+        result, status = process_chat_new(app, chat, payload, attachments)
         return jsonify(result), status
 
     @app.post("/api/archive/chat/continue")
     def continue_conversation():
-        payload = request.get_json(silent=True) or {}
-        result, status = process_chat_continue(app, store, chat, payload)
+        try:
+            payload, attachments = parse_chat_request_payload(request)
+        except ValueError as exc:
+            return jsonify(ok=False, error=str(exc)), 400
+        result, status = process_chat_continue(app, store, chat, payload, attachments)
         return jsonify(result), status
 
     @app.get("/api/archive/chat/background/<response_id>")
@@ -1117,8 +1374,11 @@ def make_multi_archive_app(sites_root: Path, *, asset_archive_dir: Path = ASSET_
         if ctx is None:
             return err_resp, status
         _, _, chat = ctx
-        payload = request.get_json(silent=True) or {}
-        result, code = process_chat_new(app, chat, payload)
+        try:
+            payload, attachments = parse_chat_request_payload(request)
+        except ValueError as exc:
+            return jsonify(ok=False, error=str(exc)), 400
+        result, code = process_chat_new(app, chat, payload, attachments)
         return jsonify(result), code
 
     @app.post("/api/archives/<archive_slug>/chat/continue")
@@ -1127,8 +1387,11 @@ def make_multi_archive_app(sites_root: Path, *, asset_archive_dir: Path = ASSET_
         if ctx is None:
             return err_resp, status
         _, store, chat = ctx
-        payload = request.get_json(silent=True) or {}
-        result, code = process_chat_continue(app, store, chat, payload)
+        try:
+            payload, attachments = parse_chat_request_payload(request)
+        except ValueError as exc:
+            return jsonify(ok=False, error=str(exc)), 400
+        result, code = process_chat_continue(app, store, chat, payload, attachments)
         return jsonify(result), code
 
     @app.get("/api/archives/<archive_slug>/chat/background/<response_id>")

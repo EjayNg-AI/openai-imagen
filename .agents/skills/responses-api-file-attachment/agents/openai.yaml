@@ -1,0 +1,4 @@
+interface:
+  display_name: "Responses File Attachment"
+  short_description: "Attach files in Responses API calls"
+  default_prompt: "Use $responses-api-file-attachment to upload local files and attach them correctly to a Responses API request with cleanup and optional background polling."

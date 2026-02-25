@@ -41,6 +41,9 @@ Generated or edited images are:
   - Live authoring single-archive mode: `python3 scripts/chatgpt_viewer_server.py --viewer-dir <site_dir> [--host 127.0.0.1] [--port 8000]`.
   - Multi-archive hub mode: `python3 scripts/chatgpt_viewer_server.py --sites-root chatgpt_viewer_sites [--asset-archive-dir scripts/viewer_asset_archive] [--host 127.0.0.1] [--port 8000]`.
   - New conversations can include an optional short title (max 80 chars); if omitted, title is derived from the prompt.
+  - The composer supports per-turn multi-file attachments; users can add/remove files between model responses.
+  - Live chat endpoints accept either JSON (no files) or multipart with `payload_json` + repeated `attachments`.
+  - Attachment routing follows file type: image files use `purpose="vision"` / `input_image`; non-images use `purpose="user_data"` / `input_file`.
   - Background-mode polling in the viewer runs every 10 seconds.
   - Live authoring model calls always enable web search with `search_context_size: "high"`.
   - Renderer assets are sourced from repository-local `scripts/viewer_asset_archive/` and copied into each site's `viewer_assets/` (no CDN fallback).

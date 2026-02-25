@@ -191,13 +191,18 @@ Archive-scoped live API routes:
 
 ## Live Chat API Payloads
 
+Chat endpoints accept either:
+
+- `application/json` body (no file attachments), or
+- `multipart/form-data` body with `payload_json` (required stringified JSON object) and `attachments` (optional repeated file part; one part per file).
+
 ### `chat/new`
 
-Required JSON fields:
+Required `payload_json` fields:
 
 - `prompt` (string)
 
-Optional JSON fields:
+Optional `payload_json` fields:
 
 - `title` (string, max 80 chars)
 - `model` (string)
@@ -207,18 +212,46 @@ Optional JSON fields:
 
 ### `chat/continue`
 
-Required JSON fields:
+Required `payload_json` fields:
 
 - `conversation_id` (string)
 - `anchor_node_id` (string)
 - `prompt` (string)
 
-Optional JSON fields:
+Optional `payload_json` fields:
 
 - `model` (string)
 - `reasoning_effort` (`none|low|medium|high|xhigh`)
 - `text_verbosity` (`low|medium|high`)
 - `background` (boolean)
+
+### Attachment multipart example
+
+Single-archive route:
+
+```bash
+curl -sS -X POST http://127.0.0.1:8000/api/archive/chat/new \
+  -F 'payload_json={"prompt":"Summarize these files.","model":"gpt-5.1"}' \
+  -F 'attachments=@/path/to/notes.pdf' \
+  -F 'attachments=@/path/to/diagram.png'
+```
+
+Archive-scoped route:
+
+```bash
+curl -sS -X POST http://127.0.0.1:8000/api/archives/<slug>/chat/continue \
+  -F 'payload_json={"conversation_id":"<id>","anchor_node_id":"<node>","prompt":"Continue with the attached files."}' \
+  -F 'attachments=@/path/to/file1.txt' \
+  -F 'attachments=@/path/to/file2.jpg'
+```
+
+### Attachment behavior
+
+- Viewer UI keeps a current attachment list per page session.
+- Users can add/remove files between turns, and each turn sends the current list.
+- Images are uploaded with `purpose="vision"` and attached as `input_image`.
+- Non-image files are uploaded with `purpose="user_data"` and attached as `input_file`.
+- Uploaded files are cleaned up after foreground requests and after background requests reach a terminal status.
 
 ### Background flow
 
