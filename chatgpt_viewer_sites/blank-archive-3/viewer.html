@@ -1423,11 +1423,13 @@
         const hasContinueTarget = Boolean(state.conv && state.selected);
         const busy = state.chatBusy;
         const hasPending = Boolean(state.chatPendingResponseId);
+        const model = chatModelEl.value.trim() || "gpt-5.1";
+        const includeReasoningControls = !isGpt4FamilyModel(model);
 
         chatModelEl.disabled = !backendReady || busy;
         chatTitleEl.disabled = !backendReady || busy;
-        chatReasoningEl.disabled = !backendReady || busy;
-        chatVerbosityEl.disabled = !backendReady || busy;
+        chatReasoningEl.disabled = !backendReady || busy || !includeReasoningControls;
+        chatVerbosityEl.disabled = !backendReady || busy || !includeReasoningControls;
         chatBackgroundEl.disabled = !backendReady || busy;
         chatAttachmentsInputEl.disabled = !backendReady || busy;
         chatAttachmentsAddEl.disabled = !backendReady || busy;
@@ -1506,6 +1508,12 @@
         updateChatControls();
       }
 
+      function isGpt4FamilyModel(model) {
+        if (typeof model !== "string") return false;
+        const normalized = model.trim().toLowerCase();
+        return normalized.startsWith("gpt-4") || normalized.startsWith("gpt4");
+      }
+
       function buildChatPayload(mode) {
         const prompt = chatPromptEl.value.trim();
         if (!prompt) {
@@ -1515,10 +1523,12 @@
         const payload = {
           prompt: prompt,
           model: model,
-          reasoning_effort: chatReasoningEl.value || "high",
-          text_verbosity: chatVerbosityEl.value || "medium",
           background: chatBackgroundEl.checked,
         };
+        if (!isGpt4FamilyModel(model)) {
+          payload.reasoning_effort = chatReasoningEl.value || "high";
+          payload.text_verbosity = chatVerbosityEl.value || "medium";
+        }
 
         const rawTitle = chatTitleEl.value.trim();
         if (rawTitle.length > 80) {
@@ -2925,9 +2935,14 @@
 
       chatModelEl.addEventListener("change", () => {
         persistChatSettings();
+        updateChatControls();
       });
       chatModelEl.addEventListener("blur", () => {
         persistChatSettings();
+        updateChatControls();
+      });
+      chatModelEl.addEventListener("input", () => {
+        updateChatControls();
       });
       chatReasoningEl.addEventListener("change", () => {
         persistChatSettings();

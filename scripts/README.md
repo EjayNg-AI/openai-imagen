@@ -206,8 +206,8 @@ Optional `payload_json` fields:
 
 - `title` (string, max 80 chars)
 - `model` (string)
-- `reasoning_effort` (`none|low|medium|high|xhigh`)
-- `text_verbosity` (`low|medium|high`)
+- `reasoning_effort` (`none|low|medium|high|xhigh`) for non-`gpt-4*` models
+- `text_verbosity` (`low|medium|high`) for non-`gpt-4*` models
 - `background` (boolean)
 
 ### `chat/continue`
@@ -221,9 +221,19 @@ Required `payload_json` fields:
 Optional `payload_json` fields:
 
 - `model` (string)
-- `reasoning_effort` (`none|low|medium|high|xhigh`)
-- `text_verbosity` (`low|medium|high`)
+- `reasoning_effort` (`none|low|medium|high|xhigh`) for non-`gpt-4*` models
+- `text_verbosity` (`low|medium|high`) for non-`gpt-4*` models
 - `background` (boolean)
+
+### Model request-shape rules
+
+- For `gpt-4*` / `gpt4*` models (for example, `gpt-4.1`, `gpt-4o`), the server omits `reasoning` and `text.verbosity` in `responses.create`.
+- For non-`gpt-4*` / non-`gpt4*` models (for example, `gpt-5*`), the server includes `reasoning.effort` and `text.verbosity` from payload options.
+- The server always sends `text.format.type = "text"`.
+- For `gpt-4*` / `gpt4*` models only, the server also sends:
+  - `temperature = 1`
+  - `top_p = 1`
+  - `max_output_tokens = 16000`
 
 ### Attachment multipart example
 

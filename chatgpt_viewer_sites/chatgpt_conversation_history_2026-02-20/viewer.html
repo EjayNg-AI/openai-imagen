@@ -251,6 +251,70 @@
         color: var(--accent);
       }
 
+      .composer-file-input {
+        display: none;
+      }
+
+      .chat-attachment-summary {
+        font-family: var(--font-sans);
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .chat-attachment-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .chat-attachment-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        max-width: 100%;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        border-radius: 999px;
+        padding: 4px 8px;
+        font-family: var(--font-sans);
+        font-size: 11px;
+        color: var(--ink);
+      }
+
+      .chat-attachment-kind {
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 1px 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        font-size: 10px;
+        color: var(--muted);
+      }
+
+      .chat-attachment-name {
+        min-width: 0;
+        max-width: 220px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .chat-attachment-remove {
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--muted);
+        border-radius: 8px;
+        padding: 1px 6px;
+        font-family: var(--font-sans);
+        font-size: 11px;
+        cursor: pointer;
+      }
+
+      .chat-attachment-remove:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
       main.layout {
         display: grid;
         grid-template-columns: 280px 1fr 1.3fr;
@@ -773,6 +837,14 @@
           <span>Background</span>
         </label>
       </div>
+      <div class="composer-row">
+        <span class="composer-label">Attachments</span>
+        <input id="chatAttachmentsInput" class="composer-file-input" type="file" multiple>
+        <button id="chatAttachmentsAdd" class="chat-btn" type="button">Add files</button>
+        <button id="chatAttachmentsClear" class="chat-btn" type="button" disabled>Clear files</button>
+        <span id="chatAttachmentSummary" class="chat-attachment-summary">No attachments selected.</span>
+      </div>
+      <div id="chatAttachmentList" class="chat-attachment-list"></div>
       <textarea id="chatPrompt" placeholder="Enter prompt text"></textarea>
       <div class="composer-row">
         <button id="chatNewSend" class="chat-btn primary" type="button">New conversation</button>
@@ -1015,6 +1087,7 @@
         chatPendingMode: null,
         chatPollHandle: null,
         chatBusy: false,
+        chatAttachments: [],
       };
 
       const convListEl = document.getElementById("convList");
@@ -1045,6 +1118,11 @@
       const chatReasoningEl = document.getElementById("chatReasoning");
       const chatVerbosityEl = document.getElementById("chatVerbosity");
       const chatBackgroundEl = document.getElementById("chatBackground");
+      const chatAttachmentsInputEl = document.getElementById("chatAttachmentsInput");
+      const chatAttachmentsAddEl = document.getElementById("chatAttachmentsAdd");
+      const chatAttachmentsClearEl = document.getElementById("chatAttachmentsClear");
+      const chatAttachmentSummaryEl = document.getElementById("chatAttachmentSummary");
+      const chatAttachmentListEl = document.getElementById("chatAttachmentList");
       const chatPromptEl = document.getElementById("chatPrompt");
       const chatNewSendEl = document.getElementById("chatNewSend");
       const chatContinueSendEl = document.getElementById("chatContinueSend");
@@ -1211,6 +1289,117 @@
         if (tone === "success") chatStatusEl.classList.add("success");
       }
 
+      function formatByteSize(bytes) {
+        if (!Number.isFinite(bytes) || bytes < 0) return "";
+        if (bytes < 1024) return String(bytes) + " B";
+        const units = ["KB", "MB", "GB", "TB"];
+        let value = bytes;
+        let unitIndex = -1;
+        while (value >= 1024 && unitIndex < units.length - 1) {
+          value /= 1024;
+          unitIndex += 1;
+        }
+        const rounded = value >= 10 ? value.toFixed(1) : value.toFixed(2);
+        return rounded.replace(/\.0+$/, "") + " " + units[Math.max(unitIndex, 0)];
+      }
+
+      function attachmentIsImageFile(file) {
+        if (file && typeof file.type === "string" && file.type.toLowerCase().startsWith("image/")) {
+          return true;
+        }
+        const name = file && typeof file.name === "string" ? file.name : "";
+        const ext = name.includes(".") ? "." + name.split(".").pop().toLowerCase() : "";
+        return (
+          ext === ".avif" ||
+          ext === ".bmp" ||
+          ext === ".gif" ||
+          ext === ".heic" ||
+          ext === ".heif" ||
+          ext === ".ico" ||
+          ext === ".jpeg" ||
+          ext === ".jpg" ||
+          ext === ".png" ||
+          ext === ".svg" ||
+          ext === ".tif" ||
+          ext === ".tiff" ||
+          ext === ".webp"
+        );
+      }
+
+      function makeAttachmentId() {
+        if (window.crypto && typeof window.crypto.randomUUID === "function") {
+          return window.crypto.randomUUID();
+        }
+        return "att-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
+      }
+
+      function renderChatAttachments() {
+        const editable = state.chatBackendReady && !state.chatBusy;
+        chatAttachmentListEl.innerHTML = "";
+        const total = state.chatAttachments.length;
+        if (!total) {
+          chatAttachmentSummaryEl.textContent = "No attachments selected.";
+        } else {
+          chatAttachmentSummaryEl.textContent =
+            String(total) + " " + (total === 1 ? "attachment" : "attachments") + " selected.";
+        }
+
+        for (let i = 0; i < state.chatAttachments.length; i++) {
+          const item = state.chatAttachments[i];
+          if (!item || !item.file) continue;
+
+          const chip = document.createElement("div");
+          chip.className = "chat-attachment-chip";
+
+          const kind = document.createElement("span");
+          kind.className = "chat-attachment-kind";
+          kind.textContent = item.isImage ? "image" : "file";
+          chip.appendChild(kind);
+
+          const name = document.createElement("span");
+          name.className = "chat-attachment-name";
+          const sizeText = formatByteSize(item.file.size);
+          name.textContent = item.file.name + (sizeText ? " (" + sizeText + ")" : "");
+          chip.appendChild(name);
+
+          const remove = document.createElement("button");
+          remove.type = "button";
+          remove.className = "chat-attachment-remove";
+          remove.textContent = "Remove";
+          remove.disabled = !editable;
+          remove.addEventListener("click", () => {
+            state.chatAttachments = state.chatAttachments.filter((entry) => entry.id !== item.id);
+            renderChatAttachments();
+            updateChatControls();
+          });
+          chip.appendChild(remove);
+
+          chatAttachmentListEl.appendChild(chip);
+        }
+      }
+
+      function addChatAttachments(fileList) {
+        const files = Array.from(fileList || []);
+        if (!files.length) return;
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          if (!(file instanceof File)) continue;
+          state.chatAttachments.push({
+            id: makeAttachmentId(),
+            file: file,
+            isImage: attachmentIsImageFile(file),
+          });
+        }
+        renderChatAttachments();
+        updateChatControls();
+      }
+
+      function clearChatAttachments() {
+        state.chatAttachments = [];
+        renderChatAttachments();
+        updateChatControls();
+      }
+
       function persistChatSettings() {
         try {
           localStorage.setItem("chatgpt_viewer_chat_model", chatModelEl.value.trim() || "gpt-5.1");
@@ -1234,17 +1423,27 @@
         const hasContinueTarget = Boolean(state.conv && state.selected);
         const busy = state.chatBusy;
         const hasPending = Boolean(state.chatPendingResponseId);
+        const model = chatModelEl.value.trim() || "gpt-5.1";
+        const includeReasoningControls = !isGpt4FamilyModel(model);
 
         chatModelEl.disabled = !backendReady || busy;
         chatTitleEl.disabled = !backendReady || busy;
-        chatReasoningEl.disabled = !backendReady || busy;
-        chatVerbosityEl.disabled = !backendReady || busy;
+        chatReasoningEl.disabled = !backendReady || busy || !includeReasoningControls;
+        chatVerbosityEl.disabled = !backendReady || busy || !includeReasoningControls;
         chatBackgroundEl.disabled = !backendReady || busy;
+        chatAttachmentsInputEl.disabled = !backendReady || busy;
+        chatAttachmentsAddEl.disabled = !backendReady || busy;
+        chatAttachmentsClearEl.disabled = !backendReady || busy || state.chatAttachments.length === 0;
         chatPromptEl.disabled = !backendReady || busy;
 
         chatNewSendEl.disabled = !backendReady || busy;
         chatContinueSendEl.disabled = !backendReady || busy || !hasContinueTarget;
         chatCancelEl.disabled = !backendReady || !hasPending;
+
+        const removeButtons = chatAttachmentListEl.querySelectorAll(".chat-attachment-remove");
+        for (let i = 0; i < removeButtons.length; i++) {
+          removeButtons[i].disabled = !backendReady || busy;
+        }
       }
 
       function upsertIndexEntry(entry) {
@@ -1309,6 +1508,12 @@
         updateChatControls();
       }
 
+      function isGpt4FamilyModel(model) {
+        if (typeof model !== "string") return false;
+        const normalized = model.trim().toLowerCase();
+        return normalized.startsWith("gpt-4") || normalized.startsWith("gpt4");
+      }
+
       function buildChatPayload(mode) {
         const prompt = chatPromptEl.value.trim();
         if (!prompt) {
@@ -1318,10 +1523,12 @@
         const payload = {
           prompt: prompt,
           model: model,
-          reasoning_effort: chatReasoningEl.value || "high",
-          text_verbosity: chatVerbosityEl.value || "medium",
           background: chatBackgroundEl.checked,
         };
+        if (!isGpt4FamilyModel(model)) {
+          payload.reasoning_effort = chatReasoningEl.value || "high";
+          payload.text_verbosity = chatVerbosityEl.value || "medium";
+        }
 
         const rawTitle = chatTitleEl.value.trim();
         if (rawTitle.length > 80) {
@@ -1341,6 +1548,18 @@
           payload.title = rawTitle;
         }
         return payload;
+      }
+
+      function buildChatRequestBody(payload) {
+        const formData = new FormData();
+        formData.append("payload_json", JSON.stringify(payload));
+        for (let i = 0; i < state.chatAttachments.length; i++) {
+          const item = state.chatAttachments[i];
+          if (!item || !(item.file instanceof File)) continue;
+          const filename = item.file.name && item.file.name.trim() ? item.file.name : "attachment";
+          formData.append("attachments", item.file, filename);
+        }
+        return formData;
       }
 
       async function pollBackgroundChat(responseId) {
@@ -1420,10 +1639,10 @@
         setChatStatus("Sending request...", null);
 
         try {
+          const body = buildChatRequestBody(payload);
           const res = await fetch(endpoint, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
+            body: body,
           });
           const data = await res.json().catch(() => ({}));
           if (!res.ok || !data.ok) {
@@ -2688,6 +2907,20 @@
         renderTree();
       });
 
+      chatAttachmentsAddEl.addEventListener("click", () => {
+        if (chatAttachmentsInputEl.disabled) return;
+        chatAttachmentsInputEl.click();
+      });
+
+      chatAttachmentsInputEl.addEventListener("change", () => {
+        addChatAttachments(chatAttachmentsInputEl.files);
+        chatAttachmentsInputEl.value = "";
+      });
+
+      chatAttachmentsClearEl.addEventListener("click", () => {
+        clearChatAttachments();
+      });
+
       chatNewSendEl.addEventListener("click", () => {
         submitChat("new");
       });
@@ -2702,9 +2935,14 @@
 
       chatModelEl.addEventListener("change", () => {
         persistChatSettings();
+        updateChatControls();
       });
       chatModelEl.addEventListener("blur", () => {
         persistChatSettings();
+        updateChatControls();
+      });
+      chatModelEl.addEventListener("input", () => {
+        updateChatControls();
       });
       chatReasoningEl.addEventListener("change", () => {
         persistChatSettings();
@@ -2835,6 +3073,7 @@
         stopChatPolling();
       });
 
+      renderChatAttachments();
       updateChatControls();
       checkChatBackend();
 

@@ -145,6 +145,11 @@ def normalize_prompt(value: object) -> str:
     return text
 
 
+def is_gpt4_family_model(model: str) -> bool:
+    normalized = model.strip().lower()
+    return normalized.startswith("gpt-4") or normalized.startswith("gpt4")
+
+
 def normalize_optional_title(value: object) -> Optional[str]:
     if value is None:
         return None
@@ -473,10 +478,16 @@ class ChatService:
         payload: Dict[str, object] = {
             "model": model,
             "input": messages,
-            "text": {"format": {"type": "text"}, "verbosity": text_verbosity},
-            "reasoning": {"summary": None, "effort": reasoning_effort},
+            "text": {"format": {"type": "text"}},
             "tools": [default_web_search_tool()],
         }
+        if is_gpt4_family_model(model):
+            payload["temperature"] = 1
+            payload["top_p"] = 1
+            payload["max_output_tokens"] = 16000
+        else:
+            payload["text"]["verbosity"] = text_verbosity
+            payload["reasoning"] = {"summary": None, "effort": reasoning_effort}
         if background:
             payload["background"] = True
         else:

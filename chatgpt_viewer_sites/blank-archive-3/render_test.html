@@ -1,0 +1,830 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Markdown + LaTeX Render Test</title>
+    <style>
+      :root {
+        --bg: #f3efe6;
+        --bg-2: #efe5d6;
+        --panel: #fffaf0;
+        --surface: #fffdf8;
+        --ink: #1f1a16;
+        --muted: #6f655d;
+        --border: #d8cec1;
+        --accent: #1e6f5a;
+        --shadow: rgba(31, 26, 22, 0.12);
+        --code-bg: #1e1a16;
+        --code-ink: #f5f1e8;
+        --font-serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, serif;
+        --font-sans: "Avenir Next", "Gill Sans", "Trebuchet MS", sans-serif;
+        --font-mono: "SF Mono", "Menlo", "Consolas", "Courier New", monospace;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        font-family: var(--font-serif);
+        color: var(--ink);
+        background: linear-gradient(120deg, var(--bg), var(--bg-2));
+        min-height: 100vh;
+      }
+
+      header {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+        background: rgba(255, 250, 240, 0.85);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+
+      .title {
+        font-family: var(--font-sans);
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        font-size: 14px;
+      }
+
+      .controls {
+        margin-top: 8px;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-family: var(--font-sans);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: var(--muted);
+      }
+
+      .select {
+        border: 1px solid var(--border);
+        background: var(--panel);
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-family: var(--font-sans);
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      button {
+        border: 1px solid var(--border);
+        background: var(--surface);
+        border-radius: 10px;
+        padding: 6px 10px;
+        font-family: var(--font-sans);
+        font-size: 12px;
+        color: var(--muted);
+        cursor: pointer;
+      }
+
+      main {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        padding: 16px 20px 24px;
+        min-height: calc(100vh - 110px);
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: 0 10px 24px var(--shadow);
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+
+      .panel-header {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+        font-family: var(--font-sans);
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+      }
+
+      .panel-body {
+        padding: 12px 14px 16px;
+        overflow: auto;
+        flex: 1;
+        min-height: 0;
+      }
+
+      textarea {
+        width: 100%;
+        height: 100%;
+        min-height: 300px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        border-radius: 10px;
+        padding: 12px;
+        font-family: var(--font-mono);
+        font-size: 12px;
+      }
+
+      .rendered-content {
+        font-family: var(--font-sans);
+        font-size: 14px;
+        line-height: 1.55;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+
+      .rendered-content pre {
+        background: var(--code-bg);
+        color: var(--code-ink);
+        padding: 10px;
+        border-radius: 10px;
+        overflow-x: auto;
+        white-space: pre;
+      }
+
+      .rendered-content code {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        white-space: pre;
+      }
+
+      .rendered-content table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+
+      .rendered-content th,
+      .rendered-content td {
+        border: 1px solid var(--border);
+        padding: 6px;
+      }
+
+      .rendered-content blockquote {
+        margin: 8px 0;
+        border-left: 3px solid var(--accent);
+        padding: 6px 10px;
+        border-radius: 8px;
+        color: var(--muted);
+        background: rgba(201, 122, 31, 0.08);
+      }
+
+      .rendered-content .katex,
+      .rendered-content .katex * {
+        overflow-wrap: normal;
+        word-break: normal;
+      }
+
+      .rendered-content .katex {
+        white-space: nowrap;
+      }
+
+      .rendered-content .katex-display {
+        overflow-x: auto;
+      }
+
+      .status {
+        font-family: var(--font-sans);
+        font-size: 12px;
+        color: var(--muted);
+        margin-left: auto;
+      }
+
+      @media (max-width: 900px) {
+        main {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="title">Markdown + LaTeX Render Test</div>
+      <div class="controls">
+        <label class="toggle">
+          <input id="escapeBrackets" type="checkbox" checked>
+          <span>Further escape brackets</span>
+        </label>
+        <select id="mathRenderer" class="select">
+          <option value="katex">KaTeX (HTML)</option>
+          <option value="mathjax">MathJax (SVG)</option>
+        </select>
+        <button id="resetBtn" type="button">Reset Sample</button>
+        <button id="renderBtn" type="button">Render</button>
+        <span id="status" class="status">Loading renderer...</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="panel">
+        <div class="panel-header">Source Markdown</div>
+        <div class="panel-body">
+          <textarea id="source"></textarea>
+        </div>
+      </section>
+      <section class="panel">
+        <div class="panel-header">Rendered Output</div>
+        <div id="output" class="panel-body rendered-content"></div>
+      </section>
+    </main>
+
+    <script>
+      (function () {
+        const ASSETS = [
+          {
+            type: "css",
+            local: "viewer_assets/katex.min.css",
+            id: "katexCss",
+          },
+          {
+            type: "js",
+            local: "viewer_assets/marked.min.js",
+            global: "marked",
+          },
+          {
+            type: "js",
+            local: "viewer_assets/purify.min.js",
+            global: "DOMPurify",
+          },
+          {
+            type: "js",
+            local: "viewer_assets/katex.min.js",
+            global: "katex",
+          },
+          {
+            type: "js",
+            local: "viewer_assets/auto-render.min.js",
+            global: "renderMathInElement",
+          },
+        ];
+        const MATHJAX_ASSET = {
+          type: "js",
+          local: "viewer_assets/mathjax/tex-svg.js",
+          global: "MathJax",
+          readyCheck: () => window.MathJax && window.MathJax.typesetPromise,
+        };
+
+        function loadCssAsset(item) {
+          return new Promise((resolve) => {
+            const link = document.createElement("link");
+            link.rel = "stylesheet";
+            link.href = item.local;
+            if (item.id) link.id = item.id;
+            link.onload = () => resolve(true);
+            link.onerror = () => resolve(false);
+            document.head.appendChild(link);
+          });
+        }
+
+        function loadScriptAsset(item) {
+          if (item.readyCheck && item.readyCheck()) return Promise.resolve(true);
+          if (item.global && window[item.global]) return Promise.resolve(true);
+          return new Promise((resolve) => {
+            const script = document.createElement("script");
+            script.src = item.local;
+            script.async = false;
+            script.onload = () => resolve(true);
+            script.onerror = () => resolve(false);
+            document.head.appendChild(script);
+          });
+        }
+
+        let libsPromise = null;
+        window.ensureViewerLibs = function () {
+          if (libsPromise) return libsPromise;
+          const cssPromise = loadCssAsset(ASSETS[0]);
+          libsPromise = cssPromise
+            .then((ok) => (ok ? loadScriptAsset(ASSETS[1]) : false))
+            .then((ok) => (ok ? loadScriptAsset(ASSETS[2]) : false))
+            .then((ok) => (ok ? loadScriptAsset(ASSETS[3]) : false))
+            .then((ok) => (ok ? loadScriptAsset(ASSETS[4]) : false))
+            .then((ok) => !!ok)
+            .catch(() => false);
+          return libsPromise;
+        };
+
+        let mathjaxPromise = null;
+        window.ensureMathJax = function () {
+          if (mathjaxPromise) return mathjaxPromise;
+          if (window.MathJax && window.MathJax.typesetPromise) {
+            return Promise.resolve(true);
+          }
+          if (!window.MathJax || !window.MathJax._configured) {
+            window.MathJax = {
+              tex: {
+                inlineMath: [
+                  ["$", "$"],
+                  ["\\(", "\\)"],
+                ],
+                displayMath: [
+                  ["$$", "$$"],
+                  ["\\[", "\\]"],
+                ],
+                processEscapes: true,
+              },
+              svg: { fontCache: "global" },
+              options: {
+                ignoreHtmlClass: "tex2jax_ignore",
+              },
+              _configured: true,
+            };
+          }
+          mathjaxPromise = loadScriptAsset(MATHJAX_ASSET)
+            .then(() => {
+              if (window.MathJax && window.MathJax.startup && window.MathJax.startup.promise) {
+                return window.MathJax.startup.promise.then(() => true).catch(() => false);
+              }
+              return true;
+            })
+            .catch(() => false);
+          return mathjaxPromise;
+        };
+
+        window.ensureViewerLibs();
+      })();
+    </script>
+
+    <script>
+      const sampleText = `# Markdown + LaTeX Test
+
+## Headers
+### H3 Header
+#### H4 Header
+##### H5 Header
+###### H6 Header
+
+Paragraph with **bold**, *italic*, ~~strikethrough~~, \`inline code\`, and a [link](https://example.com).
+
+> Blockquote with inline math \\(x^2 + y^2 = z^2\\).
+
+---
+
+## Lists
+- Item 1
+  - Subitem A
+    - Subsub 1
+- Item 2 with math $E=mc^2$ and numbers \\(123,000\\), \\(0.23\\), \\(1_x\\), \\(x^3\\).
+
+1. First
+2. Second
+   1. Sub 2.1
+   2. Sub 2.2
+
+## Table
+
+| Col A | Col B | Col C |
+| --- | --- | --- |
+| a | b | c |
+| 1 | 2 | 3 |
+
+## Code (should not render math)
+
+\`\`\`python
+def f(x):
+    return x**2  # \\(not math\\)
+\`\`\`
+
+\`\`\`html
+<script>alert("xss")</scr${""}ipt>
+<iframe src="https://example.com"></iframe>
+<img src="x" onerror="alert(1)">
+<svg onload="alert(1)"><circle cx="10" cy="10" r="10"></circle></svg>
+\`\`\`
+
+## Inline SVG (should render safely)
+
+<svg width="160" height="80" viewBox="0 0 160 80" role="img" aria-label="Sample chart">
+  <rect x="0" y="0" width="160" height="80" fill="#f8efe2" stroke="#c97a1f" stroke-width="2"></rect>
+  <line x1="10" y1="70" x2="150" y2="70" stroke="#1e6f5a" stroke-width="2"></line>
+  <circle cx="40" cy="40" r="8" fill="#1e6f5a"></circle>
+  <circle cx="80" cy="30" r="8" fill="#1e6f5a"></circle>
+  <circle cx="120" cy="50" r="8" fill="#1e6f5a"></circle>
+  <text x="10" y="20" font-size="10" font-family="sans-serif" fill="#6f655d">SVG sample</text>
+</svg>
+
+## LaTeX Display
+
+\\[
+\\int_0^\\infty e^{-x^2}\\, dx = \\frac{\\sqrt{\\pi}}{2}
+\\]
+
+\\[
+\\begin{aligned}
+ a^2 + b^2 &= c^2 \\\\
+ \\sum_{n=1}^{\\infty} \\frac{1}{n^2} &= \\frac{\\pi^2}{6}
+\\end{aligned}
+\\]
+
+Inline with spacing: \\(a\\;b\\;c\\)
+
+Matrix:
+
+\\[
+\\begin{bmatrix}
+1 & 2 \\\\
+3 & 4
+\\end{bmatrix}
+\\]
+
+Cases:
+
+\\[
+f(x)=
+\\begin{cases}
+ x^2 & x \\ge 0 \\\\
+ -x^2 & x < 0
+\\end{cases}
+\\]
+`;
+
+      const sourceEl = document.getElementById("source");
+      const outputEl = document.getElementById("output");
+      const renderBtn = document.getElementById("renderBtn");
+      const resetBtn = document.getElementById("resetBtn");
+      const escapeEl = document.getElementById("escapeBrackets");
+      const mathRendererEl = document.getElementById("mathRenderer");
+      const statusEl = document.getElementById("status");
+
+      sourceEl.value = sampleText;
+
+      function looksLikeMath(inner) {
+        const text = (inner || "").trim();
+        if (!text) return false;
+        if (/\\[a-zA-Z]+/.test(text)) return true;
+        if (/\\[^\\s]/.test(text)) return true;
+        if (/[+\-*/^_=<>]/.test(text)) return true;
+        if (/^[A-Za-z0-9]+$/.test(text)) return true;
+        if (/^[A-Za-z0-9_^]+$/.test(text)) return true;
+        if (/^[0-9]+(?:,[0-9]{3})*(?:\.[0-9]+)?$/.test(text)) return true;
+        if (/^[0-9]*\.[0-9]+$/.test(text)) return true;
+        return false;
+      }
+
+      const PURIFY_CONFIG = {
+        USE_PROFILES: { html: true, svg: true },
+        ALLOWED_TAGS: [
+          "a",
+          "b",
+          "blockquote",
+          "br",
+          "code",
+          "div",
+          "del",
+          "em",
+          "h1",
+          "h2",
+          "h3",
+          "h4",
+          "h5",
+          "h6",
+          "hr",
+          "i",
+          "img",
+          "li",
+          "ol",
+          "p",
+          "pre",
+          "span",
+          "strong",
+          "sub",
+          "sup",
+          "table",
+          "thead",
+          "tbody",
+          "tr",
+          "th",
+          "td",
+          "ul",
+          "svg",
+          "g",
+          "path",
+          "circle",
+          "rect",
+          "line",
+          "polyline",
+          "polygon",
+          "ellipse",
+          "defs",
+          "linearGradient",
+          "radialGradient",
+          "stop",
+          "text",
+          "tspan",
+        ],
+        ALLOWED_ATTR: [
+          "href",
+          "title",
+          "target",
+          "rel",
+          "src",
+          "alt",
+          "class",
+          "colspan",
+          "rowspan",
+          "aria-label",
+          "aria-hidden",
+          "role",
+          "viewBox",
+          "width",
+          "height",
+          "fill",
+          "stroke",
+          "stroke-width",
+          "stroke-linecap",
+          "stroke-linejoin",
+          "stroke-miterlimit",
+          "opacity",
+          "fill-opacity",
+          "stroke-opacity",
+          "d",
+          "cx",
+          "cy",
+          "r",
+          "x",
+          "y",
+          "x1",
+          "y1",
+          "x2",
+          "y2",
+          "points",
+          "transform",
+          "font-size",
+          "font-family",
+          "text-anchor",
+        ],
+        FORBID_TAGS: [
+          "style",
+          "script",
+          "iframe",
+          "object",
+          "embed",
+          "link",
+          "meta",
+          "form",
+          "math",
+          "foreignObject",
+          "animate",
+          "set",
+          "animateMotion",
+          "animateTransform",
+          "mpath",
+        ],
+        ALLOW_DATA_ATTR: false,
+        KEEP_CONTENT: false,
+        FORBID_ATTR: ["xlink:href"],
+      };
+
+      function configurePurify() {
+        if (configurePurify._configured || !window.DOMPurify) return;
+        DOMPurify.setConfig(PURIFY_CONFIG);
+        DOMPurify.addHook("uponSanitizeAttribute", (node, data) => {
+          const name = data.attrName || "";
+          if (name === "style" || name.toLowerCase().startsWith("on")) {
+            data.keepAttr = false;
+          }
+        });
+        DOMPurify.addHook("afterSanitizeAttributes", (node) => {
+          if (node.nodeName === "A") {
+            const href = node.getAttribute("href") || "";
+            if (/^javascript:/i.test(href)) {
+              node.removeAttribute("href");
+            }
+            if (node.getAttribute("target") === "_blank") {
+              node.setAttribute("rel", "noopener noreferrer");
+            }
+          }
+        });
+        configurePurify._configured = true;
+      }
+
+      function escapeDelimitersInMarkdown(markdown) {
+        if (!markdown || markdown.indexOf("\\") === -1) return markdown;
+        let out = "";
+        let cursor = 0;
+        while (cursor < markdown.length) {
+          const nextFence = findNextFenceStart(markdown, cursor);
+          if (nextFence === -1) {
+            out += processInlineCode(markdown.slice(cursor));
+            break;
+          }
+          out += processInlineCode(markdown.slice(cursor, nextFence));
+          const fenceMarker = markdown.startsWith("~~~", nextFence) ? "~~~" : "```";
+          const fenceEnd = findFenceEnd(markdown, nextFence, fenceMarker);
+          if (fenceEnd === -1) {
+            out += markdown.slice(nextFence);
+            break;
+          }
+          out += markdown.slice(nextFence, fenceEnd);
+          cursor = fenceEnd;
+        }
+        return out;
+      }
+
+      function findNextFenceStart(text, start) {
+        let pos = start;
+        while (pos < text.length) {
+          const tick = text.indexOf("```", pos);
+          const tilde = text.indexOf("~~~", pos);
+          let next = -1;
+          if (tick === -1) next = tilde;
+          else if (tilde === -1) next = tick;
+          else next = Math.min(tick, tilde);
+          if (next === -1) return -1;
+          const atLineStart = next === 0 || text[next - 1] === "\n";
+          if (atLineStart) return next;
+          pos = next + 3;
+        }
+        return -1;
+      }
+
+      function findFenceEnd(text, start, marker) {
+        let lineStart = text.indexOf("\n", start);
+        if (lineStart === -1) return -1;
+        lineStart += 1;
+        while (lineStart <= text.length) {
+          const lineEnd = text.indexOf("\n", lineStart);
+          const line = lineEnd === -1 ? text.slice(lineStart) : text.slice(lineStart, lineEnd);
+          if (line.startsWith(marker)) {
+            return lineEnd === -1 ? text.length : lineEnd + 1;
+          }
+          if (lineEnd === -1) return -1;
+          lineStart = lineEnd + 1;
+        }
+        return -1;
+      }
+
+      function processInlineCode(text) {
+        let out = "";
+        let i = 0;
+        while (i < text.length) {
+          const tick = text.indexOf("`", i);
+          if (tick === -1) {
+            out += escapeDelimitersInText(text.slice(i));
+            break;
+          }
+          let j = tick;
+          while (j < text.length && text[j] === "`") j++;
+          const ticks = text.slice(tick, j);
+          const end = text.indexOf(ticks, j);
+          if (end === -1) {
+            out += escapeDelimitersInText(text.slice(i));
+            break;
+          }
+          out += escapeDelimitersInText(text.slice(i, tick));
+          out += text.slice(tick, end + ticks.length);
+          i = end + ticks.length;
+        }
+        return out;
+      }
+
+      function normalizeMathInner(inner) {
+        if (!inner || inner.indexOf("\n") === -1) return inner;
+        return inner.replace(/\r?\n/g, " ");
+      }
+
+      function preserveBackslashesForMarkdown(inner) {
+        if (!inner || inner.indexOf("\\") === -1) return inner;
+        const placeholder = "__BSLASH__";
+        let temp = inner.replace(/\\\\/g, placeholder);
+        temp = temp.replace(/\\([^A-Za-z])/g, "\\\\$1");
+        temp = temp.replace(new RegExp(placeholder, "g"), "\\\\\\\\");
+        return temp;
+      }
+
+      function replaceMathSpacing(inner) {
+        return inner;
+      }
+
+      function escapeDelimitersInText(text) {
+        if (!text || (text.indexOf("\\") === -1 && text.indexOf("$") === -1)) return text;
+        const inlineRegex = /\\\(([\s\S]*?)\\\)/g;
+        const blockRegex = /\\\[([\s\S]*?)\\\]/g;
+        let replaced = text.replace(inlineRegex, (match, inner) => {
+          if (!looksLikeMath(inner)) return match;
+          let updated = replaceMathSpacing(inner);
+          updated = normalizeMathInner(updated);
+          updated = preserveBackslashesForMarkdown(updated);
+          return " \\\\( " + updated + " \\\\) ";
+        });
+        replaced = replaced.replace(blockRegex, (match, inner) => {
+          if (!looksLikeMath(inner)) return match;
+          let updated = replaceMathSpacing(inner);
+          updated = normalizeMathInner(updated);
+          updated = preserveBackslashesForMarkdown(updated);
+          return " \\\\[ " + updated + " \\\\] ";
+        });
+        return replaced;
+      }
+
+      function replaceMathSpacingInDollarMath(text) {
+        if (!text || text.indexOf("$") === -1) return text;
+        let replaced = text.replace(/(^|[^\\])\$\$([\s\S]*?)\$\$/g, (match, prefix, inner) => {
+          if (!looksLikeMath(inner)) return match;
+          let updated = replaceMathSpacing(inner);
+          updated = normalizeMathInner(updated);
+          updated = preserveBackslashesForMarkdown(updated);
+          return (prefix || "") + "$$" + updated + "$$";
+        });
+        replaced = replaced.replace(/(^|[^\\])\$([^\$]*?)\$/g, (match, prefix, inner) => {
+          if (!looksLikeMath(inner)) return match;
+          let updated = replaceMathSpacing(inner);
+          updated = normalizeMathInner(updated);
+          updated = preserveBackslashesForMarkdown(updated);
+          return (prefix || "") + "$" + updated + "$";
+        });
+        return replaced;
+      }
+
+      function renderMarkdown(markdown) {
+        if (!window.marked || !window.DOMPurify) {
+          return "<pre>" + escapeHtml(markdown) + "</pre>";
+        }
+        configurePurify();
+        if (!renderMarkdown._configured) {
+          marked.setOptions({ breaks: true, headerIds: false, mangle: false });
+          renderMarkdown._configured = true;
+        }
+        const raw = marked.parse(markdown);
+        return DOMPurify.sanitize(raw, PURIFY_CONFIG);
+      }
+
+      function escapeHtml(text) {
+        return String(text)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function render() {
+        const source = sourceEl.value;
+        let markdown = source;
+        if (escapeEl.checked) {
+          markdown = escapeDelimitersInMarkdown(markdown);
+        }
+        markdown = replaceMathSpacingInDollarMath(markdown);
+        outputEl.innerHTML = renderMarkdown(markdown);
+        const renderer = mathRendererEl.value;
+        if (renderer === "mathjax") {
+          const ensure = typeof window.ensureMathJax === "function" ? window.ensureMathJax() : null;
+          Promise.resolve(ensure)
+            .catch(() => false)
+            .then((ok) => {
+              if (!ok || !window.MathJax || !window.MathJax.typesetPromise) return;
+              if (window.MathJax.typesetClear) {
+                window.MathJax.typesetClear([outputEl]);
+              }
+              window.MathJax.typesetPromise([outputEl]).catch((err) => {
+                console.warn("MathJax render failed", err);
+              });
+            });
+        } else if (window.renderMathInElement) {
+          renderMathInElement(outputEl, {
+            delimiters: [
+              { left: "$$", right: "$$", display: true },
+              { left: "$", right: "$", display: false },
+              { left: "\\(", right: "\\)", display: false },
+              { left: "\\[", right: "\\]", display: true },
+            ],
+            ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"],
+            throwOnError: false,
+            strict: "warn",
+            trust: false,
+            output: "html",
+          });
+        }
+      }
+
+      function updateStatus(ready) {
+        statusEl.textContent = ready ? "Renderer ready" : "Renderer unavailable";
+      }
+
+      function init() {
+        Promise.resolve(typeof window.ensureViewerLibs === "function" ? window.ensureViewerLibs() : false)
+          .then((ok) => updateStatus(!!ok))
+          .catch(() => updateStatus(false))
+          .finally(() => render());
+      }
+
+      renderBtn.addEventListener("click", render);
+      resetBtn.addEventListener("click", () => {
+        sourceEl.value = sampleText;
+        render();
+      });
+      sourceEl.addEventListener("input", () => render());
+      escapeEl.addEventListener("change", () => render());
+      mathRendererEl.addEventListener("change", () => render());
+
+      init();
+    </script>
+  </body>
+</html>
