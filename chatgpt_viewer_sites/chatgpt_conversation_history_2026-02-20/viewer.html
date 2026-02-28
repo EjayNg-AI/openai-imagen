@@ -211,6 +211,20 @@
         line-height: 1.4;
       }
 
+      #chatSystemPrompt {
+        width: 100%;
+        min-height: 96px;
+        resize: vertical;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 10px;
+        background: var(--surface);
+        color: var(--ink);
+        font-family: var(--font-sans);
+        font-size: 13px;
+        line-height: 1.4;
+      }
+
       .chat-btn {
         border: 1px solid var(--border);
         background: var(--surface);
@@ -259,6 +273,20 @@
         font-family: var(--font-sans);
         font-size: 12px;
         color: var(--muted);
+      }
+
+      .chat-system-prompt-status {
+        font-family: var(--font-sans);
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .chat-system-prompt-status.error {
+        color: #8a3b2b;
+      }
+
+      .chat-system-prompt-status.success {
+        color: var(--accent);
       }
 
       .chat-attachment-list {
@@ -845,6 +873,21 @@
         <span id="chatAttachmentSummary" class="chat-attachment-summary">No attachments selected.</span>
       </div>
       <div id="chatAttachmentList" class="chat-attachment-list"></div>
+      <div class="composer-row">
+        <span class="composer-label">System prompt</span>
+        <select id="chatSystemPromptLibrary" class="select">
+          <option value="">(none)</option>
+        </select>
+        <button id="chatSystemPromptLoad" class="chat-btn" type="button">Load selected</button>
+        <button id="chatSystemPromptClear" class="chat-btn" type="button">Clear</button>
+        <span id="chatSystemPromptStatus" class="chat-system-prompt-status">
+          Optional. Loaded prompts remain editable before sending.
+        </span>
+      </div>
+      <textarea
+        id="chatSystemPrompt"
+        placeholder="Optional system prompt (sent as Responses API instructions)"
+      ></textarea>
       <textarea id="chatPrompt" placeholder="Enter prompt text"></textarea>
       <div class="composer-row">
         <button id="chatNewSend" class="chat-btn primary" type="button">New conversation</button>
@@ -1088,6 +1131,9 @@
         chatPollHandle: null,
         chatBusy: false,
         chatAttachments: [],
+        chatSystemPrompts: [],
+        chatSystemPromptLoading: false,
+        chatSystemPromptPreferredName: "",
       };
 
       const convListEl = document.getElementById("convList");
@@ -1123,6 +1169,11 @@
       const chatAttachmentsClearEl = document.getElementById("chatAttachmentsClear");
       const chatAttachmentSummaryEl = document.getElementById("chatAttachmentSummary");
       const chatAttachmentListEl = document.getElementById("chatAttachmentList");
+      const chatSystemPromptLibraryEl = document.getElementById("chatSystemPromptLibrary");
+      const chatSystemPromptLoadEl = document.getElementById("chatSystemPromptLoad");
+      const chatSystemPromptClearEl = document.getElementById("chatSystemPromptClear");
+      const chatSystemPromptStatusEl = document.getElementById("chatSystemPromptStatus");
+      const chatSystemPromptEl = document.getElementById("chatSystemPrompt");
       const chatPromptEl = document.getElementById("chatPrompt");
       const chatNewSendEl = document.getElementById("chatNewSend");
       const chatContinueSendEl = document.getElementById("chatContinueSend");
@@ -1289,6 +1340,125 @@
         if (tone === "success") chatStatusEl.classList.add("success");
       }
 
+      function setSystemPromptStatus(text, tone) {
+        chatSystemPromptStatusEl.textContent = text || "";
+        chatSystemPromptStatusEl.className = "chat-system-prompt-status";
+        if (tone === "error") chatSystemPromptStatusEl.classList.add("error");
+        if (tone === "success") chatSystemPromptStatusEl.classList.add("success");
+      }
+
+      function systemPromptLabelForName(name) {
+        for (let i = 0; i < state.chatSystemPrompts.length; i++) {
+          const item = state.chatSystemPrompts[i];
+          if (item && item.name === name) {
+            return item.title || item.name;
+          }
+        }
+        return name;
+      }
+
+      function renderSystemPromptLibraryOptions() {
+        const selectedBefore = chatSystemPromptLibraryEl.value || "";
+        const preferred = state.chatSystemPromptPreferredName || selectedBefore;
+        chatSystemPromptLibraryEl.innerHTML = "";
+
+        const defaultOption = document.createElement("option");
+        defaultOption.value = "";
+        defaultOption.textContent = "(none)";
+        chatSystemPromptLibraryEl.appendChild(defaultOption);
+
+        const knownNames = new Set();
+        for (let i = 0; i < state.chatSystemPrompts.length; i++) {
+          const item = state.chatSystemPrompts[i];
+          if (!item || typeof item.name !== "string" || !item.name) continue;
+          knownNames.add(item.name);
+          const option = document.createElement("option");
+          option.value = item.name;
+          option.textContent = item.title || item.name;
+          chatSystemPromptLibraryEl.appendChild(option);
+        }
+
+        if (preferred && knownNames.has(preferred)) {
+          chatSystemPromptLibraryEl.value = preferred;
+        } else {
+          chatSystemPromptLibraryEl.value = "";
+        }
+      }
+
+      async function loadSystemPromptLibraryList() {
+        state.chatSystemPromptLoading = true;
+        updateChatControls();
+        try {
+          const res = await fetch(ARCHIVE_API_BASE + "/system-prompts", { cache: "no-store" });
+          const payload = await res.json().catch(() => ({}));
+          if (!res.ok || !payload.ok || !Array.isArray(payload.prompts)) {
+            throw new Error(payload.error || "Failed to load system prompt library.");
+          }
+          state.chatSystemPrompts = payload.prompts.filter((item) => {
+            return item && typeof item.name === "string" && item.name.trim();
+          });
+          renderSystemPromptLibraryOptions();
+          if (state.chatSystemPrompts.length > 0) {
+            setSystemPromptStatus("System prompt library ready.", "success");
+          } else {
+            setSystemPromptStatus("System prompt library is empty.", null);
+          }
+        } catch (err) {
+          state.chatSystemPrompts = [];
+          renderSystemPromptLibraryOptions();
+          setSystemPromptStatus(err.message || "System prompt library unavailable.", "error");
+        } finally {
+          state.chatSystemPromptLoading = false;
+          updateChatControls();
+        }
+      }
+
+      async function loadSelectedSystemPromptIntoTextbox() {
+        const promptName = chatSystemPromptLibraryEl.value;
+        state.chatSystemPromptPreferredName = promptName || "";
+        persistSystemPromptSettings();
+
+        if (!promptName) {
+          setSystemPromptStatus("No system prompt selected.", null);
+          updateChatControls();
+          return;
+        }
+
+        state.chatSystemPromptLoading = true;
+        updateChatControls();
+        setSystemPromptStatus("Loading system prompt...", null);
+        try {
+          const res = await fetch(
+            ARCHIVE_API_BASE + "/system-prompts/" + encodeURIComponent(promptName),
+            { cache: "no-store" }
+          );
+          const payload = await res.json().catch(() => ({}));
+          if (!res.ok || !payload.ok || typeof payload.content !== "string") {
+            throw new Error(payload.error || "Failed to load selected system prompt.");
+          }
+          chatSystemPromptEl.value = payload.content;
+          persistSystemPromptSettings();
+          setSystemPromptStatus(
+            "Loaded " + systemPromptLabelForName(promptName) + " into editable textbox.",
+            "success"
+          );
+        } catch (err) {
+          setSystemPromptStatus(err.message || "Failed to load selected system prompt.", "error");
+        } finally {
+          state.chatSystemPromptLoading = false;
+          updateChatControls();
+        }
+      }
+
+      function clearSystemPromptInputs() {
+        chatSystemPromptEl.value = "";
+        chatSystemPromptLibraryEl.value = "";
+        state.chatSystemPromptPreferredName = "";
+        persistSystemPromptSettings();
+        setSystemPromptStatus("System prompt cleared.", null);
+        updateChatControls();
+      }
+
       function formatByteSize(bytes) {
         if (!Number.isFinite(bytes) || bytes < 0) return "";
         if (bytes < 1024) return String(bytes) + " B";
@@ -1411,6 +1581,18 @@
         }
       }
 
+      function persistSystemPromptSettings() {
+        try {
+          localStorage.setItem("chatgpt_viewer_chat_system_prompt", chatSystemPromptEl.value || "");
+          localStorage.setItem(
+            "chatgpt_viewer_chat_system_prompt_library",
+            state.chatSystemPromptPreferredName || ""
+          );
+        } catch (err) {
+          // ignore storage errors
+        }
+      }
+
       function stopChatPolling() {
         if (state.chatPollHandle) {
           clearInterval(state.chatPollHandle);
@@ -1434,6 +1616,17 @@
         chatAttachmentsInputEl.disabled = !backendReady || busy;
         chatAttachmentsAddEl.disabled = !backendReady || busy;
         chatAttachmentsClearEl.disabled = !backendReady || busy || state.chatAttachments.length === 0;
+        chatSystemPromptLibraryEl.disabled = !backendReady || busy || state.chatSystemPromptLoading;
+        chatSystemPromptLoadEl.disabled =
+          !backendReady ||
+          busy ||
+          state.chatSystemPromptLoading ||
+          !chatSystemPromptLibraryEl.value;
+        chatSystemPromptClearEl.disabled =
+          !backendReady ||
+          busy ||
+          (!chatSystemPromptEl.value.trim() && !chatSystemPromptLibraryEl.value);
+        chatSystemPromptEl.disabled = !backendReady || busy;
         chatPromptEl.disabled = !backendReady || busy;
 
         chatNewSendEl.disabled = !backendReady || busy;
@@ -1501,9 +1694,13 @@
           if (!payload || !payload.ok) throw new Error("backend unavailable");
           state.chatBackendReady = true;
           setChatStatus("Live chat connected.", "success");
+          await loadSystemPromptLibraryList();
         } catch (err) {
           state.chatBackendReady = false;
+          state.chatSystemPrompts = [];
+          renderSystemPromptLibraryOptions();
           setChatStatus("Live chat requires chatgpt_viewer_server.py.", "error");
+          setSystemPromptStatus("System prompt library requires live chat backend.", "error");
         }
         updateChatControls();
       }
@@ -1528,6 +1725,11 @@
         if (!isGpt4FamilyModel(model)) {
           payload.reasoning_effort = chatReasoningEl.value || "high";
           payload.text_verbosity = chatVerbosityEl.value || "medium";
+        }
+
+        const systemPrompt = chatSystemPromptEl.value.trim();
+        if (systemPrompt) {
+          payload.system_prompt = systemPrompt;
         }
 
         const rawTitle = chatTitleEl.value.trim();
@@ -2921,6 +3123,30 @@
         clearChatAttachments();
       });
 
+      chatSystemPromptLibraryEl.addEventListener("change", () => {
+        state.chatSystemPromptPreferredName = chatSystemPromptLibraryEl.value || "";
+        persistSystemPromptSettings();
+        if (state.chatSystemPromptPreferredName) {
+          loadSelectedSystemPromptIntoTextbox();
+        } else {
+          setSystemPromptStatus("No system prompt selected.", null);
+          updateChatControls();
+        }
+      });
+
+      chatSystemPromptLoadEl.addEventListener("click", () => {
+        loadSelectedSystemPromptIntoTextbox();
+      });
+
+      chatSystemPromptClearEl.addEventListener("click", () => {
+        clearSystemPromptInputs();
+      });
+
+      chatSystemPromptEl.addEventListener("input", () => {
+        persistSystemPromptSettings();
+        updateChatControls();
+      });
+
       chatNewSendEl.addEventListener("click", () => {
         submitChat("new");
       });
@@ -3039,6 +3265,22 @@
       })();
 
       updateCopyUiMode();
+
+      (function restoreSystemPromptSettings() {
+        try {
+          const savedSystemPrompt = localStorage.getItem("chatgpt_viewer_chat_system_prompt");
+          if (typeof savedSystemPrompt === "string" && savedSystemPrompt.length > 0) {
+            chatSystemPromptEl.value = savedSystemPrompt;
+          }
+          const savedLibrary = localStorage.getItem("chatgpt_viewer_chat_system_prompt_library");
+          if (savedLibrary && savedLibrary.trim()) {
+            state.chatSystemPromptPreferredName = savedLibrary.trim();
+          }
+        } catch (err) {
+          // ignore storage errors
+        }
+        renderSystemPromptLibraryOptions();
+      })();
 
       (function restoreChatSettings() {
         try {

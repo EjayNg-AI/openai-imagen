@@ -68,6 +68,8 @@ TERMINAL_RESPONSE_STATUSES = {
     "failed",
     "incomplete",
 }
+REPO_ROOT = Path(__file__).resolve().parents[1]
+SYSTEM_PROMPT_LIBRARY_DIR = REPO_ROOT / "chatgpt_archive_viewer_system_prompt_library"
 
 
 def default_web_search_tool() -> Dict[str, object]:
@@ -176,6 +178,58 @@ def normalize_optional_archive_input(value: object, field_name: str) -> Optional
     if len(text) > MAX_ARCHIVE_INPUT_CHARS:
         raise ValueError(f"{field_name} must be {MAX_ARCHIVE_INPUT_CHARS} characters or fewer.")
     return text
+
+
+def normalize_optional_system_prompt(value: object) -> Optional[str]:
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise ValueError("system_prompt must be a string.")
+    text = value.strip()
+    return text or None
+
+
+def system_prompt_title_from_filename(filename: str) -> str:
+    stem = Path(filename).stem
+    title = re.sub(r"[_-]+", " ", stem).strip()
+    return title or filename
+
+
+def list_system_prompt_library_entries(
+    library_dir: Path = SYSTEM_PROMPT_LIBRARY_DIR,
+) -> List[Dict[str, str]]:
+    if not library_dir.is_dir():
+        return []
+    entries: List[Dict[str, str]] = []
+    for path in sorted(library_dir.iterdir(), key=lambda item: item.name.lower()):
+        if not path.is_file():
+            continue
+        if path.suffix.lower() != ".md":
+            continue
+        entries.append({"name": path.name, "title": system_prompt_title_from_filename(path.name)})
+    return entries
+
+
+def read_system_prompt_library_entry(
+    prompt_name: str,
+    *,
+    library_dir: Path = SYSTEM_PROMPT_LIBRARY_DIR,
+) -> str:
+    if not isinstance(prompt_name, str):
+        raise ValueError("prompt name is required.")
+    raw_name = prompt_name.strip()
+    if not raw_name:
+        raise ValueError("prompt name is required.")
+    if raw_name != Path(raw_name).name:
+        raise ValueError("prompt name is invalid.")
+
+    prompt_entries = list_system_prompt_library_entries(library_dir)
+    allowed_names = {entry["name"] for entry in prompt_entries}
+    if raw_name not in allowed_names:
+        raise FileNotFoundError(f"System prompt not found: {raw_name}")
+
+    path = library_dir / raw_name
+    return path.read_text(encoding="utf-8")
 
 
 def parse_bool(value: object, default: bool = False) -> bool:
@@ -474,6 +528,7 @@ class ChatService:
         reasoning_effort: str,
         text_verbosity: str,
         background: bool,
+        instructions: Optional[str] = None,
     ):
         payload: Dict[str, object] = {
             "model": model,
@@ -481,6 +536,8 @@ class ChatService:
             "text": {"format": {"type": "text"}},
             "tools": [default_web_search_tool()],
         }
+        if instructions:
+            payload["instructions"] = instructions
         if is_gpt4_family_model(model):
             payload["temperature"] = 1
             payload["top_p"] = 1
@@ -928,6 +985,7 @@ def process_chat_new(
     try:
         prompt = normalize_prompt(payload.get("prompt"))
         custom_title = normalize_optional_title(payload.get("title"))
+        system_prompt = normalize_optional_system_prompt(payload.get("system_prompt"))
         model = payload.get("model") if isinstance(payload.get("model"), str) else "gpt-5.1"
         model = model.strip() or "gpt-5.1"
         reasoning_effort = normalize_choice(payload.get("reasoning_effort"), VALID_REASONING, "high")
@@ -948,6 +1006,7 @@ def process_chat_new(
             reasoning_effort=reasoning_effort,
             text_verbosity=text_verbosity,
             background=background,
+            instructions=system_prompt,
         )
     except Exception as exc:  # noqa: BLE001
         if uploaded_file_ids:
@@ -979,6 +1038,7 @@ def process_chat_new(
                 "prompt": prompt,
                 "model": model,
                 "title": conv_title,
+                "system_prompt": system_prompt,
                 "persisted": False,
                 "uploaded_file_ids": uploaded_file_ids,
                 "attachments_cleaned": False,
@@ -1038,6 +1098,7 @@ def process_chat_continue(
         anchor_node_id = anchor_node_id.strip()
 
         prompt = normalize_prompt(payload.get("prompt"))
+        system_prompt = normalize_optional_system_prompt(payload.get("system_prompt"))
         model = payload.get("model") if isinstance(payload.get("model"), str) else "gpt-5.1"
         model = model.strip() or "gpt-5.1"
         reasoning_effort = normalize_choice(payload.get("reasoning_effort"), VALID_REASONING, "high")
@@ -1067,6 +1128,7 @@ def process_chat_continue(
             reasoning_effort=reasoning_effort,
             text_verbosity=text_verbosity,
             background=background,
+            instructions=system_prompt,
         )
     except Exception as exc:  # noqa: BLE001
         if uploaded_file_ids:
@@ -1099,6 +1161,7 @@ def process_chat_continue(
                 "anchor_node_id": anchor_node_id,
                 "prompt": prompt,
                 "model": model,
+                "system_prompt": system_prompt,
                 "persisted": False,
                 "uploaded_file_ids": uploaded_file_ids,
                 "attachments_cleaned": False,
@@ -1244,6 +1307,28 @@ def make_single_archive_app(viewer_dir: Path) -> Flask:
     def archive_health():
         return jsonify(ok=True, viewer_dir=str(viewer_dir))
 
+    @app.get("/api/archive/system-prompts")
+    def list_system_prompts():
+        try:
+            prompts = list_system_prompt_library_entries()
+            return jsonify(ok=True, prompts=prompts)
+        except Exception as exc:  # noqa: BLE001
+            app.logger.exception("Failed to list system prompts")
+            return jsonify(ok=False, error=str(exc)), 500
+
+    @app.get("/api/archive/system-prompts/<path:prompt_name>")
+    def get_system_prompt(prompt_name: str):
+        try:
+            content = read_system_prompt_library_entry(prompt_name)
+            return jsonify(ok=True, name=Path(prompt_name).name, content=content)
+        except ValueError as exc:
+            return jsonify(ok=False, error=str(exc)), 400
+        except FileNotFoundError:
+            return jsonify(ok=False, error="System prompt not found."), 404
+        except Exception as exc:  # noqa: BLE001
+            app.logger.exception("Failed to read system prompt %s", prompt_name)
+            return jsonify(ok=False, error=str(exc)), 500
+
     @app.post("/api/archive/chat/new")
     def create_new_conversation():
         try:
@@ -1378,6 +1463,34 @@ def make_multi_archive_app(sites_root: Path, *, asset_archive_dir: Path = ASSET_
             return err_resp, status
         archive_dir, _, _ = ctx
         return jsonify(ok=True, viewer_dir=str(archive_dir), archive_slug=archive_slug)
+
+    @app.get("/api/archives/<archive_slug>/system-prompts")
+    def list_archive_system_prompts(archive_slug: str):
+        ctx, err_resp, status = resolve_archive_or_response(archive_slug)
+        if ctx is None:
+            return err_resp, status
+        try:
+            prompts = list_system_prompt_library_entries()
+            return jsonify(ok=True, prompts=prompts)
+        except Exception as exc:  # noqa: BLE001
+            app.logger.exception("Failed to list system prompts")
+            return jsonify(ok=False, error=str(exc)), 500
+
+    @app.get("/api/archives/<archive_slug>/system-prompts/<path:prompt_name>")
+    def get_archive_system_prompt(archive_slug: str, prompt_name: str):
+        ctx, err_resp, status = resolve_archive_or_response(archive_slug)
+        if ctx is None:
+            return err_resp, status
+        try:
+            content = read_system_prompt_library_entry(prompt_name)
+            return jsonify(ok=True, name=Path(prompt_name).name, content=content)
+        except ValueError as exc:
+            return jsonify(ok=False, error=str(exc)), 400
+        except FileNotFoundError:
+            return jsonify(ok=False, error="System prompt not found."), 404
+        except Exception as exc:  # noqa: BLE001
+            app.logger.exception("Failed to read system prompt %s", prompt_name)
+            return jsonify(ok=False, error=str(exc)), 500
 
     @app.post("/api/archives/<archive_slug>/chat/new")
     def archive_chat_new(archive_slug: str):
