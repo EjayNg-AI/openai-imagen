@@ -45,7 +45,7 @@ Generated or edited images are:
   - Live chat endpoints accept either JSON (no files) or multipart with `payload_json` + repeated `attachments`.
   - Attachment routing follows file type: image files use `purpose="vision"` / `input_image`; non-images use `purpose="user_data"` / `input_file`.
   - Background-mode polling in the viewer runs every 10 seconds.
-  - Live authoring model calls always enable web search with `search_context_size: "high"`.
+  - Live authoring model calls include a `Web search` composer toggle (enabled by default); when enabled, requests use `search_context_size: "high"`.
   - Renderer assets are sourced from repository-local `scripts/viewer_asset_archive/` and copied into each site's `viewer_assets/` (no CDN fallback).
   - Rebuilds are safe by default: existing `viewer_data/` (including live-added turns) is preserved unless you pass `--no-preserve-viewer-data`.
   - Build CLI args: `python3 scripts/build_chatgpt_viewer.py <export_dir> [--output-dir <dir>] [--preserve-viewer-data|--no-preserve-viewer-data] [--asset-archive-dir <dir>]`.

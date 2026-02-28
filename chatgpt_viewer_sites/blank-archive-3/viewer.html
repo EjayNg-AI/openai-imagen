@@ -864,6 +864,10 @@
           <input id="chatBackground" type="checkbox">
           <span>Background</span>
         </label>
+        <label class="toggle">
+          <input id="chatIncludeWebSearch" type="checkbox" checked>
+          <span>Web search</span>
+        </label>
       </div>
       <div class="composer-row">
         <span class="composer-label">Attachments</span>
@@ -1164,6 +1168,7 @@
       const chatReasoningEl = document.getElementById("chatReasoning");
       const chatVerbosityEl = document.getElementById("chatVerbosity");
       const chatBackgroundEl = document.getElementById("chatBackground");
+      const chatIncludeWebSearchEl = document.getElementById("chatIncludeWebSearch");
       const chatAttachmentsInputEl = document.getElementById("chatAttachmentsInput");
       const chatAttachmentsAddEl = document.getElementById("chatAttachmentsAdd");
       const chatAttachmentsClearEl = document.getElementById("chatAttachmentsClear");
@@ -1576,6 +1581,10 @@
           localStorage.setItem("chatgpt_viewer_chat_reasoning", chatReasoningEl.value);
           localStorage.setItem("chatgpt_viewer_chat_verbosity", chatVerbosityEl.value);
           localStorage.setItem("chatgpt_viewer_chat_background", chatBackgroundEl.checked ? "1" : "0");
+          localStorage.setItem(
+            "chatgpt_viewer_chat_include_web_search",
+            chatIncludeWebSearchEl.checked ? "1" : "0"
+          );
         } catch (err) {
           // ignore storage errors
         }
@@ -1613,6 +1622,7 @@
         chatReasoningEl.disabled = !backendReady || busy || !includeReasoningControls;
         chatVerbosityEl.disabled = !backendReady || busy || !includeReasoningControls;
         chatBackgroundEl.disabled = !backendReady || busy;
+        chatIncludeWebSearchEl.disabled = !backendReady || busy;
         chatAttachmentsInputEl.disabled = !backendReady || busy;
         chatAttachmentsAddEl.disabled = !backendReady || busy;
         chatAttachmentsClearEl.disabled = !backendReady || busy || state.chatAttachments.length === 0;
@@ -1721,6 +1731,7 @@
           prompt: prompt,
           model: model,
           background: chatBackgroundEl.checked,
+          include_web_search: chatIncludeWebSearchEl.checked,
         };
         if (!isGpt4FamilyModel(model)) {
           payload.reasoning_effort = chatReasoningEl.value || "high";
@@ -3179,6 +3190,9 @@
       chatBackgroundEl.addEventListener("change", () => {
         persistChatSettings();
       });
+      chatIncludeWebSearchEl.addEventListener("change", () => {
+        persistChatSettings();
+      });
 
       chatPromptEl.addEventListener("keydown", (event) => {
         if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
@@ -3305,6 +3319,12 @@
           const savedBackground = localStorage.getItem("chatgpt_viewer_chat_background");
           if (savedBackground === "1") {
             chatBackgroundEl.checked = true;
+          }
+          const savedIncludeWebSearch = localStorage.getItem("chatgpt_viewer_chat_include_web_search");
+          if (savedIncludeWebSearch === "0") {
+            chatIncludeWebSearchEl.checked = false;
+          } else {
+            chatIncludeWebSearchEl.checked = true;
           }
         } catch (err) {
           // ignore storage errors

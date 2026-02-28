@@ -232,7 +232,12 @@ def read_system_prompt_library_entry(
     return path.read_text(encoding="utf-8")
 
 
-def parse_bool(value: object, default: bool = False) -> bool:
+def parse_bool(
+    value: object,
+    default: bool = False,
+    *,
+    field_name: str = "background",
+) -> bool:
     if value is None:
         return default
     if isinstance(value, bool):
@@ -243,7 +248,7 @@ def parse_bool(value: object, default: bool = False) -> bool:
             return True
         if lowered in {"0", "false", "no", "off"}:
             return False
-    raise ValueError("background must be a boolean.")
+    raise ValueError(f"{field_name} must be a boolean.")
 
 
 def sanitize_attachment_filename(value: object) -> str:
@@ -528,14 +533,16 @@ class ChatService:
         reasoning_effort: str,
         text_verbosity: str,
         background: bool,
+        include_web_search: bool,
         instructions: Optional[str] = None,
     ):
         payload: Dict[str, object] = {
             "model": model,
             "input": messages,
             "text": {"format": {"type": "text"}},
-            "tools": [default_web_search_tool()],
         }
+        if include_web_search:
+            payload["tools"] = [default_web_search_tool()]
         if instructions:
             payload["instructions"] = instructions
         if is_gpt4_family_model(model):
@@ -990,7 +997,12 @@ def process_chat_new(
         model = model.strip() or "gpt-5.1"
         reasoning_effort = normalize_choice(payload.get("reasoning_effort"), VALID_REASONING, "high")
         text_verbosity = normalize_choice(payload.get("text_verbosity"), VALID_VERBOSITY, "medium")
-        background = parse_bool(payload.get("background"), False)
+        background = parse_bool(payload.get("background"), False, field_name="background")
+        include_web_search = parse_bool(
+            payload.get("include_web_search"),
+            True,
+            field_name="include_web_search",
+        )
     except ValueError as exc:
         return {"ok": False, "error": str(exc)}, 400
 
@@ -1006,6 +1018,7 @@ def process_chat_new(
             reasoning_effort=reasoning_effort,
             text_verbosity=text_verbosity,
             background=background,
+            include_web_search=include_web_search,
             instructions=system_prompt,
         )
     except Exception as exc:  # noqa: BLE001
@@ -1039,6 +1052,7 @@ def process_chat_new(
                 "model": model,
                 "title": conv_title,
                 "system_prompt": system_prompt,
+                "include_web_search": include_web_search,
                 "persisted": False,
                 "uploaded_file_ids": uploaded_file_ids,
                 "attachments_cleaned": False,
@@ -1103,7 +1117,12 @@ def process_chat_continue(
         model = model.strip() or "gpt-5.1"
         reasoning_effort = normalize_choice(payload.get("reasoning_effort"), VALID_REASONING, "high")
         text_verbosity = normalize_choice(payload.get("text_verbosity"), VALID_VERBOSITY, "medium")
-        background = parse_bool(payload.get("background"), False)
+        background = parse_bool(payload.get("background"), False, field_name="background")
+        include_web_search = parse_bool(
+            payload.get("include_web_search"),
+            True,
+            field_name="include_web_search",
+        )
     except ValueError as exc:
         return {"ok": False, "error": str(exc)}, 400
 
@@ -1128,6 +1147,7 @@ def process_chat_continue(
             reasoning_effort=reasoning_effort,
             text_verbosity=text_verbosity,
             background=background,
+            include_web_search=include_web_search,
             instructions=system_prompt,
         )
     except Exception as exc:  # noqa: BLE001
@@ -1162,6 +1182,7 @@ def process_chat_continue(
                 "prompt": prompt,
                 "model": model,
                 "system_prompt": system_prompt,
+                "include_web_search": include_web_search,
                 "persisted": False,
                 "uploaded_file_ids": uploaded_file_ids,
                 "attachments_cleaned": False,
